@@ -8,6 +8,7 @@ import {
   ShieldCheck, Sparkles, XCircle,
 } from "lucide-react";
 import { ResumeUpload } from "@/components/resume-upload";
+import { ProviderSelector, type Provider } from "@/components/provider-selector";
 import { AnalysisReport } from "@/components/analysis-report";
 import { type AnalysisResult, DEMO_REPORT } from "@/lib/analysis";
 
@@ -30,6 +31,9 @@ export default function Home() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [provider, setProvider] = useState<Provider>("gemini");
+  const [model, setModel] = useState("");
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
   const controllerRef = useRef<AbortController | null>(null);
 
   const canAnalyze =
@@ -65,7 +69,6 @@ export default function Home() {
     setError("");
     setResult(null);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     let endpoint: string;
     let options: RequestInit;
 
@@ -73,6 +76,8 @@ export default function Home() {
       const formData = new FormData();
       formData.append("file", resumeFile);
       formData.append("job_description", jobDescription);
+      formData.append("provider", provider);
+      if (provider === "chatgpt" && model) formData.append("model", model);
       endpoint = "/api/v1/analyses/upload";
       options = { method: "POST", body: formData, signal: controller.signal };
     } else {
@@ -80,7 +85,7 @@ export default function Home() {
       options = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resume_text: resumeText, job_description: jobDescription }),
+        body: JSON.stringify({ resume_text: resumeText, job_description: jobDescription, provider, model: provider === "chatgpt" ? model || null : null }),
         signal: controller.signal,
       };
     }
@@ -227,7 +232,9 @@ export default function Home() {
                   <span id="job-help">{jobDescription.trim().length >= 60 ? <><Check size={13} aria-hidden="true" /> Descrição pronta para análise</> : "Mínimo de 60 caracteres"}</span>
                   <span className="mini-progress" aria-hidden="true"><span style={{ width: `${jobProgress}%` }} /></span>
                 </div>
-                <p className="form-note"><ShieldCheck size={16} aria-hidden="true" /> Seus dados não são armazenados pela API. O provedor de IA processa o conteúdo conforme seus próprios termos.</p>
+                <div className="form-divider" />
+                <ProviderSelector apiUrl={apiUrl} provider={provider} onProviderChange={setProvider} model={model} onModelChange={setModel} disabled={loading} />
+                <p className="form-note"><ShieldCheck size={16} aria-hidden="true" /> Seus dados não são armazenados pela API. Com ChatGPT e Gemini, o conteúdo é enviado ao serviço escolhido; com Ollama, permanece no computador.</p>
                 {error && <div className="error-message" role="alert"><XCircle size={18} aria-hidden="true" /><span>{error}</span><button className="icon-button" type="button" onClick={() => setError("")} aria-label="Fechar aviso"><XCircle size={16} aria-hidden="true" /></button></div>}
                 <button type="submit" className="button button-dark submit-button" disabled={!canAnalyze || loading} aria-busy={loading}>
                   {loading ? <><LoaderCircle className="spinner" size={18} aria-hidden="true" /> Analisando…</> : <>Analisar correspondência <ArrowRight size={18} aria-hidden="true" /></>}

@@ -8,7 +8,8 @@ Fornecer uma análise de correspondência entre currículo e vaga **fundamentada
 
 - `apps/web`: Next.js, interface client-side, formulário e relatório.
 - `apps/api`: FastAPI, contratos Pydantic, leitura limitada de arquivos.
-- `services/provider.py`: implementação Gemini isolada por protocolo `AnalysisProvider`.
+- `services/provider.py`: adaptadores Gemini, Ollama e ChatGPT, cada um usando o contrato `AnalysisProvider`.
+- `services/chatgpt_auth.py`: OAuth local de assinatura ChatGPT, validação de ID token, refresh e cofre de credenciais do sistema. A integração permanece desligada em hospedagens não locais.
 - `workflows/analysis.py`: LangGraph com nós `generate` e `verify_evidence`.
 - `services/analysis.py`: regras determinísticas de validação de trechos.
 
@@ -26,9 +27,11 @@ A descrição da vaga e o currículo são **dados não confiáveis**, nunca inst
 
 ## Decisões e limites
 
-- O fluxo de IA é executado apenas quando o ambiente tem chave Gemini.
+- O fluxo de IA depende do provedor selecionado: chave Gemini, Ollama local ou autorização ChatGPT na instalação local.
 - A demonstração local é fixa e marcada como fictícia.
-- O modelo é configurável via `GEMINI_MODEL`; as chamadas devem poder ser substituídas por um fake em testes.
+- Provedores são selecionados por solicitação, sem compartilhar credenciais ou alterar o fluxo de verificação.
+- Modelos ChatGPT são consultados na conta autenticada, com tokens mantidos apenas no backend local.
+- Modelos Gemini/Ollama são configurados localmente por variável de ambiente; as chamadas devem poder ser substituídas por fakes em testes.
 - Não há banco, RAG, embeddings, armazenamento de candidatos ou Langfuse **nesta etapa**. Essas tecnologias serão consideradas quando houver caso de uso e requisitos claros.
 - As respostas não têm uma porcentagem de compatibilidade ou rótulo de aprovação ATS.
 - Máximo de 3 MB por arquivo, 12 páginas PDF, conteúdo DOCX descompactado limitado; não existe OCR.

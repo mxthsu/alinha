@@ -6,6 +6,12 @@ Alinha é uma aplicação de código aberto que ajuda pessoas a comparar seu cur
 
 > **Estado atual:** versão inicial para desenvolvimento local. O site ainda não está hospedado publicamente. Há três provedores opcionais: Gemini (API), Ollama (modelo local) e ChatGPT (assinatura elegível, via autorização OAuth **somente em instalação local**). A demonstração usa dados fictícios e é identificada como tal.
 
+## Modelo de distribuição
+
+**Alinha Community** é open source, sob licença MIT, para instalação própria e provedores à escolha do usuário. **Alinha Cloud** é um serviço hospedado e opcional em planejamento, com planos pagos apenas quando houver infraestrutura, privacidade e custos de inferência validados. Não há planos pagos ativos nesta versão. Consulte [modelo de produto](docs/product-model.md).
+
+O login de assinatura ChatGPT implementado para Community não autoriza, por si só, compartilhamento de tokens ou uso comercial em um site público. O modo Cloud atualmente bloqueia inferência até que identidade própria, cotas e controles financeiros estejam prontos.
+
 ## O que já funciona
 
 - Interface responsiva em português brasileiro (Next.js / TypeScript), com componentes reativos, ícones Lucide e Google Fonts.

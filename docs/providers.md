@@ -79,3 +79,14 @@ Instale o Ollama no computador, faça download do modelo correspondente a `OLLAM
 - [Modelos e inferência Responses API](https://developers.openai.com/siwc/token-sharing-open-source/models-and-inference)
 - [Sessões, renovação e revogação](https://developers.openai.com/siwc/token-sharing-open-source/profiles-and-sessions)
 - [Limitações da prévia](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations)
+
+## Community e Cloud (fronteira de implantação)
+
+O Alinha separa os modos por configuração **do servidor**, nunca por um campo enviado pelo navegador:
+
+- `ALINHA_DEPLOYMENT_MODE=community` (padrão): execução open source do usuário; pode acessar o Ollama local e, quando ativado explicitamente, o OAuth OSS local do ChatGPT.
+- `ALINHA_DEPLOYMENT_MODE=cloud`: reservado para o futuro serviço gerenciado. **Neste estágio a inferência Cloud retorna HTTP 503**, mesmo se uma chave de API estiver configurada; não existem ainda conta do Alinha, medição, controle de gastos e defesa contra abuso.
+
+Mesmo no modo Community, o login com ChatGPT só é habilitado com `ALINHA_LOCAL_AUTH_ENABLED=1`, API em loopback e as verificações de origem documentadas. Para o Cloud, **não** aproveitar o OAuth OSS local; exigir a modalidade adequada autorizada para sites hospedados.
+
+A decisão de produto e negócio, com Community gratuito e hospedagem paga opcional, está em [Modelo do produto](product-model.md). Não divulgar como lançados os planos que ainda estão no roteiro.

@@ -19,6 +19,8 @@ import httpx
 import jwt
 import keyring
 
+from alinha_api.services.deployment import local_chatgpt_allowed
+
 ISSUER = "https://auth.openai.com"
 AUTH_URL = f"{ISSUER}/api/accounts/authorize"
 TOKEN_URL = f"{ISSUER}/api/accounts/oauth/token"
@@ -46,7 +48,7 @@ class PendingLogin:
 
 
 def enabled() -> bool:
-    return os.getenv("ALINHA_LOCAL_AUTH_ENABLED") == "1"
+    return local_chatgpt_allowed()
 
 
 def _challenge(verifier: str) -> str:

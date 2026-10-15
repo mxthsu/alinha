@@ -216,3 +216,50 @@ def test_reauthorization_never_embeds_id_token_in_browser_url(monkeypatch):
     assert params["client_id"] == ["oaiapp_existing"]
     assert "private-synthetic-id-token" not in url
     assert "id_token_hint" not in params
+
+
+def test_cloud_mode_blocks_local_oss_oauth_and_inference(monkeypatch):
+    """Operator's API keys and local OAuth must not silently power public visitors."""
+    monkeypatch.setenv("ALINHA_DEPLOYMENT_MODE", "cloud")
+    monkeypatch.setenv("ALINHA_LOCAL_AUTH_ENABLED", "1")
+    monkeypatch.setenv("GEMINI_API_KEY", "synthetic-key-for-test-only")
+    client = TestClient(app)
+    status = client.get("/api/v1/providers/status")
+    assert status.status_code == 200
+    providers = status.json()
+    assert providers["deployment_mode"] == "cloud"
+    assert providers["chatgpt"]["enabled"] is False
+    assert providers["gemini"]["available"] is False
+    assert providers["ollama"]["available"] is False
+
+    login = client.post(
+        "/api/v1/providers/chatgpt/login",
+        headers={"origin": "http://localhost:3000"},
+    )
+    assert login.status_code == 403
+
+    for selected in ("chatgpt", "gemini", "ollama"):
+        response = client.post(
+            "/api/v1/analyses/text",
+            json={
+                "resume_text": "Desenvolvi APIs Python e testes em contextos diversos de sistemas empresariais.",
+                "job_description": "Vaga para Backend Python com conhecimento de FastAPI e testes automatizados.",
+                "provider": selected,
+            },
+        )
+        assert response.status_code == 503
+
+
+def test_community_mode_is_default(monkeypatch):
+    monkeypatch.delenv("ALINHA_DEPLOYMENT_MODE", raising=False)
+    from alinha_api.services.deployment import get_mode
+
+    assert get_mode() == "community"
+
+
+def test_invalid_mode_fails_closed(monkeypatch):
+    monkeypatch.setenv("ALINHA_DEPLOYMENT_MODE", "unknown")
+    from alinha_api.services.deployment import get_mode
+
+    with pytest.raises(RuntimeError, match="inválido"):
+        get_mode()

@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from alinha_api.schemas import AnalysisRequest, AnalysisResult, ProviderName
 from alinha_api.services.chatgpt_auth import AuthError, chatgpt_auth, enabled
+from alinha_api.services.deployment import get_mode, hosted_analysis_ready, local_ollama_allowed
 from alinha_api.services.document_reader import MAX_UPLOAD_BYTES, extract_resume
 from alinha_api.services.provider import (
     ChatGPTPlanProvider,
@@ -107,11 +108,18 @@ def chatgpt_logout(request: Request) -> dict:
 
 
 def run_analysis(payload: AnalysisRequest) -> AnalysisResult:
+    if get_mode() == "cloud" and not hosted_analysis_ready():
+        raise HTTPException(
+            503,
+            "O Alinha Cloud ainda não está disponível. Use uma instalação Community.",
+        )
     if payload.provider == "gemini":
         if not os.getenv("GEMINI_API_KEY"):
             raise HTTPException(503, "A chave Gemini não está configurada.")
         provider = GeminiProvider()
     elif payload.provider == "ollama":
+        if not local_ollama_allowed():
+            raise HTTPException(403, "Ollama disponível apenas no Alinha Community.")
         provider = OllamaProvider()
     else:
         if not enabled():

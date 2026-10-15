@@ -9,6 +9,7 @@ from google.genai import types
 
 from alinha_api.schemas import AnalysisDraft
 from alinha_api.services.chatgpt_auth import chatgpt_auth
+from alinha_api.services.deployment import get_mode, local_ollama_allowed
 
 SYSTEM_INSTRUCTION = """
 Você é um analista de requisitos de vagas e evidências curriculares.
@@ -206,14 +207,19 @@ class ChatGPTPlanProvider:
 
 def provider_status() -> dict:
     result = {
-        "gemini": {"available": bool(os.getenv("GEMINI_API_KEY")), "name": "Gemini"},
+        "deployment_mode": get_mode(),
+        "gemini": {
+            "available": get_mode() == "community" and bool(os.getenv("GEMINI_API_KEY")),
+            "name": "Gemini",
+        },
         "ollama": {"available": False, "name": "Ollama (local)"},
         "chatgpt": {**chatgpt_auth.status(), "name": "ChatGPT"},
     }
-    try:
-        result["ollama"]["available"] = (
-            httpx.get("http://127.0.0.1:11434/api/tags", timeout=0.7).status_code == 200
-        )
-    except httpx.HTTPError:
-        pass
+    if local_ollama_allowed():
+        try:
+            result["ollama"]["available"] = (
+                httpx.get("http://127.0.0.1:11434/api/tags", timeout=0.7).status_code == 200
+            )
+        except httpx.HTTPError:
+            pass
     return result

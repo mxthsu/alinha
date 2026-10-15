@@ -92,7 +92,12 @@ def main() -> int:
         print("[Alinha] Iniciando API e interface. Acesse http://localhost:3000", flush=True)
         print("[Alinha] Pressione Ctrl+C para encerrar ambos os processos.", flush=True)
         options = {"start_new_session": True} if os.name != "nt" else {}
-        api = subprocess.Popen(api_cmd, cwd=API, **options)
+        api_env = os.environ.copy()
+        # The helper binds the backend strictly to loopback and disables access logs.
+        # Browser consent is still required before any ChatGPT plan use.
+        if not (API / ".env").exists():
+            api_env.setdefault("ALINHA_LOCAL_AUTH_ENABLED", "1")
+        api = subprocess.Popen(api_cmd, cwd=API, env=api_env, **options)
         try:
             web = subprocess.Popen(web_cmd, cwd=WEB, **options)
         except Exception:

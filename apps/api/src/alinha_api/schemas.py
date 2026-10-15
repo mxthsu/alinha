@@ -4,7 +4,16 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 MatchStatus = Literal["evidenciado", "parcial", "nao_identificado"]
-ProviderName = Literal["gemini", "ollama", "chatgpt"]
+ProviderName = Literal["gemini", "anthropic", "openai_api", "ollama", "chatgpt"]
+
+
+class ProviderKeyInput(BaseModel):
+    provider: Literal["gemini", "anthropic", "openai_api"]
+    api_key: str = Field(min_length=12, max_length=4096)
+
+
+class ProviderKeyDelete(BaseModel):
+    provider: Literal["gemini", "anthropic", "openai_api"]
 
 
 class AnalysisRequest(BaseModel):

@@ -7,14 +7,23 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 
-from alinha_api.schemas import AnalysisRequest, AnalysisResult, ProviderName
+from alinha_api.schemas import (
+    AnalysisRequest,
+    AnalysisResult,
+    ProviderKeyDelete,
+    ProviderKeyInput,
+    ProviderName,
+)
+from alinha_api.services.api_key_store import ConnectionError, api_key, connect, disconnect
 from alinha_api.services.chatgpt_auth import AuthError, chatgpt_auth, enabled
 from alinha_api.services.deployment import get_mode, hosted_analysis_ready, local_ollama_allowed
 from alinha_api.services.document_reader import MAX_UPLOAD_BYTES, extract_resume
 from alinha_api.services.provider import (
+    AnthropicProvider,
     ChatGPTPlanProvider,
     GeminiProvider,
     OllamaProvider,
+    OpenAIKeyProvider,
     ProviderError,
     provider_status,
 )
@@ -42,10 +51,12 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-def _local_only(request: Request, *, mutation: bool = False) -> None:
+def _local_only(request: Request, *, mutation: bool = False, require_oauth: bool = True) -> None:
     """Fail closed if installed behind a remote proxy or remote host."""
-    if not enabled():
+    if require_oauth and not enabled():
         raise HTTPException(status_code=403, detail="Conexão ChatGPT disponível apenas localmente.")
+    if get_mode() != "community":
+        raise HTTPException(status_code=403, detail="As credenciais pessoais exigem modo Community.")
     if request.url.hostname not in ("localhost", "127.0.0.1"):
         raise HTTPException(status_code=403, detail="Esta operação só funciona no computador local.")
     if request.client and request.client.host not in ("127.0.0.1", "::1"):
@@ -59,6 +70,26 @@ def providers_status() -> dict:
     try:
         return provider_status()
     except AuthError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.post("/api/v1/providers/keys/connect")
+def provider_key_connect(request: Request, body: ProviderKeyInput) -> dict[str, bool]:
+    _local_only(request, mutation=True, require_oauth=False)
+    try:
+        connect(body.provider, body.api_key)
+        return {"connected": True}
+    except ConnectionError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/api/v1/providers/keys/disconnect")
+def provider_key_disconnect(request: Request, body: ProviderKeyDelete) -> dict[str, bool]:
+    _local_only(request, mutation=True, require_oauth=False)
+    try:
+        disconnect(body.provider)
+        return {"disconnected": True}
+    except ConnectionError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
@@ -114,9 +145,17 @@ def run_analysis(payload: AnalysisRequest) -> AnalysisResult:
             "O Alinha Cloud ainda não está disponível. Use uma instalação Community.",
         )
     if payload.provider == "gemini":
-        if not os.getenv("GEMINI_API_KEY"):
-            raise HTTPException(503, "A chave Gemini não está configurada.")
+        if not api_key("gemini"):
+            raise HTTPException(503, "Conecte uma chave de API do Gemini.")
         provider = GeminiProvider()
+    elif payload.provider == "anthropic":
+        if not api_key("anthropic"):
+            raise HTTPException(503, "Conecte uma chave Anthropic para Claude.")
+        provider = AnthropicProvider()
+    elif payload.provider == "openai_api":
+        if not api_key("openai_api"):
+            raise HTTPException(503, "Conecte uma chave de API da OpenAI.")
+        provider = OpenAIKeyProvider()
     elif payload.provider == "ollama":
         if not local_ollama_allowed():
             raise HTTPException(403, "Ollama disponível apenas no Alinha Community.")
@@ -131,7 +170,7 @@ def run_analysis(payload: AnalysisRequest) -> AnalysisResult:
             {"resume_text": payload.resume_text, "job_description": payload.job_description}
         )
         return AnalysisResult.model_validate(state["result"])
-    except (AuthError, ProviderError) as exc:
+    except (AuthError, ProviderError, ConnectionError) as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except (ValueError, ValidationError) as exc:
         raise HTTPException(

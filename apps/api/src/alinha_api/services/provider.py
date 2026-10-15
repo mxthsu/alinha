@@ -8,6 +8,8 @@ from google import genai
 from google.genai import types
 
 from alinha_api.schemas import AnalysisDraft
+from alinha_api.services.api_key_store import api_key as saved_api_key
+from alinha_api.services.api_key_store import connection_source
 from alinha_api.services.chatgpt_auth import chatgpt_auth
 from alinha_api.services.deployment import get_mode, local_ollama_allowed
 
@@ -49,7 +51,7 @@ def _prompt(resume_text: str, job_description: str) -> str:
 
 class GeminiProvider:
     def __init__(self, api_key: str | None = None, model: str | None = None):
-        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
+        self.api_key = api_key or saved_api_key("gemini")
         self.model = model or os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
     def analyze(self, resume_text: str, job_description: str) -> AnalysisDraft:
@@ -205,13 +207,103 @@ class ChatGPTPlanProvider:
         return AnalysisDraft.model_validate_json(text)
 
 
+def _structured_text(raw: str) -> AnalysisDraft:
+    """Parse provider JSON without trusting formatting wrappers."""
+    fence = chr(96) * 3
+    raw = raw.strip()
+    if raw.startswith(fence):
+        raw = raw.removeprefix(fence + "json").removeprefix(fence).strip()
+        raw = raw.removesuffix(fence).strip()
+    return AnalysisDraft.model_validate_json(raw)
+
+
+class AnthropicProvider:
+    """Claude via the official Anthropic Messages API, using a user's API key."""
+
+    def __init__(self, model: str | None = None):
+        self.model = model or os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5")
+
+    def analyze(self, resume_text: str, job_description: str) -> AnalysisDraft:
+        credential = saved_api_key("anthropic")
+        if not credential:
+            raise ProviderError("Conecte uma chave Anthropic para utilizar o Claude.")
+        try:
+            response = httpx.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={"x-api-key": credential, "anthropic-version": "2023-06-01"},
+                json={
+                    "model": self.model,
+                    "max_tokens": 3000,
+                    "system": SYSTEM_INSTRUCTION,
+                    "messages": [{"role": "user", "content": _prompt(resume_text, job_description)}],
+                },
+                timeout=100,
+            )
+            if response.status_code in (401, 403):
+                raise ProviderError("A chave Anthropic não foi autorizada.")
+            if response.status_code == 429:
+                raise ProviderError("Limite de utilização do Claude atingido.")
+            response.raise_for_status()
+            payload = response.json()
+            blocks = payload.get("content", [])
+            raw = "".join(part.get("text", "") for part in blocks if part.get("type") == "text")
+            if payload.get("stop_reason") != "end_turn" or not raw:
+                raise ProviderError("O Claude retornou uma análise incompleta.")
+            return _structured_text(raw)
+        except httpx.HTTPError as exc:
+            raise ProviderError("Não foi possível consultar a API Anthropic.") from exc
+
+
+class OpenAIKeyProvider:
+    """OpenAI API with a user-provided billable API key; separate from ChatGPT OAuth."""
+
+    def __init__(self, model: str | None = None):
+        self.model = model or os.getenv("OPENAI_API_MODEL", "gpt-4.1-mini")
+
+    def analyze(self, resume_text: str, job_description: str) -> AnalysisDraft:
+        credential = saved_api_key("openai_api")
+        if not credential:
+            raise ProviderError("Conecte uma chave OpenAI API para analisar.")
+        try:
+            response = httpx.post(
+                "https://api.openai.com/v1/responses",
+                headers={"Authorization": f"Bearer {credential}"},
+                json={
+                    "model": self.model,
+                    "instructions": SYSTEM_INSTRUCTION,
+                    "input": [{"role": "user", "content": _prompt(resume_text, job_description)}],
+                    "store": False,
+                    "stream": False,
+                },
+                timeout=100,
+            )
+            if response.status_code in (401, 403):
+                raise ProviderError("A chave OpenAI API não foi autorizada.")
+            if response.status_code == 429:
+                raise ProviderError("Limite de utilização da OpenAI API atingido.")
+            response.raise_for_status()
+            payload = response.json()
+            if payload.get("status") != "completed":
+                raise ProviderError("A OpenAI API retornou uma análise incompleta.")
+            raw = "".join(
+                part.get("text", "")
+                for item in payload.get("output", [])
+                for part in item.get("content", [])
+                if part.get("type") == "output_text"
+            )
+            if not raw:
+                raise ProviderError("A OpenAI API não retornou texto utilizável.")
+            return _structured_text(raw)
+        except httpx.HTTPError as exc:
+            raise ProviderError("Não foi possível consultar a OpenAI API.") from exc
+
+
 def provider_status() -> dict:
     result = {
         "deployment_mode": get_mode(),
-        "gemini": {
-            "available": get_mode() == "community" and bool(os.getenv("GEMINI_API_KEY")),
-            "name": "Gemini",
-        },
+        "gemini": {"available": connection_source("gemini") != "none", "source": connection_source("gemini"), "name": "Gemini"},
+        "anthropic": {"available": connection_source("anthropic") != "none", "source": connection_source("anthropic"), "name": "Claude (API)"},
+        "openai_api": {"available": connection_source("openai_api") != "none", "source": connection_source("openai_api"), "name": "OpenAI API"},
         "ollama": {"available": False, "name": "Ollama (local)"},
         "chatgpt": {**chatgpt_auth.status(), "name": "ChatGPT"},
     }

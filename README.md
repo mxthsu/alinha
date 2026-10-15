@@ -41,11 +41,11 @@ cd alinha
 python scripts/dev.py
 ```
 
-O primeiro início instala as dependências necessárias. Abra **http://localhost:3000** e clique em **Ver uma demonstração**. Pressione **Ctrl+C** para parar os serviços.
+O primeiro início instala as dependências necessárias. Abra **http://localhost:3000**: a primeira aba, **Conectar IA**, orienta a escolha e autorização de um provedor. Depois avance para **Analisar currículo**. Sem uma conta ou chave, clique em **Ver uma demonstração** para explorar um relatório fictício. Pressione **Ctrl+C** para parar os serviços.
 
 No Windows, você também pode iniciar com `py -3 scripts/dev.py`. Para instruções manuais, configuração do provedor e solução de problemas, consulte o [guia de instalação](docs/getting-started.md).
 
-**Análises reais:** a versão principal usa Gemini configurado localmente por `GEMINI_API_KEY`. A chave não deve ser incluída no repositório. A demonstração não exige configuração. Adaptadores adicionais estão em desenvolvimento; veja [integrações planejadas](docs/roadmap.md).
+**Análises reais:** conecte Gemini, Claude (Anthropic API) ou OpenAI API pela central de conexões do site local. Também há Ollama e o login ChatGPT OAuth no Alinha Community, quando elegíveis. As chaves são verificadas e armazenadas no cofre do sistema operacional, sem persistência no navegador. A demonstração não exige configuração. Consulte [provedores e segurança](docs/providers.md).
 
 ## O que acontece durante a análise?
 
@@ -89,9 +89,9 @@ Queremos manter o núcleo útil sem assinatura obrigatória. A modalidade hosped
 | Capacidade | Situação |
 | --- | --- |
 | Interface pt-BR, arquivos, demonstração fictícia | Disponível no código |
-| Gemini via chave própria e validação de evidências | Implementado; requer chave e teste real pelo usuário |
+| Gemini, Claude e OpenAI API via chaves pessoais | Implementados; requerem validação real com chave do usuário |
+| Login ChatGPT local por OAuth e Ollama | Implementados; aguardam homologação real com conta/modelo |
 | Testes automatizados de API e CI | Disponíveis |
-| Outros provedores e login ChatGPT local | Em revisão no [PR #3](https://github.com/mxthsu/alinha/pull/3) |
 | Avaliações sistemáticas e métricas de qualidade | Planejado |
 | Alinha Cloud, histórico sincronizado e pagamentos | Planejado; não disponível |
 

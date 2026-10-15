@@ -90,3 +90,30 @@ O Alinha separa os modos por configuração **do servidor**, nunca por um campo 
 Mesmo no modo Community, o login com ChatGPT só é habilitado com `ALINHA_LOCAL_AUTH_ENABLED=1`, API em loopback e as verificações de origem documentadas. Para o Cloud, **não** aproveitar o OAuth OSS local; exigir a modalidade adequada autorizada para sites hospedados.
 
 A decisão de produto e negócio, com Community gratuito e hospedagem paga opcional, está em [Modelo do produto](product-model.md). Não divulgar como lançados os planos que ainda estão no roteiro.
+
+## Central de Conexões de IA (Community)
+
+A interface do Alinha usa o mesmo padrão de **gerenciamento de conexões** para todos os provedores, mas respeita as formas de autenticação oficiais de cada um. Na seção **Conexões de IA**:
+
+| Opção | Autenticação | Onde a credencial fica |
+| --- | --- | --- |
+| ChatGPT | OAuth com autorização no navegador | Cofre local; tokens nunca vão para o Next.js |
+| Claude | Chave da **Claude API** da Anthropic | Cofre do sistema operacional |
+| Gemini | Chave da **Gemini API** | Cofre do sistema operacional |
+| OpenAI API | Chave da API da OpenAI, com cobrança separada | Cofre do sistema operacional |
+| Ollama | Modelo executado no próprio computador | Não precisa de chave |
+
+Para conectar chaves, abra o aplicativo local, selecione o provedor, obtenha a chave na plataforma oficial e clique em **Verificar e conectar**. O backend consulta a lista de modelos do provedor com a chave fornecida, **sem solicitar geração de texto**. Só após uma resposta autorizada a chave é salva pelo `keyring`. A interface nunca devolve nem exibe a chave depois de conectada. Para remover uma chave armazenada, selecione **Remover conexão**. Chaves configuradas por variáveis de ambiente devem ser removidas no servidor, e não podem ser apagadas pela interface.
+
+- Não existe login direto de **Claude Pro/Max** para uso no Alinha. Uma assinatura de chat e a API Anthropic são produtos diferentes. Consulte [a documentação oficial da API Claude](https://platform.claude.com/docs/en/api/overview).
+- A conexão OpenAI API **não** equivale ao login ChatGPT. A primeira utiliza cobrança de API independente; a segunda só é oferecida no fluxo OSS local permitido, conforme elegibilidade, permissões e limites do usuário.
+- O modo Cloud não aceita essas conexões pessoais e continua bloqueado até possuir sessões, isolamento entre usuários, medição, limites e armazenamento apropriados.
+- Chaves não vão para `localStorage`, cookies, scripts de inicialização ou arquivo `.env` quando fornecidas pela interface.
+- Não cole senhas da conta ChatGPT/Claude, cookies, tokens de sessão do navegador ou códigos extraídos de outros aplicativos.
+- As conexões e a inferência com credenciais reais devem ser testadas voluntariamente pelo usuário; o CI usa somente credenciais sintéticas.
+
+### Boas práticas
+
+Execute o Alinha local com `python scripts/dev.py`, vinculado a `127.0.0.1`. O script inicia Uvicorn sem log de acessos para evitar URLs do callback OAuth nos logs. Em sistemas com cofre indisponível, a conexão de chaves deve apresentar erro; **nunca salvar chaves em texto simples como fallback**.
+
+Conectar uma chave valida a credencial, mas não garante saldo, permissão para cada modelo ou cotas de inferência. Os modelos padrão são definidos no backend; a disponibilização e preços podem mudar no provedor.

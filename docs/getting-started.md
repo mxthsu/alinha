@@ -47,9 +47,10 @@ python scripts/dev.py --reinstall
 ## Experimente uma análise de demonstração
 
 1. Abra http://localhost:3000.
-2. Clique em **Ver uma demonstração**.
-3. Examine as evidências, classificações e recomendações.
-4. Observe que o resultado está identificado como **exemplo fictício**; nenhum modelo é chamado.
+2. O Alinha inicia na aba **1. Conectar IA**. Configure a chave do seu provedor ou escolha uma conexão suportada. Para explorar o site sem provedor, utilize **Ver uma demonstração**.
+3. Após conectar, clique em **Continuar para análise** e vá para a aba **2. Analisar currículo**.
+4. Informe currículo e descrição de vaga e clique em **Analisar correspondência**.
+5. Confira as evidências e limitações do relatório. A demonstração é explicitamente fictícia e não chama um modelo.
 
 É a forma recomendada de conhecer a interface antes de enviar documentos próprios. Para testar o preenchimento, use os [arquivos fictícios de exemplo](../examples/README.md).
 
@@ -69,7 +70,11 @@ Reinicie o script e envie um **currículo fictício** e uma vaga fictícia para 
 
 ### Outros provedores
 
-Os adaptadores para provedores adicionais e autenticação local do ChatGPT estão em desenvolvimento no [PR de integração](https://github.com/mxthsu/alinha/pull/3). **Não considere esses recursos disponíveis na branch principal até a integração e homologação.** O Alinha Cloud também ainda não está disponível.
+A central **Conexões de IA** oferece Gemini, Claude (chave Anthropic), OpenAI API, ChatGPT OAuth local e Ollama. As chaves são verificadas antes de salvar no cofre do sistema. Os testes automáticos usam dados fictícios; **autenticações e inferências reais ainda exigem validação voluntária**. Leia [provedores e segurança](providers.md).
+
+Para login ChatGPT local, se você configurou um arquivo `.env`, utilize `ALINHA_LOCAL_AUTH_ENABLED=1` nele e reinicie os serviços. Sem `.env`, `python scripts/dev.py` habilita essa opção de login **somente na API vinculada a 127.0.0.1**. O uso do plano é solicitado somente após seu consentimento no navegador.
+
+O Alinha Cloud não está disponível.
 
 ## Execução manual
 

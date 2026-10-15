@@ -5,13 +5,23 @@ from typing import Protocol
 
 import httpx
 from google import genai
-from google.genai import types
+from google.genai import errors, types
 
 from alinha_api.schemas import AnalysisDraft
 from alinha_api.services.api_key_store import api_key as saved_api_key
 from alinha_api.services.api_key_store import connection_source
 from alinha_api.services.chatgpt_auth import chatgpt_auth
 from alinha_api.services.deployment import get_mode, local_ollama_allowed
+from alinha_api.services.gemini_limits import (
+    LocalQuotaExceeded,
+    QuotaStorageUnavailable,
+)
+from alinha_api.services.gemini_limits import (
+    cooldown as gemini_cooldown,
+)
+from alinha_api.services.gemini_limits import (
+    reserve as reserve_gemini_request,
+)
 
 SYSTEM_INSTRUCTION = """
 Você é um analista de requisitos de vagas e evidências curriculares.
@@ -33,6 +43,14 @@ class ProviderError(Exception):
     """Public, non-sensitive provider error."""
 
 
+class GeminiRateLimited(ProviderError):
+    """Local or remote Gemini rate limit. No inference was retried automatically."""
+
+    def __init__(self, message: str, retry_after: int = 60):
+        self.retry_after = retry_after
+        super().__init__(message)
+
+
 class AnalysisProvider(Protocol):
     def analyze(self, resume_text: str, job_description: str) -> AnalysisDraft: ...
 
@@ -52,26 +70,75 @@ def _prompt(resume_text: str, job_description: str) -> str:
 class GeminiProvider:
     def __init__(self, api_key: str | None = None, model: str | None = None):
         self.api_key = api_key or saved_api_key("gemini")
-        self.model = model or os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+        self.model = model or os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
     def analyze(self, resume_text: str, job_description: str) -> AnalysisDraft:
         if not self.api_key:
-            raise ProviderError("Configure GEMINI_API_KEY para usar o Gemini.")
-        with genai.Client(api_key=self.api_key) as client:
-            response = client.models.generate_content(
-                model=self.model,
-                contents=_prompt(resume_text, job_description),
-                config=types.GenerateContentConfig(
-                    system_instruction=SYSTEM_INSTRUCTION,
-                    response_mime_type="application/json",
-                    response_schema=AnalysisDraft,
-                    temperature=0.1,
+            raise ProviderError("Conecte uma chave Gemini antes de analisar.")
+        try:
+            reserve_gemini_request(self.model)
+        except LocalQuotaExceeded as exc:
+            raise GeminiRateLimited(
+                f"Limite preventivo do Alinha atingido. Aguarde {exc.seconds} "
+                "segundo(s) para uma nova análise Gemini.",
+                retry_after=exc.seconds,
+            ) from exc
+        except QuotaStorageUnavailable as exc:
+            raise ProviderError(str(exc)) from exc
+
+        try:
+            with genai.Client(
+                api_key=self.api_key,
+                # One HTTP attempt per reservation: never retry behind the limiter.
+                http_options=types.HttpOptions(
+                    retry_options=types.HttpRetryOptions(attempts=1),
                 ),
-            )
+            ) as client:
+                response = client.models.generate_content(
+                    model=self.model,
+                    contents=_prompt(resume_text, job_description),
+                    config=types.GenerateContentConfig(
+                        system_instruction=SYSTEM_INSTRUCTION,
+                        response_mime_type="application/json",
+                        response_schema=AnalysisDraft,
+                        temperature=0.1,
+                    ),
+                )
+        except errors.APIError as exc:
+            code = getattr(exc, "code", None)
+            if code == 429:
+                # Shared Google-project usage can exhaust RPM/TPM/RPD externally.
+                try:
+                    gemini_cooldown(self.model, seconds=60)
+                except QuotaStorageUnavailable:
+                    pass
+                raise GeminiRateLimited(
+                    "O Google Gemini informou que a cota foi atingida. "
+                    "Aguarde e confira os limites do projeto Google AI Studio.",
+                    retry_after=60,
+                ) from exc
+            if code == 404:
+                raise ProviderError(
+                    f"O modelo Gemini {self.model} não está disponível para esta chave. "
+                    "Atualize GEMINI_MODEL para um modelo autorizado."
+                ) from exc
+            if code in (500, 502, 503, 504):
+                raise ProviderError(
+                    "O Gemini está temporariamente indisponível. "
+                    "Tente novamente mais tarde, sem repetir várias vezes."
+                ) from exc
+            if code in (401, 403):
+                raise ProviderError(
+                    "A chave Gemini não tem autorização para executar este modelo."
+                ) from exc
+            raise ProviderError(
+                "Não foi possível consultar o Gemini. Confira a configuração do modelo."
+            ) from exc
+
         if response.parsed is not None:
             return AnalysisDraft.model_validate(response.parsed)
         if not response.text:
-            raise ValueError("O modelo não retornou uma análise.")
+            raise ValueError("O Gemini não retornou uma análise estruturada.")
         return AnalysisDraft.model_validate_json(response.text)
 
 

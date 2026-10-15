@@ -60,7 +60,7 @@ Crie o arquivo local `apps/api/.env` a partir de `apps/api/.env.example` e infor
 
 ```dotenv
 GEMINI_API_KEY=sua_chave_aqui
-GEMINI_MODEL=gemini-2.5-flash
+GEMINI_MODEL=gemini-3.5-flash-lite
 FRONTEND_ORIGIN=http://localhost:3000
 ```
 

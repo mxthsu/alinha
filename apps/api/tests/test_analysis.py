@@ -96,6 +96,8 @@ def test_health():
 
 def test_missing_ai_configuration_does_not_simulate_analysis(monkeypatch):
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    # A developer may have a key in the OS vault; tests must not read or call it.
+    monkeypatch.setattr("alinha_api.main.api_key", lambda provider: None)
     response = TestClient(app).post(
         "/api/v1/analyses/text",
         json={"resume_text": RESUME, "job_description": VACANCY},

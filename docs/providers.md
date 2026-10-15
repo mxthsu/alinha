@@ -117,3 +117,10 @@ Para conectar chaves, abra o aplicativo local, selecione o provedor, obtenha a c
 Execute o Alinha local com `python scripts/dev.py`, vinculado a `127.0.0.1`. O script inicia Uvicorn sem log de acessos para evitar URLs do callback OAuth nos logs. Em sistemas com cofre indisponível, a conexão de chaves deve apresentar erro; **nunca salvar chaves em texto simples como fallback**.
 
 Conectar uma chave valida a credencial, mas não garante saldo, permissão para cada modelo ou cotas de inferência. Os modelos padrão são definidos no backend; a disponibilização e preços podem mudar no provedor.
+## Limites preventivos do Gemini
+
+O modelo padrão é gemini-3.5-flash-lite. A variável GEMINI_MODEL permite alterar o modelo.
+
+Para a cota informada de 15 RPM, a instalação Community limita suas próprias análises a 10 por minuto, em uma janela móvel de 60 segundos, e a 400 tentativas em 24 horas. As contagens ficam em um banco SQLite local, incluindo após reinícios e requisições paralelas. O SDK realiza apenas uma tentativa de inferência por reserva. Ao alcançar o limite, o Alinha retorna HTTP 429 e Retry-After sem chamar o Google; se o Google retornar 429, novas tentativas são pausadas por 60 segundos.
+
+Esses limites não incluem o consumo feito por outros aplicativos ou computadores no mesmo projeto Google. Também não controlam totalmente os tokens por minuto; o Google poderá retornar 429 caso a cota compartilhada ou de tokens seja atingida. O banco registra apenas modelo e horário, sem documentos ou chaves.

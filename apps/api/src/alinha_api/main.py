@@ -22,6 +22,7 @@ from alinha_api.services.provider import (
     AnthropicProvider,
     ChatGPTPlanProvider,
     GeminiProvider,
+    GeminiRateLimited,
     OllamaProvider,
     OpenAIKeyProvider,
     ProviderError,
@@ -170,6 +171,12 @@ def run_analysis(payload: AnalysisRequest) -> AnalysisResult:
             {"resume_text": payload.resume_text, "job_description": payload.job_description}
         )
         return AnalysisResult.model_validate(state["result"])
+    except GeminiRateLimited as exc:
+        raise HTTPException(
+            status_code=429,
+            detail=str(exc),
+            headers={"Retry-After": str(exc.retry_after)},
+        ) from exc
     except (AuthError, ProviderError, ConnectionError) as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except (ValueError, ValidationError) as exc:

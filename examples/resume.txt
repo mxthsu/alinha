@@ -1,0 +1,11 @@
+CURRÍCULO DEMONSTRATIVO (FICTÍCIO)
+
+Resumo
+Desenvolvedor(a) de backend com experiência em automações e integração de serviços.
+
+Projetos e responsabilidades
+Desenvolvimento de APIs REST com Python e FastAPI.
+Colaboração com a equipe na validação de funcionalidades.
+Automatização de rotinas internas e documentação de endpoints.
+
+Este documento contém apenas informações inventadas para demonstração do Alinha.

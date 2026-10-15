@@ -3,7 +3,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import {
-  ArrowRight, ArrowUpRight, Check, CheckCircle2, CircleHelp,
+  ArrowRight, ArrowUpRight, BookOpen, Check, CheckCircle2, CircleHelp,
   ClipboardList, Code2, FileText, LoaderCircle, SearchCheck,
   ShieldCheck, Sparkles, XCircle,
 } from "lucide-react";
@@ -238,6 +238,31 @@ export default function Home() {
               <section className="result-panel" id="resultado" aria-live="polite" aria-label="Resultado da análise">
                 <AnalysisReport result={result} loading={loading} onDemo={showDemo} onReset={resetReport} />
               </section>
+            </div>
+          </div>
+        </section>
+
+        <section className="community-section" aria-labelledby="community-heading">
+          <div className="container">
+            <div className="community-card">
+              <div className="community-content">
+                <span className="community-label"><Code2 size={15} aria-hidden="true" /> CÓDIGO ABERTO · LICENÇA MIT</span>
+                <h2 id="community-heading">A confiança começa com transparência.</h2>
+                <p>O Alinha é desenvolvido em código aberto. Explore as decisões técnicas, execute no seu computador e ajude a construir análises mais claras e responsáveis.</p>
+                <div className="community-actions">
+                  <a className="button community-primary" href="https://github.com/mxthsu/alinha" target="_blank" rel="noreferrer">
+                    Explorar o código <ArrowUpRight size={17} aria-hidden="true" />
+                  </a>
+                  <a className="community-doc-link" href="https://github.com/mxthsu/alinha/blob/main/docs/getting-started.md" target="_blank" rel="noreferrer">
+                    Guia de instalação <BookOpen size={16} aria-hidden="true" />
+                  </a>
+                </div>
+              </div>
+              <div className="community-aside">
+                <div><CheckCircle2 size={18} aria-hidden="true" /> <span>Evidências verificáveis</span></div>
+                <div><CheckCircle2 size={18} aria-hidden="true" /> <span>Sem resultados inventados</span></div>
+                <div><CheckCircle2 size={18} aria-hidden="true" /> <span>Construído com a comunidade</span></div>
+              </div>
             </div>
           </div>
         </section>

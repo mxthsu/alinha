@@ -1,0 +1,25 @@
+name: Propor uma melhoria
+description: Sugira uma evolução compatível com o objetivo do Alinha.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qual problema você quer resolver?
+      description: Explique a necessidade do usuário antes de propor tecnologia.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Como você imagina a solução?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Impacto e alternativas
+      description: Considere privacidade, manutenção, custo de IA e uso local.
+    validations:
+      required: false

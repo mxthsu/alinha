@@ -7,7 +7,7 @@ import httpx
 from google import genai
 from google.genai import errors, types
 
-from alinha_api.schemas import AnalysisDraft
+from alinha_api.schemas import AnalysisDraft, ModelAnalysisResponse
 from alinha_api.services.api_key_store import api_key as saved_api_key
 from alinha_api.services.api_key_store import connection_source
 from alinha_api.services.chatgpt_auth import chatgpt_auth
@@ -22,6 +22,7 @@ from alinha_api.services.gemini_limits import (
 from alinha_api.services.gemini_limits import (
     reserve as reserve_gemini_request,
 )
+from alinha_api.services.model_output import ModelOutputError, parse_model_output
 
 SYSTEM_INSTRUCTION = """
 Você é um analista de requisitos de vagas e evidências curriculares.
@@ -104,7 +105,7 @@ class GeminiProvider:
                     config=types.GenerateContentConfig(
                         system_instruction=SYSTEM_INSTRUCTION,
                         response_mime_type="application/json",
-                        response_schema=AnalysisDraft,
+                        response_schema=ModelAnalysisResponse,
                         temperature=0.1,
                     ),
                 )
@@ -140,10 +141,13 @@ class GeminiProvider:
             ) from exc
 
         if response.parsed is not None:
-            return AnalysisDraft.model_validate(response.parsed)
+            return parse_model_output(response.parsed)
         if not response.text:
-            raise ValueError("O Gemini não retornou uma análise estruturada.")
-        return AnalysisDraft.model_validate_json(response.text)
+            raise ModelOutputError(
+                "O Gemini não concluiu o relatório. Nenhum dado foi inventado. "
+                "Tente novamente mais tarde."
+            )
+        return parse_model_output(response.text)
 
 
 class OllamaProvider:

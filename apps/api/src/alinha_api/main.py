@@ -19,6 +19,7 @@ from alinha_api.services.api_key_store import ConnectionError, api_key, connect,
 from alinha_api.services.chatgpt_auth import AuthError, chatgpt_auth, enabled
 from alinha_api.services.deployment import get_mode, hosted_analysis_ready, local_ollama_allowed
 from alinha_api.services.document_reader import MAX_UPLOAD_BYTES, extract_resume
+from alinha_api.services.model_output import ModelOutputError
 from alinha_api.services.provider import (
     AnthropicProvider,
     ChatGPTPlanProvider,
@@ -180,6 +181,8 @@ def run_analysis(payload: AnalysisRequest) -> AnalysisResult:
         ) from exc
     except (AuthError, ProviderError, ConnectionError) as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ModelOutputError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except NoVerifiedRequirements as exc:
         raise HTTPException(
             status_code=422,

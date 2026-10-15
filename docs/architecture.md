@@ -11,7 +11,8 @@ Fornecer uma análise de correspondência entre currículo e vaga **fundamentada
 - `services/provider.py`: adaptadores Gemini, Ollama e ChatGPT, cada um usando o contrato `AnalysisProvider`.
 - `services/chatgpt_auth.py`: OAuth local de assinatura ChatGPT, validação de ID token, refresh e cofre de credenciais do sistema. A integração permanece desligada em hospedagens não locais.
 - `workflows/analysis.py`: LangGraph com nós `generate` e `verify_evidence`.
-- `services/analysis.py`: regras determinísticas de validação de trechos.
+- `services/model_output.py`: leitura tolerante do JSON do Gemini; remove itens incompletos, limita o tamanho de campos e reclassifica estados desconhecidos conservadoramente, sem inventar citações.
+- `services/analysis.py` e `services/evidence_quotes.py`: validação determinística das citações antes de publicar os resultados. Rejeita evidências inexistentes.
 
 ## Fluxo
 

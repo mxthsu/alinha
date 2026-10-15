@@ -31,6 +31,23 @@ class RequirementDraft(BaseModel):
     recommendation: str = Field(min_length=5, max_length=450)
 
 
+class ModelRequirement(BaseModel):
+    """Lenient external LLM contract. Never trust as validated report data."""
+
+    requirement: str | None = None
+    job_evidence: str | None = None
+    status: str | None = None
+    resume_evidence: str | None = None
+    recommendation: str | None = None
+
+
+class ModelAnalysisResponse(BaseModel):
+    """Provider wire response; final publication still requires AnalysisDraft."""
+
+    job_title: str | None = None
+    requirements: list[ModelRequirement] = Field(default_factory=list)
+
+
 class AnalysisDraft(BaseModel):
     job_title: str = Field(min_length=2, max_length=130)
     requirements: list[RequirementDraft] = Field(min_length=1, max_length=20)

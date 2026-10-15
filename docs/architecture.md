@@ -1,0 +1,51 @@
+# Arquitetura inicial
+
+## Objetivo
+
+Fornecer uma análise de correspondência entre currículo e vaga **fundamentada em evidências literais**, com uma experiência acessível em português e base de código convencional em inglês.
+
+## Componentes
+
+- `apps/web`: Next.js, interface client-side, formulário e relatório.
+- `apps/api`: FastAPI, contratos Pydantic, leitura limitada de arquivos.
+- `services/provider.py`: implementação Gemini isolada por protocolo `AnalysisProvider`.
+- `workflows/analysis.py`: LangGraph com nós `generate` e `verify_evidence`.
+- `services/analysis.py`: regras determinísticas de validação de trechos.
+
+## Fluxo
+
+```mermaid
+flowchart TD
+  A[Currículo e vaga] --> B[Extração e validação]
+  B --> C[LLM: requisitos e trechos]
+  C --> D[Verificação determinística de citações]
+  D --> E[Relatório com limitações]
+```
+
+A descrição da vaga e o currículo são **dados não confiáveis**, nunca instruções. As citações de requisitos sem correspondência na vaga são descartadas. Uma citação atribuída ao currículo que não aparece nele leva o requisito a `nao_identificado`. Isso **não prova** a correção semântica de cada classificação: avaliações com um conjunto de referência serão adicionadas antes de alegar qualidade medida.
+
+## Decisões e limites
+
+- O fluxo de IA é executado apenas quando o ambiente tem chave Gemini.
+- A demonstração local é fixa e marcada como fictícia.
+- O modelo é configurável via `GEMINI_MODEL`; as chamadas devem poder ser substituídas por um fake em testes.
+- Não há banco, RAG, embeddings, armazenamento de candidatos ou Langfuse **nesta etapa**. Essas tecnologias serão consideradas quando houver caso de uso e requisitos claros.
+- As respostas não têm uma porcentagem de compatibilidade ou rótulo de aprovação ATS.
+- Máximo de 3 MB por arquivo, 12 páginas PDF, conteúdo DOCX descompactado limitado; não existe OCR.
+- O CORS permite, por padrão, `http://localhost:3000`. Ajuste `FRONTEND_ORIGIN` ao publicar.
+
+## Segurança e privacidade
+
+O processamento de documentos ocorre em memória, sem gravação local pelo aplicativo. O Gemini recebe o texto da vaga e o texto do currículo; suas regras de retenção e tratamento são externas ao projeto. Evite logs contendo conteúdo de currículos e não habilite rastreamento de prompts com dados pessoais sem consentimento e política de privacidade apropriada.
+
+Para exposição pública serão necessárias medidas adicionais: limitação de taxa, proteção contra abuso/custo, política de privacidade, consentimento informado, controles de exclusão/retensão, proteção contra uploads maliciosos e observabilidade sem dados sensíveis.
+
+## Avaliações planejadas
+
+Um dataset sintético de vagas e currículos com requisitos anotados será usado para aferir:
+1. Precisão na extração de requisitos.
+2. Validade das citações da vaga e do currículo.
+3. Erros de classificação evidenciado/parcial/não identificado.
+4. Latência e custo por análise.
+
+Relatórios de benchmark só serão publicados com dados realmente executados.

@@ -14,6 +14,7 @@ from alinha_api.schemas import (
     ProviderKeyInput,
     ProviderName,
 )
+from alinha_api.services.analysis import NoVerifiedRequirements
 from alinha_api.services.api_key_store import ConnectionError, api_key, connect, disconnect
 from alinha_api.services.chatgpt_auth import AuthError, chatgpt_auth, enabled
 from alinha_api.services.deployment import get_mode, hosted_analysis_ready, local_ollama_allowed
@@ -179,10 +180,19 @@ def run_analysis(payload: AnalysisRequest) -> AnalysisResult:
         ) from exc
     except (AuthError, ProviderError, ConnectionError) as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except NoVerifiedRequirements as exc:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "O modelo retornou requisitos, mas as citações não puderam ser "
+                "confirmadas na descrição da vaga. Nenhuma evidência foi inventada. "
+                "Tente novamente mais tarde ou escolha outro provedor de IA."
+            ),
+        ) from exc
     except (ValueError, ValidationError) as exc:
         raise HTTPException(
             status_code=422,
-            detail="A análise não apresentou evidências válidas. Revise os textos e tente novamente.",
+            detail="O modelo não retornou um relatório estruturado válido. Tente outro provedor de IA.",
         ) from exc
     except Exception as exc:
         # No user content, tokens, provider response bodies or stack traces in HTTP output.

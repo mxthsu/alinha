@@ -1,0 +1,50 @@
+name: Relatar um bug
+description: Informe um problema reproduzível sem incluir dados pessoais.
+title: "fix: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado pelo relato! Use apenas currículos e vagas sintéticos.
+        **Não envie tokens, credenciais, documentos pessoais ou detalhes de vulnerabilidades.**
+        Para segurança, consulte SECURITY.md.
+  - type: textarea
+    id: description
+    attributes:
+      label: O que aconteceu?
+      description: Descreva o comportamento observado.
+      placeholder: Ao tentar..., o aplicativo...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: O que você esperava?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Como reproduzir?
+      description: Passos com dados fictícios.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área afetada
+      options:
+        - Interface
+        - API
+        - Extração de documentos
+        - Análise e evidências
+        - Instalação e ambiente
+        - Outra
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Ambiente
+      placeholder: Windows 11, Python 3.12, Node.js 24

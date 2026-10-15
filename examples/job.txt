@@ -1,0 +1,10 @@
+VAGA DEMONSTRATIVA (FICTÍCIA)
+
+Cargo: Pessoa Desenvolvedora Backend
+
+Requisitos publicados:
+- Experiência com desenvolvimento de APIs em Python e FastAPI.
+- Conhecimento em testes automatizados.
+- Vivência com Kubernetes em produção.
+
+O objetivo desta vaga fictícia é permitir o teste das classificações com evidência, evidência parcial e não identificado.

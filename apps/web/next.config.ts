@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Keep screenshots and local demos free of development-only UI.
+  devIndicators: false,
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

@@ -4,7 +4,7 @@
 
 ## Visão
 
-O Alinha é um produto brasileiro para analisar currículos em relação a oportunidades, sempre oferecendo requisitos identificados, evidências do currículo e recomendações fundamentadas. O objetivo é seguir o **modelo de distribuição do OpenCode**: software de código aberto com acesso a provedores do usuário e uma oferta hospedada **inteiramente opcional**. Não se trata de criar um agente ou de copiar o código do OpenCode.
+O Alinha é um produto brasileiro para analisar currículos em relação a oportunidades, com requisitos identificados, evidências do currículo e recomendações fundamentadas. A distribuição combina uma edição **Community**, livre e independente, com uma oferta de infraestrutura hospedada **inteiramente opcional**. O produto mantém sua identidade, objetivos e arquitetura próprios.
 
 ### Princípios inegociáveis
 
@@ -21,11 +21,11 @@ O Alinha é um produto brasileiro para analisar currículos em relação a oport
 ### Alinha Community — open source (gratuito como software)
 
 - Instalável no computador do usuário ou em um servidor controlado por ele; usar navegador **não** exige que seja um site público centralizado.
-- Site e API com o mesmo conjunto de funcionalidades essenciais de extração, análise, relatórios, avaliações e exportação.
+- Site e API com extração, análise e relatórios de evidências; avaliações automatizadas e exportação avançada estão previstas para futuras versões.
 - Motor local via Ollama, se houver recursos computacionais; opções BYOK com chaves próprias de provedores, quando disponíveis.
 - **Sign in with ChatGPT para uso de plano** exclusivamente no modo oficialmente autorizado a aplicativos OSS locais ou auto-hospedados, conforme escopo, política e limites da OpenAI.
 - Dados armazenados somente quando o usuário habilitar funcionalidades de histórico; opção sem persistência por padrão.
-- Documentação de instalação, ambiente de testes sintéticos, Docker Compose e CI de PRs. Empacotamento e instalação simplificada são entregas futuras — **não estão prontos**.
+- Instalação pelo código-fonte com um comando de desenvolvimento, documentação e CI em PRs. Docker, empacotamento e distribuição simplificada continuam previstos, mas ainda não estão prontos.
 
 Não chamar de “IA ilimitada grátis”: custos de hardware, eletricidade, provedores BYOK e cotas de assinaturas externas continuam existindo.
 
@@ -40,18 +40,9 @@ Não chamar de “IA ilimitada grátis”: custos de hardware, eletricidade, pro
 
 **Proibição de atalho:** não utilizar a assinatura ChatGPT de um operador para atender outros visitantes. A autorização OSS local não dá automaticamente direito de oferecer uso de planos ChatGPT a visitantes de um SaaS remoto. Esse uso comercial/remotamente hospedado depende de aprovação e do fluxo aplicável; consulte [Sign in with ChatGPT](https://developers.openai.com/siwc) e [participação comercial](https://developers.openai.com/siwc/request-client-id).
 
-## Referência de negócio: OpenCode
-
-- O [OpenCode](https://github.com/anomalyco/opencode) tem código sob MIT e oferece integrações a provedores externos.
-- O [OpenCode Zen](https://opencode.ai/docs/zen) vende acesso opcional a modelos por consumo.
-- O [OpenCode Go](https://opencode.ai/docs/go) oferece acesso opcional por assinatura.
-- Ambos são **opções de serviço**; o software não depende deles.
-
-O paralelo do Alinha seria: **Community** = software aberto e independente; **Cloud** = execução hospedada com inferência e gestão opcionais.
-
 ## Experiência do usuário
 
-**Community (localhost)**: abrir o Alinha → escolher provedor → autorizar/conectar quando permitido → enviar documentos → analisar → ver citações e recomendações → exportar relatório. Nenhum usuário precisa instalar um agente autônomo; a IA é chamada pelo fluxo de análise.
+**Community (localhost)**: abrir o Alinha → configurar o provedor disponível → enviar documentos → analisar → revisar citações e recomendações. A exportação de relatórios e a seleção de provedores adicionais seguem no roteiro. Nenhum usuário precisa instalar um agente autônomo; a IA é chamada pelo fluxo de análise.
 
 **Cloud (domínio público)**: entrar no Alinha → usar cota gratuita quando disponível ou adquirir créditos/plano → enviar documentos → receber relatório → decidir se deseja salvar ou excluir. O Cloud nunca apresenta o botão de plano ChatGPT local como se fosse um login comercial aprovado.
 

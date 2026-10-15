@@ -159,3 +159,27 @@ def test_openai_api_provider_response(monkeypatch):
         "Projetos em Python na empresa.", "Experiência com Python na vaga."
     )
     assert draft.requirements[0].status == "evidenciado"
+
+
+def test_headless_environment_without_keyring(monkeypatch):
+    """CI or server environments must not silently store plaintext credentials."""
+    monkeypatch.setenv("ALINHA_DEPLOYMENT_MODE", "community")
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+    def unavailable(*args, **kwargs):
+        raise RuntimeError("No recommended backend was available")
+
+    monkeypatch.setattr(keys.keyring, "get_password", unavailable)
+    assert keys.api_key("gemini") is None
+    assert keys.connection_source("gemini") == "none"
+
+    response = local_client().post(
+        "/api/v1/analyses/text",
+        json={
+            "resume_text": "Trabalhei com automações em Python e desenvolvi APIs REST em projetos.",
+            "job_description": "Buscamos experiência em Python para desenvolvimento de APIs REST e testes.",
+            "provider": "gemini",
+        },
+    )
+    assert response.status_code == 503
+    assert "cofre" not in response.text

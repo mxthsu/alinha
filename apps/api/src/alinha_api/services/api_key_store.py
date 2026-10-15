@@ -37,14 +37,22 @@ def _vault_get(provider: KeyProvider) -> str | None:
         raise ConnectionError("O cofre de credenciais do sistema está indisponível.") from exc
 
 
+def _optional_vault_get(provider: KeyProvider) -> str | None:
+    """Headless CI/servers may not have a desktop keyring. Never persist a fallback."""
+    try:
+        return _vault_get(provider)
+    except ConnectionError:
+        return None
+
+
 def api_key(provider: KeyProvider) -> str | None:
-    return _vault_get(provider) or os.getenv(ENV_KEYS[provider]) or None
+    return _optional_vault_get(provider) or os.getenv(ENV_KEYS[provider]) or None
 
 
 def connection_source(provider: KeyProvider) -> str:
     if get_mode() != "community":
         return "none"
-    if _vault_get(provider):
+    if _optional_vault_get(provider):
         return "vault"
     if os.getenv(ENV_KEYS[provider]):
         return "environment"

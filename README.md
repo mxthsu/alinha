@@ -1,100 +1,108 @@
-# Alinha
+<div align="center">
+
+# alinha.
 
 **Sua experiência, novas oportunidades.**
 
-Alinha é uma aplicação de código aberto que ajuda pessoas a comparar seu currículo com os requisitos de uma vaga. O objetivo é tornar a análise **explicável**: cada requisito apresentado deve trazer uma citação real da vaga e, quando houver correspondência, do currículo.
+Compare um currículo com os requisitos de uma vaga. Entenda **o que está comprovado**, **o que está parcialmente demonstrado** e **onde faltam evidências** — sem inventar competências ou prometer aprovação.
 
-> **Estado atual:** versão inicial para desenvolvimento local. O site ainda não está hospedado publicamente. Há três provedores opcionais: Gemini (API), Ollama (modelo local) e ChatGPT (assinatura elegível, via autorização OAuth **somente em instalação local**). A demonstração usa dados fictícios e é identificada como tal.
+[![CI](https://github.com/mxthsu/alinha/actions/workflows/ci.yml/badge.svg)](https://github.com/mxthsu/alinha/actions/workflows/ci.yml)
+[![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-286443)](LICENSE)
+[![Contribuições](https://img.shields.io/badge/contribui%C3%A7%C3%B5es-bem--vindas-619a59)](CONTRIBUTING.md)
 
-## Modelo de distribuição
+[**Começar**](docs/getting-started.md) · [**Documentação**](docs/architecture.md) · [**Contribuir**](CONTRIBUTING.md) · [**Roteiro**](docs/roadmap.md)
 
-**Alinha Community** é open source, sob licença MIT, para instalação própria e provedores à escolha do usuário. **Alinha Cloud** é um serviço hospedado e opcional em planejamento, com planos pagos apenas quando houver infraestrutura, privacidade e custos de inferência validados. Não há planos pagos ativos nesta versão. Consulte [modelo de produto](docs/product-model.md).
+</div>
 
-O login de assinatura ChatGPT implementado para Community não autoriza, por si só, compartilhamento de tokens ou uso comercial em um site público. O modo Cloud atualmente bloqueia inferência até que identidade própria, cotas e controles financeiros estejam prontos.
+![Prévia da interface do Alinha, com comparação de requisitos e evidências](docs/assets/site-preview.png)
 
-## O que já funciona
+## Por que o Alinha?
 
-- Interface responsiva em português brasileiro (Next.js / TypeScript), com componentes reativos, ícones Lucide e Google Fonts.
-- Envio por arrastar e soltar, validação de arquivo no navegador e contadores acessíveis de preenchimento.
-- Relatório com requisitos expansíveis, feedback de carregamento e possibilidade de cancelar a solicitação.
-- Envio de currículo em texto, PDF, DOCX ou TXT.
-- Análise de requisitos com Gemini, Ollama ou ChatGPT (OAuth local), com validação de saída via Pydantic.
-- Login ChatGPT com PKCE, validação de ID token e armazenamento de tokens no cofre do sistema operacional, sem expor tokens ao navegador.
-- Fluxo explícito com LangGraph: geração da análise → verificação de evidências.
-- Verificação programática de que citações retornadas aparecem nos textos fornecidos.
-- Relatório com requisitos classificados como **com evidência**, **parcial** ou **não identificado**.
-- Demonstração estática com dados fictícios, sem chave e sem simular uma análise real.
-- Testes automatizados da API e CI configurado para pull requests.
+Descrições de vagas costumam reunir várias competências, experiências e expectativas em um único texto. O Alinha organiza esse conteúdo e compara cada requisito com trechos do currículo, ajudando a pessoa a identificar evidências e melhorar sua apresentação profissional com **informações verdadeiras**.
 
-**Não fazemos:** pontuação supostamente equivalente a ATS, previsão de contratação, invenção de experiências ou armazenamento de currículos.
+- **Evidências antes de pontuações:** citações literais da vaga e, quando existirem, do currículo.
+- **Requisitos por situação:** com evidência, evidência parcial ou não identificado.
+- **Recomendações responsáveis:** sugestões de como explicar melhor o que foi realmente feito.
+- **Arquivos e texto:** cole o currículo ou utilize PDF, DOCX ou TXT.
+- **Código aberto:** interface, API e verificações podem ser auditadas e executadas localmente.
+- **Demonstração sem conta:** explore um resultado explicitamente fictício, sem chamar a IA.
 
-## Executar localmente
+Também incluímos um [currículo e uma vaga inteiramente fictícios](examples/README.md) para testar o formulário sem expor dados pessoais.
 
-Requisitos: Python 3.11+, [uv](https://docs.astral.sh/uv/), Node.js 20.9+ e npm.
+O Alinha não simula notas de sistemas ATS, não prevê contratações e não deve ser usado como decisão automática sobre candidatos.
 
-### 1. API
+## Experimente no seu computador
 
-```bash
-cd apps/api
-uv sync --dev
-```
-
-Copie `.env.example` para `.env` e configure o provedor desejado. Para usar o ChatGPT em **instalação local**, altere `ALINHA_LOCAL_AUTH_ENABLED=1` e mantenha a API vinculada ao loopback. Em seguida:
+**Pré-requisitos:** Python 3.11+, [uv](https://docs.astral.sh/uv/), Node.js 24 e npm.
 
 ```bash
-uv run uvicorn alinha_api.main:app --app-dir src --host 127.0.0.1 --port 8000 --env-file .env --no-access-log
+git clone https://github.com/mxthsu/alinha.git
+cd alinha
+python scripts/dev.py
 ```
 
-API: http://localhost:8000/docs | Verificação: http://localhost:8000/health
+O primeiro início instala as dependências necessárias. Abra **http://localhost:3000** e clique em **Ver uma demonstração**. Pressione **Ctrl+C** para parar os serviços.
 
-### 2. Interface
+No Windows, você também pode iniciar com `py -3 scripts/dev.py`. Para instruções manuais, configuração do provedor e solução de problemas, consulte o [guia de instalação](docs/getting-started.md).
 
-Em outro terminal:
+**Análises reais:** a versão principal usa Gemini configurado localmente por `GEMINI_API_KEY`. A chave não deve ser incluída no repositório. A demonstração não exige configuração. Adaptadores adicionais estão em desenvolvimento; veja [integrações planejadas](docs/roadmap.md).
 
-```bash
-cd apps/web
-npm ci
-npm run dev
+## O que acontece durante a análise?
+
+```text
+Currículo + descrição da vaga
+            |
+            v
+   Extração e validação
+            |
+            v
+     Provedor de IA
+            |
+            v
+  Requisitos e evidências
+            |
+            v
+Verificação literal de citações
+            |
+            v
+  Relatório com limitações
 ```
 
-Abra http://localhost:3000. A URL da API é, por padrão, `http://localhost:8000`; ela pode ser alterada com `NEXT_PUBLIC_API_URL` em `apps/web/.env.local`.
+O pipeline utiliza **FastAPI, Pydantic e LangGraph**. A geração por IA e a verificação determinística são etapas separadas: se o modelo citar algo que não aparece no material enviado, a verificação rejeita ou reclassifica a alegação. Isso reduz erros de citação, mas não garante que a interpretação semântica da IA esteja sempre correta.
 
-Para usar o plano ChatGPT, clique em **Continuar com ChatGPT** no formulário local e autorize o aplicativo. Ele lista apenas modelos da conta conectada; a disponibilidade e os limites dependem do seu plano. A instalação também pode usar Ollama, sem cobranças por chamadas. Sem nenhum provedor configurado, use **Ver uma demonstração**. Consulte [configuração e segurança dos provedores](docs/providers.md).
+### Componentes do projeto
 
-## Qualidade
+| Caminho | Responsabilidade |
+| --- | --- |
+| [`apps/web`](apps/web) | Site responsivo em Next.js, React e TypeScript |
+| [`apps/api`](apps/api) | API Python, extração de documentos e análise |
+| [`docs`](docs) | Guias, arquitetura, decisões e roteiro |
+| [`scripts`](scripts) | Inicialização simplificada para desenvolvimento |
+| [`.github`](.github) | Verificações de qualidade em pull requests |
 
-```bash
-cd apps/api
-uv run pytest -q
-uv run ruff check .
-```
+## Edições e evolução
 
-```bash
-cd apps/web
-npm run lint
-npm run build
-```
+O **Alinha Community** é software de código aberto sob a licença MIT, projetado para instalação própria. Uma oferta **Alinha Cloud**, com execução hospedada e serviços opcionais, está no planejamento e **não está disponível para contratação**.
 
-## Como a análise funciona
+Queremos manter o núcleo útil sem assinatura obrigatória. A modalidade hospedada deverá oferecer conveniência operacional, com custos e limites transparentes, sem restringir artificialmente a edição Community. Veja [visão de produto](docs/product-model.md).
 
-1. Extrai texto do currículo em memória e valida os limites de tamanho.
-2. Solicita à IA requisitos explícitos da vaga com trechos literais como evidência.
-3. Um nó de verificação confere se os trechos realmente constam nos documentos.
-4. Evidências de currículo inexistentes são rejeitadas e não viram alegações de competência.
-5. Um relatório agrupa requisitos sem fingir compatibilidade com algoritmos ATS.
+| Capacidade | Situação |
+| --- | --- |
+| Interface pt-BR, arquivos, demonstração fictícia | Disponível no código |
+| Gemini via chave própria e validação de evidências | Implementado; requer chave e teste real pelo usuário |
+| Testes automatizados de API e CI | Disponíveis |
+| Outros provedores e login ChatGPT local | Em revisão no [PR #3](https://github.com/mxthsu/alinha/pull/3) |
+| Avaliações sistemáticas e métricas de qualidade | Planejado |
+| Alinha Cloud, histórico sincronizado e pagamentos | Planejado; não disponível |
 
-Veja [arquitetura](docs/architecture.md), [escopo e roteiro](docs/roadmap.md), [provedores e autenticação](docs/providers.md) e [guia de contribuição](CONTRIBUTING.md).
+## Privacidade e limites
 
-## Privacidade e limitações
+Na versão inicial, os documentos são processados em memória e **não são salvos pelo Alinha**. Se você habilitar uma análise com provedor externo, o conteúdo será enviado para processamento por esse serviço conforme as condições do próprio provedor. **Não utilize currículos de terceiros sem autorização**.
 
-O MVP não tem contas próprias do Alinha nem banco de dados; não persiste currículos. O modo OAuth permite **uma conta ChatGPT ativa na instalação local**, mantendo credenciais no cofre do sistema operacional. **Isso não significa processamento exclusivamente local:** no modo ChatGPT/Gemini, textos são enviados ao provedor escolhido. Com Ollama os textos ficam na máquina do usuário. Consulte os termos dos provedores antes de usar informações pessoais e nunca envie currículos de terceiros sem autorização.
+A extração ainda não suporta OCR de PDFs digitalizados. O resultado não substitui julgamento humano. Confira [segurança](SECURITY.md), [arquitetura](docs/architecture.md) e [roteiro técnico](docs/roadmap.md).
 
-Documentos digitalizados sem texto selecionável não são suportados. A correspondência textual das citações reduz alucinações sobre evidências, mas não garante que a interpretação semântica do modelo esteja correta; a pessoa deve revisar as recomendações.
+## Comunidade
 
-## Tecnologias
+Relatos de erros, melhorias e contribuições são bem-vindos. Veja [como contribuir](CONTRIBUTING.md) e as [issues](https://github.com/mxthsu/alinha/issues). Utilize somente dados fictícios em testes, exemplos e pull requests.
 
-Next.js, React, TypeScript, FastAPI, Python, Pydantic, LangGraph, Google Gen AI SDK, HTTPX, PyJWT, keyring, Ollama (opcional), pytest, Ruff, uv e GitHub Actions. Integrações como armazenamento persistente, avaliações sistemáticas e observabilidade são etapas futuras — não estão apresentadas como prontas.
-
-## Contribuição e licença
-
-Feedbacks, relatos de bugs e contribuições são bem-vindos. Leia [CONTRIBUTING.md](CONTRIBUTING.md). Licença MIT, veja [LICENSE](LICENSE).
+**Licença:** [MIT](LICENSE).

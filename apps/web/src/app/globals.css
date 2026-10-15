@@ -381,3 +381,33 @@ button, a, textarea { -webkit-tap-highlight-color: transparent; }
   .provider-option strong { font-size: 11px; }
   .provider-option small { font-size: 9px; }
 }
+
+/* Community: source-first product presentation, not a second landing page. */
+.community-section { background: #fdfefa; padding: 83px 0 93px; }
+.community-card {
+  position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0,1.4fr) minmax(245px,.6fr);
+  gap: 65px; align-items: center; padding: clamp(29px,5vw,55px); border: 1px solid #d9e9d5;
+  border-radius: 22px; background: radial-gradient(ellipse at 95% 12%, #e6f5dc, #f5faef 47%, #f9fcf5 100%);
+}
+.community-card::before { content: ""; position: absolute; top: -130px; right: -70px; width: 320px; height: 320px; border: 1px solid #c4e2c0; border-radius: 50%; pointer-events: none; }
+.community-content,.community-aside { position: relative; z-index: 1; }
+.community-label { display: inline-flex; align-items: center; gap: 8px; color: #47844d; font-size: 11px; font-weight: 800; letter-spacing: .12em; }
+.community-content h2 { font-size: clamp(29px,3.4vw,43px); line-height: 1.17; letter-spacing: -.047em; font-weight: 800; color: #203f2d; margin: 17px 0 13px; max-width: 640px; }
+.community-content p { color: #617469; font-size: 14px; line-height: 1.8; max-width: 630px; margin: 0; }
+.community-actions { display: flex; flex-wrap: wrap; gap: 17px; align-items: center; margin-top: 27px; }
+.community-primary { background: #224a34; color: #fff; }
+.community-primary:hover { background: #316745; box-shadow: 0 8px 24px #23483222; }
+.community-doc-link { color: #3c7449; font-weight: 750; font-size: 12px; display: inline-flex; align-items: center; gap: 7px; transition: color .2s, gap .2s; }
+.community-doc-link:hover { color: #24633a; gap: 11px; }
+.community-aside { display: flex; flex-direction: column; gap: 15px; border-left: 1px solid #cfe2cd; padding-left: 30px; }
+.community-aside div { display: flex; gap: 10px; align-items: center; font-size: 12px; font-weight: 700; color: #355e43; }
+.community-aside svg { color: #4a9859; flex: 0 0 auto; }
+@media (max-width: 800px) {
+  .community-card { grid-template-columns: 1fr; gap: 29px; }
+  .community-aside { border-left: 0; border-top: 1px solid #cfe2cd; padding: 21px 0 0; }
+}
+@media (max-width: 650px) {
+  .community-section { padding: 60px 0; }
+  .community-card { padding: 25px 22px; }
+  .community-actions .button { width: 100%; }
+}

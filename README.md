@@ -8,7 +8,9 @@ Alinha é uma aplicação de código aberto que ajuda pessoas a comparar seu cur
 
 ## O que já funciona
 
-- Interface responsiva em português brasileiro (Next.js / TypeScript).
+- Interface responsiva em português brasileiro (Next.js / TypeScript), com componentes reativos, ícones Lucide e Google Fonts.
+- Envio por arrastar e soltar, validação de arquivo no navegador e contadores acessíveis de preenchimento.
+- Relatório com requisitos expansíveis, feedback de carregamento e possibilidade de cancelar a solicitação.
 - Envio de currículo em texto, PDF, DOCX ou TXT.
 - Análise de requisitos com Google Gemini e saída estruturada via Pydantic.
 - Fluxo explícito com LangGraph: geração da análise → verificação de evidências.

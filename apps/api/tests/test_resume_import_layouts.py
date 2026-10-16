@@ -216,3 +216,68 @@ def test_scanned_or_empty_pdf_returns_actionable_error():
     )
     assert response.status_code == 422
     assert "PDFs digitalizados" in response.json()["detail"]
+
+
+def test_stacked_job_and_education_with_both_orderings():
+    example = """CURRÍCULO
+PESSOA DE TESTE
+nome@exemplo.test
+Resumo Profissional
+Profissional fictícia da área de tecnologia.
+Experiência profissional
+Analista de Sistemas
+Empresa Exemplo
+2021 - 2023
+• Analisou problemas operacionais.
+Organização Demonstrativa
+Engenheira de Software
+2023 - atual
+• Desenvolveu serviços web.
+Formação Acadêmica
+Bacharelado em Engenharia
+Universidade Demonstrativa
+2016 - 2020
+Idiomas
+Português, Inglês
+"""
+    result = draft_profile(example)
+    assert result.profile.contact.name == "PESSOA DE TESTE"
+    assert len(result.profile.experiences) == 2
+    assert result.profile.experiences[0].role == "Analista de Sistemas"
+    assert result.profile.experiences[0].organization == "Empresa Exemplo"
+    assert result.profile.experiences[1].role == "Engenheira de Software"
+    assert result.profile.experiences[1].organization == "Organização Demonstrativa"
+    assert result.profile.education[0].course == "Bacharelado em Engenharia"
+    assert result.profile.education[0].institution == "Universidade Demonstrativa"
+    assert result.profile.education[0].period == "2016 - 2020"
+
+
+def test_plain_project_heading_and_bullet_description_are_recognized():
+    example = """Pessoa Fictícia
+contato@exemplo.test
+Projetos
+API para testes
+• Desenvolvida com Python.
+• Usa banco de dados relacional.
+Dashboard fictício
+• Exibe gráficos de monitoramento.
+"""
+    result = draft_profile(example)
+    assert len(result.profile.projects) == 2
+    assert result.profile.projects[0].title == "API para testes"
+    assert "Python" in result.profile.projects[0].description
+    assert result.profile.projects[1].title == "Dashboard fictício"
+
+
+def test_ambiguous_stacked_experience_is_not_misassigned():
+    text = """Pessoa Fictícia
+contato@exemplo.test
+Experiência profissional
+Alpha
+Beta
+2020 - 2021
+"""
+    result = draft_profile(text)
+    assert result.profile.experiences == []
+    assert "Alpha" in result.unassigned_lines
+    assert "Beta" in result.unassigned_lines

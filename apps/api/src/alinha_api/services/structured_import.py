@@ -15,13 +15,14 @@ _LINK = re.compile(r"(?:https?://)?(?:www\.)?(?:linkedin\.com|github\.com|gitlab
 _BULLET = re.compile(r"^\s*(?:[•●▪◦*]|\-(?=\s))\s*")
 _DIVIDER = re.compile(r"\s+[—–-]\s+")
 _PERIOD = re.compile(r"\b(?:19|20)\d{2}\b|\b(?:atual|presente|current|present)\b", re.IGNORECASE)
-_PERIOD_LINE = re.compile(r"^(?:[a-zà-ú]{3,12}/)?(?:19|20)\d{2}\s*[—–-]\s*(?:(?:[a-zà-ú]{3,12}/)?(?:19|20)\d{2}|atual|presente|current|present)", re.IGNORECASE)
+_PERIOD_LINE = re.compile(r"^(?:[a-zà-ú]{3,12}[ /])?(?:19|20)\d{2}\s*[—–-]\s*(?:(?:[a-zà-ú]{3,12}[ /])?(?:19|20)\d{2}|atual|presente|current|present)", re.IGNORECASE)
 _CITY = re.compile(r"^[^|]{2,70},\s*[A-Z]{2}$")
-_SPLIT_ITEMS = re.compile(r"\s*[,;|]\s*")
+_SPLIT_ITEMS = re.compile(r"\s*[,;|•·]\s*")
 _HEADINGS = {
     "resumo": "summary", "resumo profissional": "summary", "perfil profissional": "summary",
     "perfil": "summary", "sobre mim": "summary", "objetivo profissional": "summary",
     "professional summary": "summary", "summary": "summary", "profile": "summary",
+    "objetivo": "summary", "apresentacao": "summary",
     "experiencia": "experiences", "experiencias": "experiences",
     "experiencia profissional": "experiences", "experiencias profissionais": "experiences",
     "historico profissional": "experiences", "experiencia de trabalho": "experiences",
@@ -29,14 +30,17 @@ _HEADINGS = {
     "formacao": "education", "formacao academica": "education", "educacao": "education",
     "escolaridade": "education", "formacao e educacao": "education",
     "education": "education", "academic background": "education",
+    "formacao escolar": "education", "formacao e qualificacoes": "education",
     "projetos": "projects", "projetos pessoais": "projects",
     "projetos relevantes": "projects", "projetos selecionados": "projects",
     "principais projetos": "projects", "projects": "projects", "selected projects": "projects",
     "competencias": "skills", "competencias tecnicas": "skills",
     "habilidades": "skills", "habilidades tecnicas": "skills",
+    "competencias e habilidades": "skills", "habilidades e competencias": "skills",
     "conhecimentos": "skills", "conhecimentos tecnicos": "skills",
     "tecnologias": "skills", "skills": "skills", "technical skills": "skills",
     "idiomas": "languages", "linguas": "languages", "languages": "languages",
+    "languages spoken": "languages", "linguas estrangeiras": "languages",
 }
 _OTHER_HEADINGS = {
     "certificacoes", "certificados", "premios", "publicacoes", "atividades",
@@ -68,7 +72,7 @@ def _add_unassigned(remaining: list[str], line: str) -> None:
 def _period_line(line: str) -> str | None:
     first = line.split("|", 1)[0].strip()
     if _PERIOD_LINE.search(first) or (
-        _PERIOD.search(first) and normalized(first).startswith(("periodo:", "period:"))
+        _PERIOD.search(first) and normalized(first.split(":", 1)[0]) in {"periodo", "period"}
     ):
         return first[:100] if len(first) <= 100 else None
     return None
@@ -106,51 +110,125 @@ def _append_highlight(exp: Experience, value: str, remaining: list[str]) -> None
         exp.highlights.append(value)
 
 
+_ROLE_WORDS = re.compile(
+    r"\b(?:analista|analyst|engenheir\w*|engineer|desenvolvedor\w*|developer|"
+    r"técnic\w*|tecnic\w*|estagiári\w*|estagiari\w*|intern|suporte|support|"
+    r"gerente|manager|coordenador\w*|consultor\w*|pesquisador\w*|researcher|"
+    r"designer|arquiteto|architect|diretor\w*|director|professor\w*|teacher|"
+    r"administrador\w*|assistente|assistant|enfermeir\w*|nurse|advogad\w*|"
+    r"lawyer|especialista|specialist|vendedor\w*|atendente|recepcionista|"
+    r"marketing|product owner|product manager|freelancer)\b", re.IGNORECASE
+)
+_EDUCATION_WORDS = re.compile(
+    r"\b(?:bacharelado|licenciatura|graduação|graduacao|tecnólogo|tecnologo|"
+    r"técnico|tecnico|mestrado|doutorado|mba|pós-graduação|pos-graduacao|"
+    r"bachelor|master|associate|phd|degree|curso superior|ensino médio)\b", re.IGNORECASE
+)
+_INSTITUTION_WORDS = re.compile(
+    r"\b(?:universidade|university|faculdade|college|instituto|institute|"
+    r"escola|school|centro universitário|centro universitario|senai|ifsc|ifc)\b",
+    re.IGNORECASE,
+)
+
+
+def _stacked_experience(lines: list[str], index: int) -> tuple[Experience, int] | None:
+    """Use explicit nearby role, organization and period. No inferred fields."""
+    if index + 2 >= len(lines):
+        return None
+    first, second, third = (lines[index + offset].strip() for offset in range(3))
+    if any(_BULLET.match(x) for x in (first, second, third)):
+        return None
+    if _record_header(first) or _record_header(second):
+        return None
+    period = _period_line(third)
+    if not period or not (0 < len(first) <= 150 and 0 < len(second) <= 150):
+        return None
+    first_role = bool(_ROLE_WORDS.search(first))
+    second_role = bool(_ROLE_WORDS.search(second))
+    if first_role == second_role:
+        return None
+    if first_role:
+        return Experience(role=first, organization=second, period=period), index + 3
+    return Experience(role=second, organization=first, period=period), index + 3
+
+
 def _parse_experiences(lines: list[str], profile: ResumeProfile, remaining: list[str]) -> None:
     current: Experience | None = None
-    for line in lines:
-        candidate = _record_header(line)
-        if candidate:
-            if current:
-                if len(profile.experiences) < 12:
-                    profile.experiences.append(current)
-                else:
-                    _add_unassigned(remaining, f"{current.role} | {current.organization}")
-            current = Experience(role=candidate[0], organization=candidate[1], period=candidate[2])
-        elif current and (period := _period_line(line)) and not current.period:
-            current.period = period
-        elif current and _BULLET.match(line):
-            _append_highlight(current, _BULLET.sub("", line), remaining)
-        elif current and current.highlights and not _PERIOD.search(line):
-            # PDFs often wrap bullets across physical lines.
-            previous = current.highlights[-1]
-            combined = previous.rstrip() + " " + line.strip()
-            if len(combined) <= 700:
-                current.highlights[-1] = combined
-            else:
-                _add_unassigned(remaining, line)
-        elif current and current.organization.rstrip().lower().endswith((" do", " da", " de", " dos", " das", " -")) and len(current.organization) + len(line) < 150:
-            # Wrapped employer name, e.g. "Empresa do" + "Brasil Ltda."
-            current.organization = current.organization.rstrip() + " " + line
-        else:
-            _add_unassigned(remaining, line)
-    if current:
+
+    def flush() -> None:
+        if current is None:
+            return
         if len(profile.experiences) < 12:
             profile.experiences.append(current)
         else:
             _add_unassigned(remaining, f"{current.role} | {current.organization}")
 
-
-def _parse_education(lines: list[str], profile: ResumeProfile, remaining: list[str]) -> None:
-    for line in lines:
-        parts = _record_header(line)
-        if parts and len(profile.education) < 10:
-            profile.education.append(Education(course=parts[0], institution=parts[1], period=parts[2]))
-        elif profile.education and _period_line(line) and not profile.education[-1].period:
-            profile.education[-1].period = _period_line(line) or ""
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        candidate = _record_header(line)
+        stacked = _stacked_experience(lines, index) if not candidate else None
+        if candidate or stacked:
+            flush()
+            if candidate:
+                current = Experience(role=candidate[0], organization=candidate[1], period=candidate[2])
+                index += 1
+            else:
+                current, index = stacked
+            continue
+        if current and (period := _period_line(line)) and not current.period:
+            current.period = period
+        elif current and _BULLET.match(line):
+            _append_highlight(current, _BULLET.sub("", line), remaining)
+        elif current and current.organization.rstrip().lower().endswith(
+            (" do", " da", " de", " dos", " das", " -")
+        ) and len(current.organization) + len(line) + 1 < 150:
+            current.organization = current.organization.rstrip() + " " + line
+        elif current and current.highlights and not _PERIOD.search(line):
+            # PDF extraction can wrap a bullet into several physical lines.
+            combined = current.highlights[-1].rstrip() + " " + line.strip()
+            if len(combined) <= 700:
+                current.highlights[-1] = combined
+            else:
+                _add_unassigned(remaining, line)
         else:
             _add_unassigned(remaining, line)
+        index += 1
+    flush()
 
+def _parse_education(lines: list[str], profile: ResumeProfile, remaining: list[str]) -> None:
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        parts = _record_header(line)
+        if parts:
+            if len(profile.education) < 10:
+                profile.education.append(Education(course=parts[0], institution=parts[1], period=parts[2]))
+            else:
+                _add_unassigned(remaining, line)
+        elif (index + 1 < len(lines)
+              and _EDUCATION_WORDS.search(line)
+              and _INSTITUTION_WORDS.search(lines[index + 1])
+              and len(line) <= 150 and len(lines[index + 1]) <= 150):
+            period = ""
+            consumed = 2
+            if index + 2 < len(lines):
+                period = _period_line(lines[index + 2]) or ""
+                if period:
+                    consumed += 1
+            if len(profile.education) < 10:
+                profile.education.append(Education(
+                    course=line, institution=lines[index + 1], period=period
+                ))
+            else:
+                _add_unassigned(remaining, line)
+            index += consumed
+            continue
+        elif profile.education and (period := _period_line(line)) and not profile.education[-1].period:
+            profile.education[-1].period = period
+        else:
+            _add_unassigned(remaining, line)
+        index += 1
 
 def _parse_projects(lines: list[str], profile: ResumeProfile, remaining: list[str]) -> None:
     current: Project | None = None
@@ -163,7 +241,7 @@ def _parse_projects(lines: list[str], profile: ResumeProfile, remaining: list[st
         else:
             _add_unassigned(remaining, current.title + ": " + current.description)
 
-    for line in lines:
+    for index, line in enumerate(lines):
         if _BULLET.match(line):
             detail = _BULLET.sub("", line).strip()
             if current is None:
@@ -173,7 +251,13 @@ def _parse_projects(lines: list[str], profile: ResumeProfile, remaining: list[st
             else:
                 _add_unassigned(remaining, line)
             continue
-        if "|" in line or (":" in line and not re.match(r"^(https?://|www\.)", line, re.IGNORECASE)):
+        next_is_bullet = index + 1 < len(lines) and bool(_BULLET.match(lines[index + 1]))
+        heading = (
+            "|" in line
+            or (":" in line and not re.match(r"^(https?://|www\\.)", line, re.IGNORECASE))
+            or (next_is_bullet and len(line) <= 150)
+        )
+        if heading:
             flush()
             if ":" in line and "|" not in line:
                 title, description = line.split(":", 1)
@@ -185,14 +269,11 @@ def _parse_projects(lines: list[str], profile: ResumeProfile, remaining: list[st
             else:
                 _add_unassigned(remaining, line)
                 current = None
-        elif current and current.description and len(current.description) + len(line) + 1 <= 750:
-            current.description += " " + line
-        elif current and not current.description and len(line) <= 750:
-            current.description = line
+        elif current and len(current.description) + len(line) + 1 <= 750:
+            current.description = (current.description + " " + line).strip()
         else:
             _add_unassigned(remaining, line)
     flush()
-
 
 def _parse_items(lines: list[str], max_items: int, remaining: list[str], labels: bool) -> list[str]:
     values: list[str] = []
@@ -220,6 +301,12 @@ def _parse_contact(lines: list[str], profile: ResumeProfile, remaining: list[str
     if not lines:
         return
     lines = list(lines)
+    while lines and normalized(lines[0]) in {
+        "curriculo", "curriculum vitae", "resume", "dados pessoais", "contato", "contact"
+    }:
+        lines.pop(0)
+    if not lines:
+        return
     first = lines[0]
     if normalized(first).startswith("nome:"):
         first = first.split(":", 1)[1].strip()

@@ -55,7 +55,9 @@ function Preview({ profile, template }: { profile: Resume; template: Template })
     {profile.summary && <section><h3>Resumo profissional</h3><p>{profile.summary}</p></section>}
     {profile.experiences.length > 0 && <section><h3>Experiência profissional</h3>
       {profile.experiences.map((exp,i) => <article key={i}><div className="studio-sheet-line"><b>{[exp.role, exp.organization].filter(Boolean).join(" — ")}</b><span>{exp.period}</span></div>
-        {exp.highlights.filter(Boolean).map((h,j) => <p key={j}>• {h}</p>)}</article>)}
+        {exp.highlights.some(Boolean) && <ul className="studio-sheet-highlights">
+          {exp.highlights.filter(Boolean).map((h,j) => <li key={j}>{h}</li>)}
+        </ul>}</article>)}
     </section>}
     {profile.education.length > 0 && <section><h3>Formação</h3>{profile.education.map((ed,i) =>
       <article key={i}><div className="studio-sheet-line"><b>{[ed.course,ed.institution].filter(Boolean).join(" — ")}</b><span>{ed.period}</span></div></article>)}</section>}
@@ -318,7 +320,7 @@ export default function Studio() {
           <div className="studio-preview-meta"><small>{template==="classico"?"Clássico":"Compacto"}</small><small>A4</small></div>
         </div>
         <Preview profile={profile} template={template}/>
-        <p>Prévia ilustrativa. O arquivo DOCX terá paginação própria.</p>
+        <p>Prévia contínua para leitura. As quebras de página são definidas ao abrir o DOCX.</p>
       </aside>
     </div>
     <footer className="studio-footer"><span>Alinha Community · Código aberto · Licença MIT</span><Link href="/preparar">Preparar candidatura <ChevronRight size={15}/></Link></footer>

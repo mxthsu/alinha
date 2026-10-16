@@ -1,0 +1,37 @@
+.ats-editor { margin: 30px 0; padding: clamp(22px,3vw,34px); border: 1px solid #dce9d9; border-radius: 18px; background: #fff; box-shadow: 0 18px 45px #24482b0a; }
+.ats-editor-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 26px; }
+.ats-editor-eyebrow { color: #489353; display: flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: .12em; font-weight: 800; }
+.ats-editor-top h2 { color: #233e2c; font-size: clamp(22px,3vw,29px); letter-spacing: -.04em; margin: 12px 0 8px; }
+.ats-editor-top p { color: #76867a; font-size: 12px; line-height: 1.65; max-width: 710px; }
+.ats-editor-local { display: inline-flex; flex-shrink: 0; align-items: center; gap: 6px; border: 1px solid #d5e8d0; background: #f2f9ee; border-radius: 8px; padding: 9px 12px; color: #568963; font-size: 11px; font-weight: 700; }
+.ats-editor-columns { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 19px; }
+.ats-editor-pane { min-width: 0; }
+.ats-editor-label { display: flex; justify-content: space-between; gap: 8px; align-items: center; color: #385b41; font-size: 11px; margin-bottom: 10px; }
+.ats-editor-label strong { font-size: 12px; }
+.ats-editor-label span { font-size: 10px; color: #829488; }
+.ats-editor-original, .ats-editor-pane textarea { width: 100%; height: 390px; overflow-y: auto; border: 1px solid #d4e1d0; border-radius: 12px; padding: 16px; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+.ats-editor-original { background: #f7faf5; color: #728173; }
+.ats-editor-pane textarea { display: block; resize: vertical; color: #234735; background: #fff; outline: none; }
+.ats-editor-pane textarea:focus-visible { border-color: #72ae7d; box-shadow: 0 0 0 4px #7ebc8a29; }
+.ats-editor-status { display: flex; align-items: center; gap: 7px; min-height: 32px; font-size: 10px; color: #6a9773; }
+.ats-editor-review { margin-top: 17px; padding: 16px; color: #456c4c; background: #f2f8ef; border: 1px solid #deecd9; border-radius: 10px; font-size: 11px; line-height: 1.6; }
+.ats-editor-review ul { margin: 8px 0 0 20px; list-style: disc; }
+.ats-editor-review li { padding: 3px 0; }
+.ats-editor-error,.ats-editor-message { display: flex; align-items: center; gap: 9px; margin: 12px 0; padding: 13px; border-radius: 9px; font-size: 11px; }
+.ats-editor-error { color: #a4423b; background: #fff0ed; border: 1px solid #f3d2cc; }
+.ats-editor-message { color: #397e4c; background: #eff8ed; border: 1px solid #d8ead6; }
+.ats-editor-actions { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-top: 22px; }
+.ats-editor-right { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.ats-editor-secondary,.ats-editor-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 45px; border-radius: 9px; padding: 10px 16px; font-size: 11px; font-weight: 760; cursor: pointer; transition: transform .2s, background .2s; }
+.ats-editor-secondary { background: #fff; border: 1px solid #cbdfc6; color: #457b50; }
+.ats-editor-primary { background: #1d4730; color: #fff; border: 1px solid #1d4730; }
+.ats-editor-secondary:hover:not(:disabled) { background: #f1f7ee; }
+.ats-editor-primary:hover:not(:disabled) { background: #296640; }
+.ats-editor-secondary:hover:not(:disabled),.ats-editor-primary:hover:not(:disabled) { transform: translateY(-2px); }
+.ats-editor-secondary:disabled,.ats-editor-primary:disabled { cursor: not-allowed; opacity: .5; }
+.ats-editor-disclaimer { margin-top: 20px; color: #849286; font-size: 10px; line-height: 1.7; }
+.ats-editor-trigger { display: flex; align-items: center; gap: 9px; min-height: 45px; margin-top: 13px; padding: 11px 16px; color: #fff; background: #214e33; border: 1px solid #214e33; border-radius: 9px; font-size: 12px; font-weight: 750; cursor: pointer; }
+.ats-editor-trigger:hover { background: #317449; }
+@media (max-width: 820px) { .ats-editor-columns { grid-template-columns: 1fr; } .ats-editor-original,.ats-editor-pane textarea { height: 250px; } }
+@media (max-width: 580px) { .ats-editor-top { flex-direction: column; } .ats-editor-actions,.ats-editor-right { width: 100%; } .ats-editor-actions button { flex: 1; } }
+@media (prefers-reduced-motion: reduce) { .ats-editor-secondary,.ats-editor-primary { transition: none; } .ats-editor-secondary:hover:not(:disabled),.ats-editor-primary:hover:not(:disabled) { transform: none; } }

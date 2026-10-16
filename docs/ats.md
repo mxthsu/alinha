@@ -25,18 +25,19 @@ O relatório mostra **problema, explicação e como melhorar**, distinguindo ale
 - A ausência de alertas só significa que **essas verificações básicas** não identificaram problemas; não garante leitura perfeita em outro sistema.
 - Não verifica todos os problemas visuais possíveis em um PDF; a análise das estruturas complexas de PDF requer validação específica.
 
-## Próxima fase: editor e exportação
+## Editor manual e exportação DOCX
 
-O próximo incremento será um editor assistido de currículos:
+Após executar o diagnóstico, clique em **Abrir editor de currículo** para:
 
-1. Importar e revisar experiências, competências e formação.
-2. Identificar os trechos da vaga com evidências já demonstradas.
-3. Propor reescritas **apenas com informações verificadas**; a pessoa aprova individualmente cada alteração.
-4. Montar uma versão de candidatura em coluna única, com títulos simples, fonte legível e texto no corpo.
-5. Exportar DOCX e PDF com texto selecionável.
-6. Validar a extração do arquivo exportado em testes automáticos e no próprio diagnóstico ATS.
+1. Importar o texto extraído do arquivo (ou partir do texto colado), sem salvá-lo no servidor.
+2. Comparar o texto original (somente leitura) com uma versão editável.
+3. Fazer apenas mudanças que você aprovar, preservando informações verdadeiras.
+4. Revalidar a versão editada com as regras ATS locais, sem consumir Gemini.
+5. Exportar um **DOCX simples**, com fonte Arial, coluna única, texto selecionável e sem tabelas.
 
-Esses recursos **não estão implementados na primeira versão** do diagnóstico.
+O backend transforma **somente o texto fornecido** em um DOCX. Testes automáticos verificam a leitura e a preservação das linhas após a exportação. O texto é mantido apenas durante a sessão da página no navegador, não em banco de dados nem em `localStorage`.
+
+**Ainda não implementado:** sugestões de reescrita por IA com aprovação individual, versões persistentes, e exportação direta em PDF com texto selecionável. Esses itens ficam para a próxima fase.
 
 ## Fundamentação
 

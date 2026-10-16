@@ -26,8 +26,8 @@
 
 - [x] Diagnóstico inicial determinístico de legibilidade ATS para PDF, DOCX e TXT; sem nota universal ou alegação de aprovação.
 - [ ] Validar diagnóstico ATS com diferentes documentos sintéticos e parsers (incluindo PDFs com layouts complexos).
-- [ ] Editor e versões de currículo.
-- [ ] Exportação DOCX/PDF.
+- [x] Editor manual de currículo com comparação do original, revalidação ATS e exportação DOCX textual.\n- [ ] Sugestões de reescrita por IA com aprovação individual e evidências verdadeiras.\n- [ ] Versões persistentes opt-in do currículo.
+- [x] Exportação DOCX de coluna única, testada por leitura de texto.\n- [ ] Exportação PDF com texto selecionável e validação visual.
 - [ ] Plano de preparação de entrevistas.
 - [ ] Histórico opcional e controles de exclusão.
 

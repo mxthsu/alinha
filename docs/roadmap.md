@@ -12,7 +12,8 @@ Política: [contratos e segurança](agent-application-contract.md).
 - [ ] Adicionar conectores brasileiros autorizados para CLT/PJ, híbrido, presencial, estágio e trainee.
 - [ ] Persistir preferências somente com consentimento e critérios claros de exclusão.
 - [ ] Explicar relevância e preparar respostas/documentos vinculados à vaga.
-- [ ] Kanban com estados reais de candidatura e persistência opt-in.
+- [x] Quadro Kanban Community para acompanhamento manual, com armazenamento no navegador e importação/exportação JSON.
+- [ ] Kanban hospedado com conta, registros auditáveis e confirmações reais das plataformas.
 - [ ] Candidatura assistida; não simular confirmações de envio externo.
 - [ ] Identidade, consentimento auditável, transações, quotas e conectores de envio antes da automação.
 - [ ] Infraestrutura hospedada e funções Pro privadas com economia unitária validada.

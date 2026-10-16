@@ -28,3 +28,20 @@
 - A segurança dos mecanismos de IA e das candidaturas não pode depender de segredo do código, e sim de validação de permissões no servidor.
 
 **Orientação:** manter o Community público e independente e desenvolver serviços comerciais privados de maneira separada, sem versionar credenciais ou usar currículo pessoal em exemplos e testes. A licença MIT publicada não retira a necessidade de proteger infraestruturas e dados.
+
+## Acompanhamento local de oportunidades
+
+O quadro Kanban do Community só persiste cargo, empresa, link, status e datas
+no localStorage quando o usuário salva uma vaga. URLs não HTTPS, internas,
+contendo credenciais ou parâmetros de autenticação conhecidos são rejeitadas.
+O aplicativo **não consulta URLs fornecidas manualmente**: apenas oferece um
+link clicável e normalizado. Importações JSON são limitadas em tamanho e
+verificadas contra o esquema do quadro; informações arbitrárias não alteram
+a política do agente nem ativam a execução de candidaturas.
+
+O armazenamento local não é criptografado e pode ser acessado por outras pessoas
+com acesso ao perfil do navegador ou por scripts maliciosos da mesma origem.
+Não salvar currículos, CPF, e-mails de candidatos ou segredos no quadro; recomendar
+exportar backup e apagar os dados em computadores compartilhados. Para a versão
+Pro, usar autenticação, controle de acesso, criptografia apropriada e isolamento
+por usuário, com persistência consentida.

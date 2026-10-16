@@ -26,7 +26,9 @@
 
 - [x] Diagnóstico inicial determinístico de legibilidade ATS para PDF, DOCX e TXT; sem nota universal ou alegação de aprovação.
 - [ ] Validar diagnóstico ATS com diferentes documentos sintéticos e parsers (incluindo PDFs com layouts complexos).
-- [x] Editor manual de currículo com comparação do original, revalidação ATS e exportação DOCX textual.\n- [ ] Sugestões de reescrita por IA com aprovação individual e evidências verdadeiras.\n- [ ] Versões persistentes opt-in do currículo.
+- [x] Editor manual de currículo com comparação do original, revalidação ATS e exportação DOCX textual.\n- [x] Studio inicial com perfil estruturado (JSON v1), prévia ao vivo, dois modelos e revisão orientativa via LangGraph com citações verificadas.
+- [ ] Importação assistida de CV em seções com confirmação humana.
+- [ ] Sugestões de reescrita por IA com aprovação individual e evidências verdadeiras.\n- [ ] Versões persistentes opt-in do currículo.
 - [x] Exportação DOCX de coluna única, testada por leitura de texto.\n- [ ] Exportação PDF com texto selecionável e validação visual.
 - [ ] Plano de preparação de entrevistas.
 - [ ] Histórico opcional e controles de exclusão.

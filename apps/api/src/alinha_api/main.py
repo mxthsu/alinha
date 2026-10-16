@@ -8,6 +8,12 @@ from fastapi.responses import RedirectResponse, Response
 from pydantic import BaseModel, Field, ValidationError
 from pypdf.errors import PdfReadError
 
+from alinha_api.resume_schema import (
+    ResumeProfile,
+    ResumeReviewRequest,
+    ResumeReviewResult,
+    StructuredExportRequest,
+)
 from alinha_api.schemas import (
     AnalysisRequest,
     AnalysisResult,
@@ -33,7 +39,9 @@ from alinha_api.services.provider import (
     provider_status,
 )
 from alinha_api.services.resume_editor import export_resume_docx
+from alinha_api.services.structured_resume import export_structured_docx, render_profile_text
 from alinha_api.workflows.analysis import build_workflow
+from alinha_api.workflows.resume_review import build_resume_review_workflow
 
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
 FRONTEND_ORIGINS = sorted({FRONTEND_ORIGIN, "http://127.0.0.1:3000", "http://localhost:3000"})
@@ -288,3 +296,48 @@ def ats_editor_export_docx(payload: AtsTextRequest) -> Response:
             "Cache-Control": "no-store",
         },
     )
+
+
+@app.post("/api/v1/resumes/structured/preview/text")
+def preview_structured_resume(profile: ResumeProfile) -> dict:
+    """Preview human-editable plain text; does not store profile information."""
+    return {"resume_text": render_profile_text(profile), "profile": profile.model_dump()}
+
+
+@app.post("/api/v1/resumes/structured/export/docx")
+def export_structured_resume(payload: StructuredExportRequest) -> Response:
+    try:
+        content = export_structured_docx(payload.profile, payload.template)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return Response(
+        content,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={
+            "Content-Disposition": 'attachment; filename="alinha-studio-curriculo.docx"',
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+@app.post("/api/v1/resumes/structured/review", response_model=ResumeReviewResult)
+def review_structured_resume(payload: ResumeReviewRequest) -> ResumeReviewResult:
+    """One provider analysis -> deterministic evidence check -> human review.
+
+    No automatic edits and no second inference request. Provider quota remains
+    enforced in run_analysis, including the Gemini rolling rate limiter.
+    """
+    resume = render_profile_text(payload.profile)
+    if len(resume) < 50 or len(resume) > 22000:
+        raise HTTPException(422, "Preencha seu perfil antes de solicitar melhorias com IA.")
+
+    def analyze(text: str, job: str) -> AnalysisResult:
+        return run_analysis(AnalysisRequest(
+            resume_text=text, job_description=job,
+            provider=payload.provider, model=payload.model,
+        ))
+
+    review = build_resume_review_workflow(analyze).invoke(
+        {"resume_text": resume, "job_description": payload.job_description}
+    )["review"]
+    return ResumeReviewResult.model_validate(review)

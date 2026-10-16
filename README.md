@@ -31,6 +31,12 @@ Também incluímos um [currículo e uma vaga inteiramente fictícios](examples/R
 
 O Alinha não simula notas de sistemas ATS, não prevê contratações e não deve ser usado como decisão automática sobre candidatos.
 
+## Community livre e Cloud opcional
+
+No Alinha Community você escolhe o provedor de IA, incluindo Gemini, Claude API, OpenAI API e Ollama local, além de ChatGPT quando elegível em uso local autorizado. A interface de conexão está disponível na análise e na aba **Melhorias com IA** do Studio. A licença do Alinha não exige pagamento; cobranças de APIs externas e uso do hardware são de responsabilidade do usuário.
+
+O **Alinha Cloud ainda não existe como serviço público**. A proposta futura é infraestrutura gerenciada mediante assinatura com créditos de IA mensais e gastos extras apenas com autorização prévia. Leia [modelo Community + Cloud](docs/product-model.md) e [estratégia comercial](docs/cloud-business-model.md). Não há preços nem checkout disponíveis nesta versão.
+
 ## Crie seu currículo no Studio
 
 O [Currículo Studio](apps/web/src/app/studio) (rota `/studio`) permite preencher seções estruturadas, escolher dois modelos, acompanhar uma prévia em tempo real e exportar DOCX. Uma revisão opcional com IA usa LangGraph para gerar orientações baseadas em citações e exige decisão humana antes de qualquer mudança. É possível salvar o perfil como JSON no computador, sem conta e sem persistência no servidor. Consulte a [documentação do Studio](docs/studio.md).

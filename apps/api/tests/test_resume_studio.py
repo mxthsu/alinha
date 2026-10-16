@@ -160,3 +160,35 @@ def test_review_route_checks_profile_before_provider_call(monkeypatch):
         json={"profile": {}, "job_description": "Vaga fictícia procura Python e FastAPI, testes e documentação profissional em APIs."},
     )
     assert response.status_code == 422
+
+
+def test_cloud_studio_review_is_disabled_until_billing_and_auth_exist(monkeypatch):
+    """A local user key must never power an unauthenticated public SaaS."""
+    monkeypatch.setenv("ALINHA_DEPLOYMENT_MODE", "cloud")
+    monkeypatch.setenv("GEMINI_API_KEY", "synthetic-test-value-not-a-real-api-key")
+    client = TestClient(app)
+    job = (
+        "Vaga fictícia com requisitos em Python, APIs REST, integração de dados, "
+        "testes automatizados e documentação para aplicações profissionais."
+    )
+    response = client.post(
+        "/api/v1/resumes/structured/review",
+        json={"profile": EXAMPLE, "job_description": job, "provider": "gemini"},
+    )
+    assert response.status_code == 503
+    assert "Cloud" in response.json()["detail"]
+    providers = client.get("/api/v1/providers/status")
+    assert providers.status_code == 200
+    assert providers.json()["deployment_mode"] == "cloud"
+    assert providers.json()["gemini"]["available"] is False
+
+
+def test_cloud_studio_exports_without_ai_or_payment(monkeypatch):
+    """Document editing/export remains independent of future billing."""
+    monkeypatch.setenv("ALINHA_DEPLOYMENT_MODE", "cloud")
+    response = TestClient(app).post(
+        "/api/v1/resumes/structured/export/docx",
+        json={"profile": EXAMPLE, "template": "classico"},
+    )
+    assert response.status_code == 200
+    assert response.content.startswith(b"PK")

@@ -71,7 +71,7 @@ export default function AnalyzePage() {
     <main className="platform-container">
       <div className="platform-kicker"><FileSearch size={17}/> ANÁLISE DE OPORTUNIDADES</div>
       <h1>Compare seu currículo com uma vaga.</h1>
-      <p className="platform-lead">Veja os requisitos publicados, as evidências do currículo e os pontos que merecem atenção. Sem notas ATS fictícias.</p>
+      <p className="platform-lead">Compare requisitos da vaga com experiências comprovadas no currículo. Diferente da verificação ATS, esta análise usa IA para avaliar a correspondência de conteúdo — sem prometer aprovação.</p>
       <div className="analysis-layout">
         <form onSubmit={analyze} className="analysis-form">
           <ConnectedProviderPicker provider={provider} onProviderChange={setProvider} model={model} onModelChange={setModel} onReadyChange={setReady}/>

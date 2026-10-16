@@ -5,8 +5,8 @@ import { ConnectionStatus } from "@/components/connection-status";
 const pages = [
   { href: "/", label: "Início" },
   { href: "/studio", label: "Currículos" },
-  { href: "/ats", label: "Verificar ATS" },
-  { href: "/analisar", label: "Analisar vaga" },
+  { href: "/ats", label: "Verificar currículo (ATS)" },
+  { href: "/analisar", label: "Comparar vaga" },
 ];
 
 export function PlatformNav() {

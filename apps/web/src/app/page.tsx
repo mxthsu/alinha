@@ -9,8 +9,8 @@ import "./home.css";
 
 const tools = [
   { icon: FilePenLine, title: "Criar currículo", label: "ESTÚDIO DE CURRÍCULOS", description: "Edite por seções, visualize modelos e exporte um DOCX com texto selecionável.", href: "/studio", hint: "Sem IA obrigatória" },
-  { icon: FileSearch, title: "Verificar ATS", label: "COMPATIBILIDADE DE LEITURA", description: "Descubra limitações de texto e estrutura que podem atrapalhar a interpretação do currículo.", href: "/ats", hint: "Sem IA obrigatória" },
-  { icon: BriefcaseBusiness, title: "Analisar uma vaga", label: "REVISÃO COM EVIDÊNCIAS", description: "Compare requisitos da oportunidade com seu currículo e receba recomendações verificáveis.", href: "/analisar", hint: "Requer IA conectada" },
+  { icon: FileSearch, title: "Verificar currículo (ATS)", label: "LEITURA DO DOCUMENTO · SEM IA", description: "Avalie estrutura, formatação e extração de texto. Não compara seu perfil com uma vaga.", href: "/ats", hint: "Sem IA obrigatória" },
+  { icon: BriefcaseBusiness, title: "Comparar com uma vaga", label: "REQUISITOS DA VAGA · COM IA", description: "Descubra quais exigências de uma vaga aparecem no seu currículo, com evidências e orientações.", href: "/analisar", hint: "Requer IA conectada" },
 ];
 
 export default function Home() {
@@ -23,7 +23,6 @@ export default function Home() {
         </Link>
         <nav className="nav-links home-nav" aria-label="Navegação principal">
           <a href="#ferramentas">Ferramentas</a>
-          <a href="#codigo-aberto">Código aberto</a>
           <a href="https://github.com/mxthsu/alinha" target="_blank" rel="noreferrer"><Code2 size={16}/> GitHub</a>
           <ConnectionStatus variant="compact" />
         </nav>

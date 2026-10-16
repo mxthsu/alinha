@@ -4,6 +4,8 @@
 
 Fornecer uma análise de correspondência entre currículo e vaga **fundamentada em evidências literais**, com uma experiência acessível em português e base de código convencional em inglês.
 
+> **Evolução do produto:** a arquitetura desta página documenta o núcleo de análise já funcional. O novo domínio independente de candidaturas está em [contratos do agente](agent-application-contract.md) e [fronteira Community/Pro](open-core-boundaries.md). A política em código ainda não executa ações externas.
+
 ## Componentes
 
 - `apps/web`: Next.js, interface client-side, formulário e relatório.

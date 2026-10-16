@@ -2,6 +2,8 @@
 
 > **Decisão de produto, não anúncio de serviço disponível.** O Alinha Cloud, planos pagos e login ChatGPT num site centralizado ainda não foram lançados. Não publicar preços, cotas ou promessas comerciais sem validação de custos, privacidade e viabilidade.
 
+> **Atualização de direção (outubro/2026):** o Alinha evolui de um analisador de currículos para um **agente de carreira brasileiro**, com busca de vagas, preparação e candidaturas autorizadas no roteiro. O Cloud ainda não existe; contratos e políticas iniciais estão em [visão de produto](career-product-vision.md), [open-core](open-core-boundaries.md) e [política do agente](agent-application-contract.md).
+
 ## Visão
 
 O Alinha é um produto brasileiro para analisar currículos em relação a oportunidades, com requisitos identificados, evidências do currículo e recomendações fundamentadas. A distribuição combina uma edição **Community**, livre e independente, com uma oferta de infraestrutura hospedada **inteiramente opcional**. O produto mantém sua identidade, objetivos e arquitetura próprios.

@@ -64,3 +64,36 @@
 .journey-selected-job a{display:inline-flex;align-items:center;gap:5px;color:#39784b;font-size:11px;font-weight:750}
 .journey-selected-job p{flex-basis:100%;margin:0}
 .journey-selected-job button{border:1px solid #d1dfcb;border-radius:8px;background:#fff;color:#6c866e;padding:8px 10px;font-size:11px}
+
+/* A compact approval surface; the person never needs to open Studio to export a job version. */
+.tailored-panel{border:1px solid #cadeca;border-radius:18px;background:#fff;box-shadow:0 10px 32px #153c2412;padding:clamp(20px,3vw,32px);margin-bottom:23px}
+.tailored-heading{display:flex;align-items:flex-start;gap:14px;margin-bottom:22px}
+.tailored-mark{border-radius:13px;background:#e8f5e5;color:#438453;padding:12px;flex-shrink:0}
+.tailored-heading span{font-size:10px;color:#61a06d;font-weight:830;letter-spacing:.11em}
+.tailored-heading h3{font-size:clamp(21px,2.4vw,27px);letter-spacing:-.04em;line-height:1.2;margin:7px 0;color:#244d34}
+.tailored-heading p{font-size:12px;color:#78927d;line-height:1.5;margin:0}
+.tailored-evidence{border:1px solid #e0eede;background:#f7fbf4;padding:17px 19px;border-radius:12px;display:grid;grid-template-columns:minmax(160px,.6fr) minmax(0,1fr);gap:15px}
+.tailored-evidence strong,.tailored-highlight strong{font-size:12px;color:#375b40}
+.tailored-evidence p{font-size:11px;line-height:1.7;color:#7a907f;margin:5px 0 0}
+.tailored-changes{display:flex;flex-direction:column;gap:9px}
+.tailored-changes span{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:#487452;line-height:1.5}
+.tailored-changes svg{flex:none;margin-top:1px}
+.tailored-highlight{margin-top:20px}
+.tailored-highlight>div{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px}
+.tailored-highlight>div>span{border:1px solid #cfe3cd;background:#eef8eb;color:#3c7b4b;border-radius:8px;padding:7px 10px;font-size:11px;font-weight:700}
+.tailored-highlight ul{margin:10px 0 0;padding-left:18px;color:#627b69;font-size:11px;line-height:1.9}
+.tailored-guarantee{display:flex;align-items:flex-start;gap:8px;background:#f1f7ee;color:#65826a;font-size:11px;line-height:1.65;padding:12px;border-radius:9px;margin:20px 0}
+.tailored-guarantee svg{flex:none;margin-top:1px}
+.tailored-actions{display:flex;align-items:center;flex-wrap:wrap;gap:11px}
+.tailored-actions button,.journey-approved-existing button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:12px 15px;border-radius:9px;font-size:12px;font-weight:750}
+.tailored-actions .tailored-approve{color:white;background:#285c3d;border:1px solid #285c3d}
+.tailored-actions .tailored-approve:hover:not(:disabled){background:#36794b}
+.tailored-actions .tailored-download{background:#fff;border:1px solid #d4e5d0;color:#467c50}
+.tailored-actions button:disabled,.journey-approved-existing button:disabled{opacity:.6;cursor:wait}
+.journey-approved-existing{display:flex;align-items:center;flex-wrap:wrap;justify-content:space-between;gap:16px;margin-bottom:24px;border-radius:13px;background:#eaf6e6;border:1px solid #cfe7c8;padding:18px 20px}
+.journey-approved-existing>div{display:flex;align-items:center;gap:11px;color:#418651}
+.journey-approved-existing>div>span{display:flex;flex-direction:column;gap:4px}
+.journey-approved-existing strong{font-size:12px;color:#315c3d}
+.journey-approved-existing small{font-size:11px;color:#77937c}
+.journey-approved-existing button{background:#295d3a;color:white;border:0}
+@media(max-width:620px){.tailored-evidence{grid-template-columns:1fr}.tailored-actions button{width:100%}.journey-approved-existing button{width:100%}}

@@ -27,6 +27,18 @@ pausa e revisão humana quando necessário. **Nenhuma candidatura é enviada nes
 - [Fronteira de arquitetura open-core](docs/open-core-boundaries.md)
 - [Contratos técnicos e segurança de candidaturas](docs/agent-application-contract.md)
 
+## Configurações locais do Community
+
+A nova área **Meu Alinha** (/meu-alinha) reúne a configuração local do agente,
+as fontes de vagas e as conexões de IA. As chaves continuam no cofre do sistema
+operacional, não nos arquivos de configuração.
+
+O backend agora oferece uma primeira camada de SQLite local e preferências
+versionadas em JSONC, fora da pasta do repositório. **Os currículos e as vagas
+existentes ainda permanecem no navegador:** a transferência para o banco local
+será feita em uma etapa posterior, com consentimento e sem apagar o original
+antes da validação. Veja [plano de conclusão do Community](docs/community-release-plan.md).
+
 ## Meu agente: do currículo à oportunidade
 
 A rota **Meu agente** (`/agente`) inicia uma jornada conectada: permite enviar ou recuperar o currículo diretamente

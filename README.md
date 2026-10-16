@@ -31,6 +31,10 @@ Também incluímos um [currículo e uma vaga inteiramente fictícios](examples/R
 
 O Alinha não simula notas de sistemas ATS, não prevê contratações e não deve ser usado como decisão automática sobre candidatos.
 
+## Verifique a legibilidade ATS
+
+Acesse **Verificar ATS** no menu (rota `/ats`) para identificar obstáculos comuns de leitura em PDF, DOCX ou TXT. A checagem não depende de uma conta de IA nem faz uma cobrança de inferência: o Alinha examina texto extraível e características da estrutura do documento, apresentando recomendações verificáveis. **Não há pontuação ATS universal ou garantia de aprovação.** Entenda os critérios e limites no [guia de compatibilidade ATS](docs/ats.md).
+
 ## Experimente no seu computador
 
 **Pré-requisitos:** Python 3.11+, [uv](https://docs.astral.sh/uv/), Node.js 24 e npm.

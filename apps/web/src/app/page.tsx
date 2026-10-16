@@ -137,6 +137,7 @@ export default function Home() {
           </Link>
           <nav className="nav-links" aria-label="Navegação principal">
             <a href="#como-funciona">Como funciona</a>
+            <Link href="/ats">Verificar ATS</Link>
             <a className="nav-featured" href="#analisar" onClick={() => setWorkspaceTab("connect")}>Começar <ArrowUpRight size={14} aria-hidden="true" /></a>
             <a href="https://github.com/mxthsu/alinha" target="_blank" rel="noreferrer">
               <Code2 size={16} aria-hidden="true" /> <span>GitHub</span>

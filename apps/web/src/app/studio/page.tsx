@@ -3,24 +3,19 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import {
-  BriefcaseBusiness, Check, ChevronRight, Download,
-  FolderOpen, GraduationCap, LayoutTemplate, Lightbulb, ListChecks,
-  Plus, ShieldCheck, Sparkles, Trash2, UploadCloud, UserRound,
+  ArrowRight, BriefcaseBusiness, Check, ChevronDown, ChevronLeft, ChevronRight,
+  Download, Eye, FileText, FolderOpen, GraduationCap, LayoutTemplate,
+  ListChecks, Plus, ShieldCheck, Trash2, UploadCloud, UserRound,
 } from "lucide-react";
 import "./studio.css";
-import { type Provider } from "@/components/provider-selector";
-import { ConnectedProviderPicker } from "@/components/connected-provider-picker";
-import { ConnectionStatus } from "@/components/connection-status";
 
 type Contact = { name: string; headline: string; email: string; phone: string; city: string; links: string[] };
 type Experience = { role: string; organization: string; period: string; highlights: string[] };
 type Education = { course: string; institution: string; period: string };
 type Project = { title: string; description: string; link: string };
 type Resume = { schema_version: 1; contact: Contact; summary: string; experiences: Experience[]; education: Education[]; projects: Project[]; skills: string[]; languages: string[] };
-type Pane = "informacoes" | "experiencias" | "formacao" | "projetos" | "habilidades" | "estilo" | "ia";
+type Pane = "informacoes" | "experiencias" | "formacao" | "projetos" | "habilidades" | "estilo";
 type Template = "classico" | "compacto";
-type Suggestion = { requirement: string; job_evidence: string; resume_evidence: string | null; status: string; guidance: string };
-type Review = { summary: string; suggestions: Suggestion[]; limitations: string[] };
 type ImportedDraft = { profile: Resume; source_text: string; unassigned_lines: string[]; warnings: string[]; requires_confirmation: boolean };
 const blank: Resume = {
   schema_version: 1, contact: { name: "", headline: "", email: "", phone: "", city: "", links: [] },
@@ -33,8 +28,15 @@ const panes: { id: Pane; label: string; icon: typeof UserRound }[] = [
   { id: "projetos", label: "Projetos", icon: FolderOpen },
   { id: "habilidades", label: "Competências", icon: ListChecks },
   { id: "estilo", label: "Modelos e estilo", icon: LayoutTemplate },
-  { id: "ia", label: "Melhorias com IA", icon: Sparkles },
 ];
+const paneDescriptions: Record<Pane, string> = {
+  informacoes: "Apresente quem você é e como entrar em contato.",
+  experiencias: "Descreva suas experiências com atividades e resultados reais.",
+  formacao: "Inclua formações que façam parte da sua trajetória.",
+  projetos: "Mostre projetos relevantes e o que você desenvolveu.",
+  habilidades: "Liste suas competências e os idiomas que conhece.",
+  estilo: "Escolha como seu documento será apresentado.",
+};
 function Field({ label, value, onChange, multiline = false, hint }: {
   label: string; value: string; onChange: (value: string) => void; multiline?: boolean; hint?: string;
 }) {
@@ -68,12 +70,7 @@ export default function Studio() {
   const [profile, setProfile] = useState<Resume>(blank);
   const [pane, setPane] = useState<Pane>("informacoes");
   const [template, setTemplate] = useState<Template>("classico");
-  const [job, setJob] = useState("");
-  const [provider, setProvider] = useState<Provider>("gemini");
-  const [model, setModel] = useState("");
-  const [providerReady, setProviderReady] = useState(false);
-  const [review, setReview] = useState<Review | null>(null);
-  const [checked, setChecked] = useState<number[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -88,21 +85,21 @@ export default function Studio() {
 
   function update<K extends keyof Resume>(key: K, value: Resume[K]) {
     previousProfile.current = null; setCanUndoImport(false);
-    setProfile(prev => ({ ...prev, [key]: value })); setReview(null);
+    setProfile(prev => ({ ...prev, [key]: value }));
   }
   function contact(key: keyof Contact, value: string) {
     previousProfile.current = null; setCanUndoImport(false);
-    setProfile(prev => ({ ...prev, contact: { ...prev.contact, [key]: key === "links" ? value.split("\n") : value } })); setReview(null);
+    setProfile(prev => ({ ...prev, contact: { ...prev.contact, [key]: key === "links" ? value.split("\n") : value } }));
   }
   function changeList<T extends Experience | Education | Project>(key: "experiences" | "education" | "projects", i: number, field: keyof T, value: string) {
     const list = profile[key] as T[];
     const changed = list.map((item,j) => j === i ? { ...item, [field]: field === "highlights" ? value.split("\n") : value } : item);
     previousProfile.current = null; setCanUndoImport(false);
-    setProfile(prev => ({ ...prev, [key]: changed })); setReview(null);
+    setProfile(prev => ({ ...prev, [key]: changed }));
   }
   function remove(key: "experiences" | "education" | "projects", i: number) {
     previousProfile.current = null; setCanUndoImport(false);
-    setProfile(prev => ({ ...prev, [key]: (prev[key] as unknown[]).filter((_,j) => j !== i) })); setReview(null);
+    setProfile(prev => ({ ...prev, [key]: (prev[key] as unknown[]).filter((_,j) => j !== i) }));
   }
   function messages() { setError(""); setSuccess(""); }
   function saveBlob(blob: Blob, name: string) {
@@ -127,8 +124,7 @@ export default function Studio() {
       if (!response.ok) throw new Error("Arquivo incompatível com o perfil Alinha versão 1.");
       const normalized = await response.json() as { profile: Resume };
       previousProfile.current = profile; setCanUndoImport(true);
-      setProfile(normalized.profile); setImportError(""); setUnassignedImportLines([]); setImportNotice("Perfil JSON carregado."); setReview(null); setChecked([]); setPane("informacoes");
-      setSuccess("Perfil importado. Revise os dados antes de exportar.");
+      setProfile(normalized.profile); setImportError(""); setUnassignedImportLines([]); setImportNotice("Perfil JSON carregado. Revise os campos antes de exportar."); setPane("informacoes");
     } catch (e) { setError(e instanceof Error ? e.message : "Falha na importação."); }
     finally { event.target.value=""; }
   }
@@ -154,7 +150,6 @@ export default function Studio() {
       setProfile(result.profile);
       setUnassignedImportLines(result.unassigned_lines);
       setPane("informacoes");
-      setReview(null); setChecked([]);
       setImportNotice("Currículo importado. Confira e edite os campos.");
       window.requestAnimationFrame(() => document.getElementById("studio-editor")?.scrollIntoView({
         behavior: "smooth", block: "start",
@@ -169,8 +164,6 @@ export default function Studio() {
     previousProfile.current = null; setCanUndoImport(false);
     setImportNotice(null);
     setUnassignedImportLines([]);
-    setReview(null);
-    setChecked([]);
     setPane("informacoes");
   }
   async function exportDocx() {
@@ -185,49 +178,74 @@ export default function Studio() {
     } catch(e) { setError(e instanceof Error?e.message:"Falha na exportação."); }
     finally { setBusy(""); }
   }
-  async function reviewWithAI() {
-    if (job.trim().length<60 || busy || !providerReady) return;
-    messages(); setBusy("ia"); setReview(null); setChecked([]);
-    try {
-      const r=await fetch(api+"/api/v1/resumes/structured/review",{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({profile,job_description:job,provider,model:provider==="chatgpt"?model||null:null}),
-      });
-      const body=await r.json();
-      if (!r.ok) throw new Error(typeof body.detail==="string"?body.detail:"Não foi possível gerar orientações.");
-      setReview(body as Review);
-    } catch(e) { setError(e instanceof Error?e.message:"Erro de análise."); }
-    finally { setBusy(""); }
+  const paneIndex = panes.findIndex(item => item.id === pane);
+  function navigatePane(offset: number) {
+    const next = panes[paneIndex + offset];
+    if (!next) return;
+    setPane(next.id);
+    messages();
+    document.getElementById("studio-editor")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   return <div className="studio-app">
-    <header className="studio-topbar"><Link href="/" className="studio-logo">alinha<span>.</span></Link><div className="studio-title">Currículo Studio</div><div className="studio-global-links"><Link href="/">Início</Link><Link href="/preparar">Preparar candidatura</Link><ConnectionStatus variant="compact" /></div>
-      <div className="studio-top-actions">
-        <input type="file" hidden accept=".json,application/json" ref={upload} onChange={loadJson}/>
-        <input type="file" hidden accept=".pdf,.docx,.txt" ref={resumeUpload} onChange={importResume}/>
-        <button type="button" className="studio-upload-action" disabled={Boolean(busy)} onClick={()=>resumeUpload.current?.click()}>
-          <UploadCloud size={16}/> <span>{busy==="import" ? "Importando…" : "Importar currículo"}</span>
-        </button>
-        <button type="button" onClick={()=>upload.current?.click()}><FolderOpen size={16}/> <span>Importar JSON</span></button>
-        <button type="button" onClick={saveJson}><Download size={16}/> <span>Salvar perfil</span></button>
-        <button type="button" className="studio-primary" disabled={Boolean(busy)} onClick={exportDocx}><Download size={16}/> {busy==="docx"?"Exportando…":"Exportar DOCX"}</button>
+    <header className="studio-topbar">
+      <div className="studio-topbar-inner">
+        <div className="studio-brand-area">
+          <Link href="/" className="studio-logo" aria-label="Alinha — página inicial">alinha<span>.</span></Link>
+          <div className="studio-title"><span>EDITOR DE CURRÍCULO</span><strong>Studio</strong></div>
+        </div>
+        <nav className="studio-global-links" aria-label="Navegação">
+          <Link href="/">Início</Link>
+          <Link href="/preparar">Preparar candidatura <ArrowRight size={15}/></Link>
+        </nav>
+        <div className="studio-top-actions">
+          <input type="file" hidden accept=".json,application/json" ref={upload} onChange={loadJson}/>
+          <input type="file" hidden accept=".pdf,.docx,.txt" ref={resumeUpload} onChange={importResume}/>
+          <button type="button" className="studio-upload-action" disabled={Boolean(busy)} onClick={()=>resumeUpload.current?.click()}>
+            <UploadCloud size={17}/> <span>{busy==="import" ? "Importando…" : "Importar currículo"}</span>
+          </button>
+          <details className="studio-file-menu">
+            <summary aria-label="Opções de perfil">Opções <ChevronDown size={16}/></summary>
+            <div className="studio-file-options">
+              <button type="button" onClick={()=>upload.current?.click()}><FolderOpen size={16}/> Importar perfil JSON</button>
+              <button type="button" onClick={saveJson}><Download size={16}/> Salvar perfil JSON</button>
+            </div>
+          </details>
+          <button type="button" className="studio-primary" disabled={Boolean(busy)} onClick={exportDocx}>
+            <Download size={17}/> {busy==="docx"?"Exportando…":"Exportar DOCX"}
+          </button>
+        </div>
       </div>
     </header>
     <div className="studio-layout">
-      <nav className="studio-sidebar" aria-label="Partes do currículo"><div className="studio-sidebar-label">EDITAR CURRÍCULO</div>
-        {panes.map(({id,label,icon:Icon},i)=><button key={id} type="button" onClick={()=>{setPane(id);messages();}} aria-current={pane===id?"step":undefined} className={pane===id?"active":""}>
-          <Icon size={18}/><span>{label}</span><small>{String(i+1).padStart(2,"0")}</small></button>)}
-        <div className="studio-side-note"><ShieldCheck size={18}/> Não armazenamos seus dados. Exporte JSON para continuar depois.</div>
+      <nav className="studio-sidebar" aria-label="Seções do currículo">
+        <div className="studio-sidebar-header"><strong>Seu currículo</strong><span>Edite por seções</span></div>
+        <div className="studio-sidebar-steps">
+          {panes.map(({id,label,icon:Icon},i)=><button key={id} type="button"
+            onClick={()=>{setPane(id);messages();}}
+            aria-current={pane===id?"step":undefined} className={pane===id?"active":""}>
+            <Icon size={18}/><span>{label}</span><small>{String(i+1).padStart(2,"0")}</small>
+          </button>)}
+        </div>
+        <div className="studio-side-note"><ShieldCheck size={18}/><span>Sem salvamento automático. Salve seu perfil para continuar depois.</span></div>
       </nav>
       <main className="studio-editor" id="studio-editor">
-        <div className="studio-editor-heading"><span>ETAPA {String(panes.findIndex(item=>item.id===pane)+1).padStart(2,"0")}</span>
-          <h2>{panes.find(item=>item.id===pane)?.label}</h2>
-          <p>{pane==="ia"?"A IA sugere com evidências, mas nunca modifica seu perfil automaticamente.":"Preencha apenas informações verdadeiras, que possa comprovar."}</p></div>
+        <div className="studio-editor-heading">
+          <div className="studio-heading-top"><span>SEÇÃO {String(paneIndex+1).padStart(2,"0")} DE 06</span>
+            <button type="button" className="studio-preview-toggle" onClick={()=>setPreviewOpen(open=>!open)}
+              aria-expanded={previewOpen} aria-controls="studio-document-preview"><Eye size={16}/> {previewOpen?"Ocultar prévia":"Ver prévia"}
+            </button>
+          </div>
+          <h1>{panes[paneIndex].label}</h1>
+          <p>{paneDescriptions[pane]}</p>
+        </div>
         {importError && <p className="studio-import-error" role="alert">{importError}</p>}
         {importNotice && <div className="studio-import-feedback" role="status">
           <Check size={16}/><span>{importNotice}</span>
           {canUndoImport && <button type="button" onClick={undoImport}>Desfazer importação</button>}
           <button type="button" onClick={()=>setImportNotice(null)} aria-label="Fechar mensagem">Fechar</button>
         </div>}
+        {error&&<div className="studio-error" role="alert">{error}</div>}
+        {success&&<div className="studio-success" role="status">{success}</div>}
         {pane==="informacoes"&&<>
           <div className="studio-grid2"><Field label="Nome completo" value={profile.contact.name} onChange={v=>contact("name",v)}/>
             <Field label="Título profissional" value={profile.contact.headline} onChange={v=>contact("headline",v)}/></div>
@@ -243,6 +261,7 @@ export default function Studio() {
           </details>}
         </>}
         {pane==="experiencias"&&<>
+          {profile.experiences.length===0&&<div className="studio-empty-section"><BriefcaseBusiness size={23}/><strong>Nenhuma experiência adicionada</strong><p>Inclua seu cargo, empresa, período e principais atividades.</p></div>}
           {profile.experiences.map((item,i)=><div className="studio-edit-card" key={i}>
             <div className="studio-edit-card-head"><strong>Experiência {i+1}</strong><button type="button" aria-label={"Remover experiência "+(i+1)} onClick={()=>remove("experiences",i)}><Trash2 size={17}/></button></div>
             <Field label="Cargo" value={item.role} onChange={v=>changeList<Experience>("experiences",i,"role",v)}/>
@@ -250,64 +269,56 @@ export default function Studio() {
             <Field label="Período" value={item.period} onChange={v=>changeList<Experience>("experiences",i,"period",v)}/>
             <Field label="Atividades (uma por linha)" multiline value={item.highlights.join("\n")} onChange={v=>changeList<Experience>("experiences",i,"highlights",v)}/>
           </div>)}
-          <button type="button" className="studio-add" onClick={()=>update("experiences",[...profile.experiences,{role:"",organization:"",period:"",highlights:[]}])}><Plus size={17}/> Adicionar experiência</button>
+          <button type="button" className="studio-add" disabled={profile.experiences.length>=12} onClick={()=>update("experiences",[...profile.experiences,{role:"",organization:"",period:"",highlights:[]}])}><Plus size={17}/> Adicionar experiência</button>
         </>}
         {pane==="formacao"&&<>
+          {profile.education.length===0&&<div className="studio-empty-section"><GraduationCap size={23}/><strong>Nenhuma formação adicionada</strong><p>Adicione suas formações acadêmicas ou técnicas.</p></div>}
           {profile.education.map((item,i)=><div className="studio-edit-card" key={i}>
             <div className="studio-edit-card-head"><strong>Formação {i+1}</strong><button type="button" aria-label={"Remover formação "+(i+1)} onClick={()=>remove("education",i)}><Trash2 size={17}/></button></div>
             <Field label="Curso" value={item.course} onChange={v=>changeList<Education>("education",i,"course",v)}/>
             <Field label="Instituição" value={item.institution} onChange={v=>changeList<Education>("education",i,"institution",v)}/>
             <Field label="Período" value={item.period} onChange={v=>changeList<Education>("education",i,"period",v)}/>
           </div>)}
-          <button type="button" className="studio-add" onClick={()=>update("education",[...profile.education,{course:"",institution:"",period:""}])}><Plus size={17}/> Adicionar formação</button>
+          <button type="button" className="studio-add" disabled={profile.education.length>=10} onClick={()=>update("education",[...profile.education,{course:"",institution:"",period:""}])}><Plus size={17}/> Adicionar formação</button>
         </>}
         {pane==="projetos"&&<>
+          {profile.projects.length===0&&<div className="studio-empty-section"><FolderOpen size={23}/><strong>Nenhum projeto adicionado</strong><p>Projetos são opcionais. Inclua aqueles que deseja destacar.</p></div>}
           {profile.projects.map((item,i)=><div className="studio-edit-card" key={i}>
             <div className="studio-edit-card-head"><strong>Projeto {i+1}</strong><button type="button" aria-label={"Remover projeto "+(i+1)} onClick={()=>remove("projects",i)}><Trash2 size={17}/></button></div>
             <Field label="Nome do projeto" value={item.title} onChange={v=>changeList<Project>("projects",i,"title",v)}/>
             <Field label="O que você desenvolveu" multiline value={item.description} onChange={v=>changeList<Project>("projects",i,"description",v)}/>
             <Field label="Link (opcional)" value={item.link} onChange={v=>changeList<Project>("projects",i,"link",v)}/>
           </div>)}
-          <button type="button" className="studio-add" onClick={()=>update("projects",[...profile.projects,{title:"",description:"",link:""}])}><Plus size={17}/> Adicionar projeto</button>
+          <button type="button" className="studio-add" disabled={profile.projects.length>=12} onClick={()=>update("projects",[...profile.projects,{title:"",description:"",link:""}])}><Plus size={17}/> Adicionar projeto</button>
         </>}
         {pane==="habilidades"&&<>
           <Field label="Competências (uma por linha)" multiline value={profile.skills.join("\n")} onChange={v=>update("skills",v.split("\n"))}/>
           <Field label="Idiomas e níveis (um por linha)" multiline value={profile.languages.join("\n")} onChange={v=>update("languages",v.split("\n"))}/>
         </>}
-        {pane==="estilo"&&<><p className="studio-tip">Dois modelos de uma coluna, sem imagens, tabelas ou caixas de texto.</p>
+        {pane==="estilo"&&<><p className="studio-tip"><FileText size={17}/> Modelos simples, com texto selecionável e estrutura de uma coluna.</p>
           <div className="studio-templates">{(["classico","compacto"] as Template[]).map(t=><button key={t} className={t===template?"selected":""} aria-pressed={t===template} type="button" onClick={()=>setTemplate(t)}>
             <div className={"studio-model studio-model-"+t}><div/><span/><span/><span/></div>
             <strong>{t==="classico"?"Clássico":"Compacto"}</strong><small>{t==="classico"?"Mais respiro":"Espaçamento reduzido"}</small>
             {t===template&&<Check size={18}/>}</button>)}</div>
           <p className="studio-tip">O modelo escolhido também será aplicado ao DOCX. A prévia é ilustrativa; a paginação final depende do editor de documentos.</p>
         </>}
-        {pane==="ia"&&<>
-          <div className="studio-provider-connection">
-            <ConnectedProviderPicker provider={provider} onProviderChange={setProvider}
-              model={model} onModelChange={setModel} onReadyChange={setProviderReady} />
-          </div>
-          <p className="studio-provider-ready" role="status">
-            {providerReady
-              ? "Provedor pronto. Sua revisão utilizará a conexão escolhida."
-              : "Conecte um provedor acima para habilitar a revisão por IA."}
-          </p>
-          <Field label="Descrição da vaga" multiline value={job} onChange={v=>{setJob(v);setReview(null);}} hint="Cole aqui a descrição da oportunidade…" />
-          <div className="studio-tip"><ShieldCheck size={18}/> Uma análise é feita somente quando você solicitar. Pode consumir o limite de seu provedor; o limitador do Gemini permanece ativo.</div>
-          <button type="button" className="studio-add studio-ai-start" disabled={Boolean(busy)||job.trim().length<60||!providerReady} onClick={reviewWithAI}><Sparkles size={17}/> {busy==="ia"?"Analisando…":"Gerar orientações com evidências"}</button>
-          {review&&<div className="studio-review"><h3>{review.summary}</h3>{review.suggestions.map((item,i)=><article key={i}>
-            <div className="studio-review-header"><span>{item.status==="evidenciado"?"Com evidência":item.status==="parcial"?"Parcial":"Não identificado"}</span><strong>{item.requirement}</strong></div>
-            <p><b>Da vaga:</b> {item.job_evidence}</p>{item.resume_evidence&&<p><b>Do currículo:</b> {item.resume_evidence}</p>}
-            <div className="studio-review-guidance"><Lightbulb size={16}/> {item.guidance}</div>
-            <button type="button" onClick={()=>setChecked(prev=>prev.includes(i)?prev.filter(x=>x!==i):[...prev,i])}>{checked.includes(i)?<Check size={15}/>:<Plus size={15}/>} {checked.includes(i)?"Marcada para revisão manual":"Marcar para revisar"}</button>
-          </article>)}<small>{checked.length} sugestão(ões) marcadas; edite os campos manualmente para aprovar qualquer alteração.</small>{review.limitations.map((lim,i)=><small key={i}>{lim}</small>)}</div>}
-        </>}
-        {error&&<div className="studio-error" role="alert">{error}</div>}
-        {success&&<div className="studio-success" role="status">{success}</div>}
-        <div className="studio-editor-footer"><ShieldCheck size={17}/> Sem salvamento automático ou alterações ocultas no seu currículo.</div>
+        <div className="studio-step-navigation" aria-label="Navegar entre seções">
+          <button type="button" disabled={paneIndex===0} onClick={()=>navigatePane(-1)}>
+            <ChevronLeft size={17}/> Anterior
+          </button>
+          <span>{paneIndex+1} de {panes.length}</span>
+          {paneIndex<panes.length-1 ?
+            <button type="button" className="studio-next" onClick={()=>navigatePane(1)}>Próxima seção <ChevronRight size={17}/></button>
+            : <Link className="studio-next" href="/preparar">Preparar candidatura <ArrowRight size={17}/></Link>}
+        </div>
       </main>
-      <aside className="studio-preview"><div className="studio-preview-heading"><div><span>VISUALIZAÇÃO</span><strong>Prévia em tempo real</strong></div><small>A4</small></div>
+      <aside className={"studio-preview"+(previewOpen?" studio-preview-visible":"")} id="studio-document-preview">
+        <div className="studio-preview-heading">
+          <div><span>SEU DOCUMENTO</span><strong>Prévia em tempo real</strong></div>
+          <div className="studio-preview-meta"><small>{template==="classico"?"Clássico":"Compacto"}</small><small>A4</small></div>
+        </div>
         <Preview profile={profile} template={template}/>
-        <p>O documento DOCX usará texto selecionável e estrutura de uma coluna. Isso não garante aprovação em ATS.</p>
+        <p>Prévia ilustrativa. O arquivo DOCX terá paginação própria.</p>
       </aside>
     </div>
     <footer className="studio-footer"><span>Alinha Community · Código aberto · Licença MIT</span><Link href="/preparar">Preparar candidatura <ChevronRight size={15}/></Link></footer>

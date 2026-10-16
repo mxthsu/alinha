@@ -39,13 +39,13 @@ O **Alinha Cloud ainda não existe como serviço público**. A proposta futura �
 
 ## Crie seu currículo no Studio
 
-O [Currículo Studio](apps/web/src/app/studio) (rota `/studio`) permite preencher seções estruturadas, escolher dois modelos, acompanhar uma prévia em tempo real e exportar DOCX. Uma revisão opcional com IA usa LangGraph para gerar orientações baseadas em citações e exige decisão humana antes de qualquer mudança. É possível salvar o perfil como JSON no computador, sem conta e sem persistência no servidor. Consulte a [documentação do Studio](docs/studio.md).
+O [Currículo Studio](apps/web/src/app/studio) (rota `/studio`) permite preencher seções estruturadas, escolher dois modelos, acompanhar uma prévia em tempo real e exportar DOCX. As sugestões de melhoria são oferecidas em Preparar candidatura, após a comparação com os requisitos de uma vaga informada. É possível salvar o perfil como JSON no computador, sem conta e sem persistência no servidor. Consulte a [documentação do Studio](docs/studio.md).
 
 ## Prepare sua candidatura
 
 Acesse **Preparar candidatura** (`/preparar`) para verificar a leitura ATS do currículo e, opcionalmente, comparar o mesmo arquivo com os requisitos de uma vaga usando sua IA conectada. Você não precisa selecionar o documento duas vezes dentro dessa jornada. As antigas rotas `/ats` e `/analisar` redirecionam para ela.
 
-No **Currículo Studio**, use **Preencher com meu currículo** para importar PDF/DOCX/TXT, revisar os campos identificados e confirmar explicitamente sua aplicação. A extração estruturada não usa IA e mantém trechos não reconhecidos para revisão. Consulte [fluxo de candidatura](docs/application-workflow.md).
+No **Currículo Studio**, use **Importar currículo** para preencher diretamente os campos do editor com PDF/DOCX/TXT e corrigir qualquer informação, se necessário. A extração estruturada não usa IA e mantém trechos não reconhecidos para revisão. Consulte [fluxo de candidatura](docs/application-workflow.md).
 
 ### Verifique a legibilidade ATS
 

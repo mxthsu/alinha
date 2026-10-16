@@ -3,7 +3,7 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft, BriefcaseBusiness, Check, ChevronRight, Download,
+  BriefcaseBusiness, Check, ChevronRight, Download,
   FilePenLine, FolderOpen, GraduationCap, LayoutTemplate, Lightbulb, ListChecks,
   Plus, ShieldCheck, Sparkles, Trash2, UploadCloud, UserRound,
 } from "lucide-react";
@@ -89,7 +89,8 @@ export default function Studio() {
   const upload = useRef<HTMLInputElement>(null);
   const resumeUpload = useRef<HTMLInputElement>(null);
   const [importPreview, setImportPreview] = useState<ImportedDraft | null>(null);
-  const [importConfirmed, setImportConfirmed] = useState(false);
+  const [importError, setImportError] = useState("");
+  const [pendingReplace, setPendingReplace] = useState(false);
   const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
   function update<K extends keyof Resume>(key: K, value: Resume[K]) {
@@ -128,7 +129,7 @@ export default function Studio() {
       });
       if (!response.ok) throw new Error("Arquivo incompatível com o perfil Alinha versão 1.");
       const normalized = await response.json() as { profile: Resume };
-      setProfile(normalized.profile); setReview(null); setChecked([]);
+      setProfile(normalized.profile); setImportPreview(null); setImportError(""); setPendingReplace(false); setReview(null); setChecked([]);
       setSuccess("Perfil importado. Revise os dados antes de exportar.");
     } catch (e) { setError(e instanceof Error ? e.message : "Falha na importação."); }
     finally { event.target.value=""; }
@@ -136,7 +137,7 @@ export default function Studio() {
   async function importResume(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-    messages(); setBusy("import"); setImportPreview(null); setImportConfirmed(false);
+    messages(); setImportError(""); setBusy("import"); setImportPreview(null); setPendingReplace(false);
     try {
       if (!/\.(pdf|docx|txt)$/i.test(file.name) || file.size > 3 * 1024 * 1024 || !file.size) {
         throw new Error("Envie um PDF, DOCX ou TXT de até 3 MB.");
@@ -146,17 +147,29 @@ export default function Studio() {
       const response = await fetch(api + "/api/v1/resumes/structured/import/upload", { method:"POST", body: uploadData });
       const payload = await response.json();
       if (!response.ok) throw new Error(typeof payload.detail === "string" ? payload.detail : "Falha ao ler currículo.");
-      setImportPreview(payload as ImportedDraft);
-      setSuccess("Texto extraído. Revise a prévia e confirme antes de importar os campos.");
+      const result = payload as ImportedDraft;
+      const hasDraft = Boolean(Object.values(profile.contact).some(value =>
+        Array.isArray(value) ? value.length : value.trim()) || profile.summary ||
+        profile.experiences.length || profile.education.length || profile.projects.length ||
+        profile.skills.length || profile.languages.length);
+      setImportPreview(result);
+      if (hasDraft) {
+        setPendingReplace(true);
+      } else {
+        setProfile(result.profile);
+        setPane("informacoes");
+        setReview(null); setChecked([]);
+        setSuccess("Campos preenchidos. Revise as seções antes de exportar.");
+      }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Falha na importação.");
+      setImportError(cause instanceof Error ? cause.message : "Falha na importação.");
     } finally { setBusy(""); event.target.value = ""; }
   }
   function applyImportedResume() {
-    if (!importPreview || !importConfirmed) return;
+    if (!importPreview || !pendingReplace) return;
     setProfile(importPreview.profile);
-    setImportPreview(null); setImportConfirmed(false); setReview(null); setChecked([]); setPane("informacoes");
-    messages(); setSuccess("Campos preenchidos. Revise cada seção antes de exportar.");
+    setPendingReplace(false); setReview(null); setChecked([]); setPane("informacoes");
+    messages(); setSuccess("Currículo substituído. Revise os campos antes de exportar.");
   }
   async function exportDocx() {
     messages(); setBusy("docx");
@@ -194,40 +207,40 @@ export default function Studio() {
         <button type="button" className="studio-primary" disabled={Boolean(busy)} onClick={exportDocx}><Download size={16}/> {busy==="docx"?"Exportando…":"Exportar DOCX"}</button>
       </div>
     </header>
-    <div className="studio-intro"><Link href="/" className="studio-back"><ArrowLeft size={16}/> Voltar</Link>
-      <div><span className="studio-eyebrow">CRIAÇÃO DE CURRÍCULOS · OPEN SOURCE</span>
-        <h1>Crie seu currículo com clareza.</h1><p>Edite cada seção, veja a prévia ao vivo e escolha quando usar a IA.</p>
-      </div>
-      <button type="button" className="studio-demo" onClick={()=>{setProfile(demo);setPane("informacoes");setReview(null);messages();}}><FilePenLine size={16}/> Carregar exemplo fictício</button>
-    </div>
     <section className="studio-import" aria-label="Importar currículo existente">
-      <div className="studio-import-intro"><div className="studio-import-symbol"><UploadCloud size={20}/></div>
-        <div><strong>Já tem um currículo?</strong><p>Importe PDF, DOCX ou TXT para gerar um rascunho dos campos. Nenhuma IA é utilizada e o arquivo não é armazenado.</p></div>
+      <div className="studio-import-intro">
+        <div className="studio-import-symbol"><UploadCloud size={20}/></div>
+        <div><strong>Já tem um currículo?</strong>
+          <p>Importe um PDF, DOCX ou TXT e edite os campos preenchidos. Sem uso de IA.</p></div>
       </div>
-      <button type="button" disabled={Boolean(busy)} onClick={() => resumeUpload.current?.click()} className="studio-import-button">
-        <UploadCloud size={16}/>{busy === "import" ? "Lendo arquivo…" : "Preencher com meu currículo"}
-      </button>
-      {importPreview && <div className="studio-import-preview" role="region" aria-label="Revisão dos campos extraídos">
-        <h2>Confira os campos antes de aplicar</h2>
-        <p>Os trechos abaixo são sugestões de organização, não informações validadas. Ao aplicar, os campos atuais serão substituídos.</p>
-        <div className="studio-import-preview-grid">
-          <div><span>Nome extraído</span><strong>{importPreview.profile.contact.name || "Não identificado"}</strong></div>
-          <div><span>Experiências identificadas</span><strong>{importPreview.profile.experiences.length}</strong></div>
-          <div><span>Formações identificadas</span><strong>{importPreview.profile.education.length}</strong></div>
-          <div><span>Competências</span><strong>{importPreview.profile.skills.join(", ") || "Não identificadas"}</strong></div>
-        </div>
-        {importPreview.warnings.map((notice,i)=><p key={i} className="studio-import-warning">{notice}</p>)}
-        {importPreview.unassigned_lines.length>0 && <details className="studio-import-unassigned">
-          <summary>Trechos que não foram classificados ({importPreview.unassigned_lines.length})</summary>
-          <pre>{importPreview.unassigned_lines.join("\n")}</pre>
-        </details>}
-        <details className="studio-import-unassigned"><summary>Ver todo o texto extraído</summary><pre>{importPreview.source_text}</pre></details>
-        <label className="studio-import-agree"><input type="checkbox" checked={importConfirmed}
-          onChange={e=>setImportConfirmed(e.target.checked)}/> Conferi que os campos extraídos precisam de revisão e autorizo substituir meu rascunho atual.</label>
-        <div className="studio-import-actions">
-          <button type="button" disabled={!importConfirmed} onClick={applyImportedResume}>Aplicar campos ao Studio</button>
-          <button type="button" onClick={()=>{setImportPreview(null);setImportConfirmed(false);}}>Cancelar</button>
-        </div>
+      <div className="studio-import-choices">
+        <button type="button" className="studio-example" disabled={Boolean(busy)}
+          onClick={()=>{setProfile(demo);setImportPreview(null);setPendingReplace(false);setPane("informacoes");setReview(null);messages();}}>
+          <FilePenLine size={15}/> Usar exemplo
+        </button>
+        <button type="button" disabled={Boolean(busy)} onClick={() => resumeUpload.current?.click()} className="studio-import-button">
+          <UploadCloud size={16}/>{busy === "import" ? "Lendo arquivo…" : "Preencher com meu currículo"}
+        </button>
+      </div>
+      {importError && <p className="studio-import-error" role="alert">{importError}</p>}
+      {importPreview && <div className="studio-import-preview" role="region" aria-label="Resultado da importação">
+        {pendingReplace ? <>
+          <strong>Substituir o currículo atual?</strong>
+          <p>Encontramos {importPreview.profile.experiences.length} experiência(s), {importPreview.profile.education.length} formação(ões) e {importPreview.profile.skills.length} competência(s). O rascunho que você está editando será substituído.</p>
+          <div className="studio-import-actions">
+            <button type="button" onClick={applyImportedResume}>Substituir e revisar campos</button>
+            <button type="button" onClick={()=>{setImportPreview(null);setPendingReplace(false);}}>Manter meu currículo</button>
+          </div>
+        </> : <>
+          <div className="studio-import-result"><Check size={17}/> Currículo preenchido. Revise os campos usando as seções abaixo.
+            <button type="button" onClick={()=>setImportPreview(null)} aria-label="Dispensar resultado da importação">Fechar</button>
+          </div>
+          {importPreview.unassigned_lines.length > 0 &&
+            <details className="studio-import-unassigned">
+              <summary>{importPreview.unassigned_lines.length} trecho(s) precisam de revisão</summary>
+              <pre>{importPreview.unassigned_lines.join("\n")}</pre>
+            </details>}
+        </>}
       </div>}
     </section>
     <div className="studio-layout">

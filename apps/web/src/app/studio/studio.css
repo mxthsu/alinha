@@ -132,3 +132,20 @@
 .studio-import-actions button:first-child:disabled{opacity:.45;cursor:not-allowed}
 .studio-import-actions button:last-child{color:#607d66}
 @media(max-width:600px){.studio-import{margin-inline:15px;padding:16px}.studio-import-preview-grid{grid-template-columns:1fr}.studio-import-button{width:100%;justify-content:center}}
+
+/* Compact, task-first import UX; a large marketing hero is unnecessary in the editor. */
+.studio-import {margin-top:22px;align-items:center}
+.studio-import-choices{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.studio-example{border:0;background:transparent;color:#54755e;display:inline-flex;gap:7px;align-items:center;font-size:12px;font-weight:700;cursor:pointer;padding:10px}
+.studio-example:hover{text-decoration:underline}
+.studio-import-preview{gap:12px}
+.studio-import-preview>strong{font-size:14px;color:#275237}
+.studio-import-preview>p{font-size:12px;max-width:850px}
+.studio-import-result{display:flex;gap:9px;align-items:center;color:#2d633d;font-size:12px;font-weight:700}
+.studio-import-result button{margin-left:auto;border:none;background:transparent;color:#56745d;font-size:12px;text-decoration:underline;cursor:pointer}
+.studio-field>span,.studio-import-intro p,.studio-sidebar>button,.studio-top-actions button{font-size:12px}
+.studio-field input,.studio-field textarea,.studio-field select{font-size:13px}
+.studio-import-unassigned{width:100%}
+@media(max-width:600px){.studio-import-choices{width:100%;justify-content:space-between}.studio-example{order:2}}
+
+.studio-import-error{width:100%;padding:11px 14px;border-radius:9px;background:#fff0ed;color:#983b36;font-size:12px;line-height:1.5}

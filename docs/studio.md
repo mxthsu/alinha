@@ -6,7 +6,9 @@ O **Currículo Studio** (rota `/studio`) é o início do criador de currículos 
 
 ## Importação assistida de PDF/DOCX/TXT
 
-Clique em **Preencher com meu currículo** para selecionar um documento. O sistema extrai as seções explicitamente reconhecidas, apresenta prévia, avisos e texto não classificado e aguarda uma **confirmação ativa** antes de substituir os campos atuais. Não usa IA nem armazena o arquivo. Formatos livres ou PDFs digitalizados podem exigir digitação manual.
+Clique em **Preencher com meu currículo** para importar PDF, DOCX ou TXT. Com o Studio vazio, os campos reconhecidos são preenchidos de imediato; **revise-os antes de exportar**. Se já existir conteúdo em edição, aparece uma confirmação antes de substituí-lo. Trechos sem classificação permanecem disponíveis em uma seção expansível para revisão. A importação não utiliza IA e não armazena o arquivo.
+
+O importador reconhece diversos cabeçalhos, datas em linhas separadas, atividades quebradas por linha, competências por categoria e projetos com tópicos. DOCX com tabelas mantém a ordem dos blocos e TXT aceita UTF-8 e Windows-1252. Documentos digitalizados sem texto e layouts multicoluna difíceis ainda exigem ajuste manual. O sistema usa apenas informações literais, **sem inferir cargos, empresas ou qualificações ausentes**.
 
 O Studio permanece independente da verificação ATS e da comparação com vagas, que agora ficam unificadas em [Preparar candidatura](application-workflow.md).
 
@@ -60,7 +62,6 @@ O harness utiliza apenas cenários sintéticos. Ele verifica se citações fabri
 
 ## Evoluções planejadas
 
-- Importação de PDF/DOCX existente para seções estruturadas, com identificação de campos e confirmação humana.
 - Sugestões de redação por trecho, com diferenças antes/depois e aprovação individual.
 - Exportação em PDF textual, com validação de extração posterior.
 - Mais modelos com prévia fiel, acessibilidade e testes visuais em tamanhos de tela distintos.

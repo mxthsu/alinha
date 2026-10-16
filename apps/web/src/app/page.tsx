@@ -8,6 +8,9 @@ import { ConnectionStatus } from "@/components/connection-status";
 import "./home.css";
 
 const tools = [
+  { icon: Sparkles, title: "Meu agente", label: "BUSCA ORIENTADA PELO CURRÍCULO",
+    description: "Conecte seu currículo, descubra vagas relacionadas ao seu perfil e acompanhe as etapas.",
+    href: "/agente", hint: "Você controla cada busca" },
   { icon: BriefcaseBusiness, title: "Acompanhar candidaturas", label: "SEU QUADRO DE VAGAS",
     description: "Salve links e acompanhe oportunidades sem criar conta ou enviar candidaturas.", href: "/candidaturas",
     hint: "Dados apenas neste navegador" },
@@ -37,11 +40,11 @@ export default function Home() {
         <div className="container hero-grid">
           <div className="hero-copy">
             <span className="eyebrow"><span className="eyebrow-dot"/> Sua carreira merece clareza <Sparkles size={13} aria-hidden="true"/></span>
-            <h1>Seu currículo tem uma história. <em>Faça ela contar.</em></h1>
-            <p>Compare sua experiência com os requisitos de uma vaga, veja o que está comprovado e descubra como apresentar melhor seu potencial.</p>
+            <h1>Seu próximo emprego começa com <em>um bom plano.</em></h1>
+            <p>Importe seu currículo uma vez. O Alinha ajuda a encontrar oportunidades, entender requisitos e preparar candidaturas com mais clareza — tudo conectado.</p>
             <div className="hero-actions">
-              <ConnectionStatus variant="hero" />
-              <Link href="/studio" className="button button-outline">Criar currículo <ArrowRight size={18}/></Link>
+              <Link href="/agente" className="button button-primary">Explorar com meu agente <ArrowRight size={18}/></Link>
+              <Link href="/studio" className="button button-outline">Meu currículo <ArrowRight size={18}/></Link>
             </div>
             <div className="hero-footnotes">
               <span><Check size={14}/> Recomendações com evidências</span>
@@ -66,8 +69,8 @@ export default function Home() {
         <div className="container">
           <div className="section-heading">
             <span className="section-label">SUAS FERRAMENTAS</span>
-            <h2>Uma ferramenta para cada momento.</h2>
-            <p>Crie seu currículo ou prepare uma candidatura. A checagem ATS funciona sem IA; a comparação com vaga é opcional.</p>
+            <h2>Uma jornada conectada, do perfil à candidatura.</h2>
+            <p>O agente utiliza seu perfil para orientar a busca. Você pode continuar usando cada ferramenta separadamente quando quiser.</p>
           </div>
           <div className="home-tools-grid">
             {tools.map(({icon:Icon,title,label,description,href,hint})=>

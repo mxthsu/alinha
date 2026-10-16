@@ -4,6 +4,7 @@ import { ConnectionStatus } from "@/components/connection-status";
 
 const pages = [
   { href: "/", label: "Início" },
+  { href: "/agente", label: "Meu agente" },
   { href: "/studio", label: "Currículos" },
   { href: "/vagas", label: "Encontrar vagas" },
   { href: "/candidaturas", label: "Acompanhar" },

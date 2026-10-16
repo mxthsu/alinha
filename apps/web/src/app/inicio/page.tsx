@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { ArrowRight, BriefcaseBusiness, FilePenLine, ShieldCheck } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, FilePenLine, ShieldCheck, Sparkles } from "lucide-react";
 import { PlatformNav } from "@/components/platform-nav";
 
 const actions = [
+  { href: "/agente", icon: Sparkles, title: "Meu agente de carreira",
+    description: "Busque oportunidades a partir do seu currículo, com recomendações explicadas." },
   { href: "/candidaturas", icon: BriefcaseBusiness, title: "Acompanhar candidaturas",
     description: "Salve oportunidades e organize etapas em um quadro local, sem cadastro." },
   { href: "/vagas", icon: BriefcaseBusiness, title: "Encontrar vagas", description: "Descubra oportunidades remotas com informações de uma fonte pública autorizada." },
@@ -21,7 +23,7 @@ export default function Dashboard() {
       <div className="platform-cards">{actions.map(item => <Link key={item.href} href={item.href} className="platform-card">
         <div className="platform-icon"><item.icon size={23}/></div><h2>{item.title}</h2><p>{item.description}</p><span>Abrir ferramenta <ArrowRight size={17}/></span>
       </Link>)}</div>
-      <p className="platform-footnote">Versão Community local, open source e sem login. Seus currículos só são salvos se você os exportar. O Cloud será desenvolvido separadamente.</p>
+      <p className="platform-footnote">Versão Community local, open source e sem login. Seu currículo é salvo automaticamente neste navegador. O Cloud será desenvolvido separadamente.</p>
     </main>
   </div>;
 }

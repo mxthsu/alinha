@@ -3,8 +3,8 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft, BriefcaseBusiness, Check, ChevronRight, Download,
-  FilePenLine, FolderOpen, GraduationCap, LayoutTemplate, Lightbulb, ListChecks,
+  BriefcaseBusiness, Check, ChevronRight, Download,
+  FolderOpen, GraduationCap, LayoutTemplate, Lightbulb, ListChecks,
   Plus, ShieldCheck, Sparkles, Trash2, UploadCloud, UserRound,
 } from "lucide-react";
 import "./studio.css";
@@ -25,15 +25,6 @@ type ImportedDraft = { profile: Resume; source_text: string; unassigned_lines: s
 const blank: Resume = {
   schema_version: 1, contact: { name: "", headline: "", email: "", phone: "", city: "", links: [] },
   summary: "", experiences: [], education: [], projects: [], skills: [], languages: [],
-};
-const demo: Resume = {
-  schema_version: 1,
-  contact: { name: "Pessoa Candidata", headline: "Desenvolvedora Backend", email: "pessoa@exemplo.com", phone: "(48) 99999-9999", city: "Cidade fictícia", links: ["linkedin.com/in/exemplo"] },
-  summary: "Profissional com experiência fictícia em APIs REST, automação e testes de software.",
-  experiences: [{ role: "Desenvolvedora Python", organization: "Empresa Exemplo", period: "2024 – 2026", highlights: ["Desenvolveu APIs REST em Python e FastAPI.", "Implementou testes com pytest e documentou integrações."] }],
-  education: [{ course: "Bacharelado em Sistemas de Informação", institution: "Universidade Fictícia", period: "2020 – 2024" }],
-  projects: [{ title: "Projeto demonstrativo", description: "Criou uma API de exemplo com documentação e testes.", link: "" }],
-  skills: ["Python", "FastAPI", "SQL", "Git"], languages: ["Português", "Inglês intermediário"],
 };
 const panes: { id: Pane; label: string; icon: typeof UserRound }[] = [
   { id: "informacoes", label: "Informações", icon: UserRound },
@@ -88,22 +79,29 @@ export default function Studio() {
   const [success, setSuccess] = useState("");
   const upload = useRef<HTMLInputElement>(null);
   const resumeUpload = useRef<HTMLInputElement>(null);
-  const [importPreview, setImportPreview] = useState<ImportedDraft | null>(null);
-  const [importConfirmed, setImportConfirmed] = useState(false);
+  const [importError, setImportError] = useState("");
+  const [importNotice, setImportNotice] = useState<string | null>(null);
+  const [canUndoImport, setCanUndoImport] = useState(false);
+  const [unassignedImportLines, setUnassignedImportLines] = useState<string[]>([]);
+  const previousProfile = useRef<Resume | null>(null);
   const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
   function update<K extends keyof Resume>(key: K, value: Resume[K]) {
+    previousProfile.current = null; setCanUndoImport(false);
     setProfile(prev => ({ ...prev, [key]: value })); setReview(null);
   }
   function contact(key: keyof Contact, value: string) {
+    previousProfile.current = null; setCanUndoImport(false);
     setProfile(prev => ({ ...prev, contact: { ...prev.contact, [key]: key === "links" ? value.split("\n") : value } })); setReview(null);
   }
   function changeList<T extends Experience | Education | Project>(key: "experiences" | "education" | "projects", i: number, field: keyof T, value: string) {
     const list = profile[key] as T[];
     const changed = list.map((item,j) => j === i ? { ...item, [field]: field === "highlights" ? value.split("\n") : value } : item);
+    previousProfile.current = null; setCanUndoImport(false);
     setProfile(prev => ({ ...prev, [key]: changed })); setReview(null);
   }
   function remove(key: "experiences" | "education" | "projects", i: number) {
+    previousProfile.current = null; setCanUndoImport(false);
     setProfile(prev => ({ ...prev, [key]: (prev[key] as unknown[]).filter((_,j) => j !== i) })); setReview(null);
   }
   function messages() { setError(""); setSuccess(""); }
@@ -128,7 +126,8 @@ export default function Studio() {
       });
       if (!response.ok) throw new Error("Arquivo incompatível com o perfil Alinha versão 1.");
       const normalized = await response.json() as { profile: Resume };
-      setProfile(normalized.profile); setReview(null); setChecked([]);
+      previousProfile.current = profile; setCanUndoImport(true);
+      setProfile(normalized.profile); setImportError(""); setUnassignedImportLines([]); setImportNotice("Perfil JSON carregado."); setReview(null); setChecked([]); setPane("informacoes");
       setSuccess("Perfil importado. Revise os dados antes de exportar.");
     } catch (e) { setError(e instanceof Error ? e.message : "Falha na importação."); }
     finally { event.target.value=""; }
@@ -136,7 +135,7 @@ export default function Studio() {
   async function importResume(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
-    messages(); setBusy("import"); setImportPreview(null); setImportConfirmed(false);
+    messages(); setImportError(""); setBusy("import");
     try {
       if (!/\.(pdf|docx|txt)$/i.test(file.name) || file.size > 3 * 1024 * 1024 || !file.size) {
         throw new Error("Envie um PDF, DOCX ou TXT de até 3 MB.");
@@ -146,17 +145,33 @@ export default function Studio() {
       const response = await fetch(api + "/api/v1/resumes/structured/import/upload", { method:"POST", body: uploadData });
       const payload = await response.json();
       if (!response.ok) throw new Error(typeof payload.detail === "string" ? payload.detail : "Falha ao ler currículo.");
-      setImportPreview(payload as ImportedDraft);
-      setSuccess("Texto extraído. Revise a prévia e confirme antes de importar os campos.");
+      const result = payload as ImportedDraft;
+      const identified = Number(Boolean(result.profile.contact.name)) + Number(Boolean(result.profile.summary)) +
+        result.profile.experiences.length + result.profile.education.length + result.profile.projects.length +
+        result.profile.skills.length + result.profile.languages.length;
+      if (!identified) throw new Error("Não foi possível reconhecer informações deste currículo. Tente um PDF com texto selecionável, DOCX ou TXT.");
+      previousProfile.current = profile; setCanUndoImport(true);
+      setProfile(result.profile);
+      setUnassignedImportLines(result.unassigned_lines);
+      setPane("informacoes");
+      setReview(null); setChecked([]);
+      setImportNotice("Currículo importado. Confira e edite os campos.");
+      window.requestAnimationFrame(() => document.getElementById("studio-editor")?.scrollIntoView({
+        behavior: "smooth", block: "start",
+      }));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Falha na importação.");
+      setImportError(cause instanceof Error ? cause.message : "Falha na importação.");
     } finally { setBusy(""); event.target.value = ""; }
   }
-  function applyImportedResume() {
-    if (!importPreview || !importConfirmed) return;
-    setProfile(importPreview.profile);
-    setImportPreview(null); setImportConfirmed(false); setReview(null); setChecked([]); setPane("informacoes");
-    messages(); setSuccess("Campos preenchidos. Revise cada seção antes de exportar.");
+  function undoImport() {
+    if (!previousProfile.current) return;
+    setProfile(previousProfile.current);
+    previousProfile.current = null; setCanUndoImport(false);
+    setImportNotice(null);
+    setUnassignedImportLines([]);
+    setReview(null);
+    setChecked([]);
+    setPane("informacoes");
   }
   async function exportDocx() {
     messages(); setBusy("docx");
@@ -189,57 +204,30 @@ export default function Studio() {
       <div className="studio-top-actions">
         <input type="file" hidden accept=".json,application/json" ref={upload} onChange={loadJson}/>
         <input type="file" hidden accept=".pdf,.docx,.txt" ref={resumeUpload} onChange={importResume}/>
+        <button type="button" className="studio-upload-action" disabled={Boolean(busy)} onClick={()=>resumeUpload.current?.click()}>
+          <UploadCloud size={16}/> <span>{busy==="import" ? "Importando…" : "Importar currículo"}</span>
+        </button>
         <button type="button" onClick={()=>upload.current?.click()}><FolderOpen size={16}/> <span>Importar JSON</span></button>
         <button type="button" onClick={saveJson}><Download size={16}/> <span>Salvar perfil</span></button>
         <button type="button" className="studio-primary" disabled={Boolean(busy)} onClick={exportDocx}><Download size={16}/> {busy==="docx"?"Exportando…":"Exportar DOCX"}</button>
       </div>
     </header>
-    <div className="studio-intro"><Link href="/" className="studio-back"><ArrowLeft size={16}/> Voltar</Link>
-      <div><span className="studio-eyebrow">CRIAÇÃO DE CURRÍCULOS · OPEN SOURCE</span>
-        <h1>Crie seu currículo com clareza.</h1><p>Edite cada seção, veja a prévia ao vivo e escolha quando usar a IA.</p>
-      </div>
-      <button type="button" className="studio-demo" onClick={()=>{setProfile(demo);setPane("informacoes");setReview(null);messages();}}><FilePenLine size={16}/> Carregar exemplo fictício</button>
-    </div>
-    <section className="studio-import" aria-label="Importar currículo existente">
-      <div className="studio-import-intro"><div className="studio-import-symbol"><UploadCloud size={20}/></div>
-        <div><strong>Já tem um currículo?</strong><p>Importe PDF, DOCX ou TXT para gerar um rascunho dos campos. Nenhuma IA é utilizada e o arquivo não é armazenado.</p></div>
-      </div>
-      <button type="button" disabled={Boolean(busy)} onClick={() => resumeUpload.current?.click()} className="studio-import-button">
-        <UploadCloud size={16}/>{busy === "import" ? "Lendo arquivo…" : "Preencher com meu currículo"}
-      </button>
-      {importPreview && <div className="studio-import-preview" role="region" aria-label="Revisão dos campos extraídos">
-        <h2>Confira os campos antes de aplicar</h2>
-        <p>Os trechos abaixo são sugestões de organização, não informações validadas. Ao aplicar, os campos atuais serão substituídos.</p>
-        <div className="studio-import-preview-grid">
-          <div><span>Nome extraído</span><strong>{importPreview.profile.contact.name || "Não identificado"}</strong></div>
-          <div><span>Experiências identificadas</span><strong>{importPreview.profile.experiences.length}</strong></div>
-          <div><span>Formações identificadas</span><strong>{importPreview.profile.education.length}</strong></div>
-          <div><span>Competências</span><strong>{importPreview.profile.skills.join(", ") || "Não identificadas"}</strong></div>
-        </div>
-        {importPreview.warnings.map((notice,i)=><p key={i} className="studio-import-warning">{notice}</p>)}
-        {importPreview.unassigned_lines.length>0 && <details className="studio-import-unassigned">
-          <summary>Trechos que não foram classificados ({importPreview.unassigned_lines.length})</summary>
-          <pre>{importPreview.unassigned_lines.join("\n")}</pre>
-        </details>}
-        <details className="studio-import-unassigned"><summary>Ver todo o texto extraído</summary><pre>{importPreview.source_text}</pre></details>
-        <label className="studio-import-agree"><input type="checkbox" checked={importConfirmed}
-          onChange={e=>setImportConfirmed(e.target.checked)}/> Conferi que os campos extraídos precisam de revisão e autorizo substituir meu rascunho atual.</label>
-        <div className="studio-import-actions">
-          <button type="button" disabled={!importConfirmed} onClick={applyImportedResume}>Aplicar campos ao Studio</button>
-          <button type="button" onClick={()=>{setImportPreview(null);setImportConfirmed(false);}}>Cancelar</button>
-        </div>
-      </div>}
-    </section>
     <div className="studio-layout">
       <nav className="studio-sidebar" aria-label="Partes do currículo"><div className="studio-sidebar-label">EDITAR CURRÍCULO</div>
         {panes.map(({id,label,icon:Icon},i)=><button key={id} type="button" onClick={()=>{setPane(id);messages();}} aria-current={pane===id?"step":undefined} className={pane===id?"active":""}>
           <Icon size={18}/><span>{label}</span><small>{String(i+1).padStart(2,"0")}</small></button>)}
         <div className="studio-side-note"><ShieldCheck size={18}/> Não armazenamos seus dados. Exporte JSON para continuar depois.</div>
       </nav>
-      <main className="studio-editor">
+      <main className="studio-editor" id="studio-editor">
         <div className="studio-editor-heading"><span>ETAPA {String(panes.findIndex(item=>item.id===pane)+1).padStart(2,"0")}</span>
           <h2>{panes.find(item=>item.id===pane)?.label}</h2>
           <p>{pane==="ia"?"A IA sugere com evidências, mas nunca modifica seu perfil automaticamente.":"Preencha apenas informações verdadeiras, que possa comprovar."}</p></div>
+        {importError && <p className="studio-import-error" role="alert">{importError}</p>}
+        {importNotice && <div className="studio-import-feedback" role="status">
+          <Check size={16}/><span>{importNotice}</span>
+          {canUndoImport && <button type="button" onClick={undoImport}>Desfazer importação</button>}
+          <button type="button" onClick={()=>setImportNotice(null)} aria-label="Fechar mensagem">Fechar</button>
+        </div>}
         {pane==="informacoes"&&<>
           <div className="studio-grid2"><Field label="Nome completo" value={profile.contact.name} onChange={v=>contact("name",v)}/>
             <Field label="Título profissional" value={profile.contact.headline} onChange={v=>contact("headline",v)}/></div>
@@ -248,6 +236,11 @@ export default function Studio() {
           <Field label="Cidade (opcional)" value={profile.contact.city} onChange={v=>contact("city",v)}/>
           <Field label="Links profissionais (um por linha)" multiline value={profile.contact.links.join("\n")} onChange={v=>contact("links",v)}/>
           <Field label="Resumo profissional" multiline value={profile.summary} onChange={v=>update("summary",v)}/>
+          {unassignedImportLines.length > 0 && <details className="studio-unassigned-inline">
+            <summary>Trechos do arquivo que precisam de revisão ({unassignedImportLines.length})</summary>
+            <p>Alguns trechos não se encaixam nos campos existentes. Você pode copiá-los para o campo adequado.</p>
+            <pre>{unassignedImportLines.join("\n")}</pre>
+          </details>}
         </>}
         {pane==="experiencias"&&<>
           {profile.experiences.map((item,i)=><div className="studio-edit-card" key={i}>

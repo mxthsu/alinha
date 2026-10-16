@@ -306,7 +306,9 @@ def import_structured_resume(file: Annotated[UploadFile, File()]) -> ProfileImpo
     try:
         text = extract_resume(file.filename, content)
         return draft_profile(text)
-    except (ValueError, ValidationError) as exc:
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except ValidationError as exc:
         raise HTTPException(status_code=422, detail="Não foi possível estruturar o currículo. Confira o documento.") from exc
     except PdfReadError as exc:
         raise HTTPException(status_code=422, detail="Não foi possível ler o PDF enviado.") from exc

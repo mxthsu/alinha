@@ -6,7 +6,11 @@ O **Currículo Studio** (rota `/studio`) é o início do criador de currículos 
 
 ## Importação assistida de PDF/DOCX/TXT
 
-Clique em **Preencher com meu currículo** para selecionar um documento. O sistema extrai as seções explicitamente reconhecidas, apresenta prévia, avisos e texto não classificado e aguarda uma **confirmação ativa** antes de substituir os campos atuais. Não usa IA nem armazena o arquivo. Formatos livres ou PDFs digitalizados podem exigir digitação manual.
+Use **Importar currículo**, na barra de ações do Studio. O PDF, DOCX ou TXT é interpretado e os campos são **preenchidos diretamente no editor**. Não há uma tela separada de confirmação, formulário de prévia nem botão de exemplo fictício. O usuário pode editar qualquer informação, navegar pelas seções e usar **Desfazer importação** para recuperar o rascunho anterior antes de começar a alterá-lo.
+
+Se algum trecho não for reconhecido, fica disponível somente na seção expansível **Trechos do arquivo que precisam de revisão** dentro de **Informações**. Não usamos IA nesse processo nem armazenamos o arquivo. Uma nova importação substitui o conteúdo editado, com opção imediata de desfazer; para guardar versões, exporte o perfil JSON.
+
+O importador reconhece cabeçalhos em português e inglês, experiências com datas em linhas separadas, formatos empilhados (empresa antes ou depois do cargo), atividades quebradas por linha, competências agrupadas e projetos com tópicos. DOCX com tabelas mantém a ordem dos blocos e TXT aceita UTF-8 e Windows-1252. PDFs digitalizados sem texto e layouts multicoluna difíceis continuam exigindo intervenção manual. O sistema usa somente informações literais e não deduz qualificações ausentes.
 
 O Studio permanece independente da verificação ATS e da comparação com vagas, que agora ficam unificadas em [Preparar candidatura](application-workflow.md).
 
@@ -60,7 +64,6 @@ O harness utiliza apenas cenários sintéticos. Ele verifica se citações fabri
 
 ## Evoluções planejadas
 
-- Importação de PDF/DOCX existente para seções estruturadas, com identificação de campos e confirmação humana.
 - Sugestões de redação por trecho, com diferenças antes/depois e aprovação individual.
 - Exportação em PDF textual, com validação de extração posterior.
 - Mais modelos com prévia fiel, acessibilidade e testes visuais em tamanhos de tela distintos.

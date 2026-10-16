@@ -4,6 +4,8 @@ from pathlib import Path
 from zipfile import BadZipFile, ZipFile
 
 from docx import Document
+from docx.table import Table
+from docx.text.paragraph import Paragraph
 from pypdf import PdfReader
 
 MAX_UPLOAD_BYTES = 3 * 1024 * 1024
@@ -24,7 +26,7 @@ def extract_resume(filename: str | None, content: bytes) -> str:
         if extension == ".pdf":
             if not content.startswith(b"%PDF"):
                 raise ValueError("O arquivo não é um PDF válido.")
-            reader = PdfReader(BytesIO(content), strict=True)
+            reader = PdfReader(BytesIO(content), strict=False)
             if len(reader.pages) > MAX_PDF_PAGES:
                 raise ValueError("O PDF deve ter no máximo 12 páginas.")
             text = "\n".join(page.extract_text() or "" for page in reader.pages)
@@ -35,12 +37,20 @@ def extract_resume(filename: str | None, content: bytes) -> str:
                 if sum(item.file_size for item in archive.infolist()) > MAX_DOCX_UNCOMPRESSED_BYTES:
                     raise ValueError("O DOCX possui conteúdo descompactado excessivo.")
             document = Document(BytesIO(content))
-            text = "\n".join(paragraph.text for paragraph in document.paragraphs)
-            for table in document.tables:
-                for row in table.rows:
-                    text += "\n" + " | ".join(cell.text for cell in row.cells)
+            blocks = []
+            for block in document.iter_inner_content():
+                if isinstance(block, Paragraph):
+                    blocks.append(block.text)
+                elif isinstance(block, Table):
+                    for row in block.rows:
+                        blocks.append(" | ".join(cell.text for cell in row.cells))
+            text = "\n".join(blocks)
         else:
-            text = content.decode("utf-8-sig")
+            try:
+                text = content.decode("utf-8-sig")
+            except UnicodeDecodeError:
+                # Older Windows text exports commonly use this encoding.
+                text = content.decode("cp1252")
     except (BadZipFile, UnicodeDecodeError, OSError, KeyError) as exc:
         raise ValueError("Não foi possível ler o arquivo enviado.") from exc
 

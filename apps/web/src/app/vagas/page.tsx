@@ -3,6 +3,8 @@ import { useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowRight, BriefcaseBusiness, ExternalLink, Globe2, LoaderCircle, MapPin, Search, ShieldCheck, SlidersHorizontal, Wallet } from "lucide-react";
 import { PlatformNav } from "@/components/platform-nav";
+import { useOpportunityTracker } from "@/hooks/use-opportunity-tracker";
+import { opportunityFingerprint } from "@/lib/opportunity-tracker";
 import "./vagas.css";
 
 type Job = {
@@ -13,6 +15,8 @@ type Result = {jobs:Job[];source_name:string;source_url:string;description:strin
 const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function Jobs() {
+  const {items:tracked,save:saveOpportunity,storageError}=useOpportunityTracker();
+  const [saveNotice,setSaveNotice]=useState("");
   const [keyword,setKeyword] = useState("");
   const [workMode,setWorkMode] = useState("remote");
   const [contract,setContract] = useState("any");
@@ -92,6 +96,7 @@ export default function Jobs() {
             <span className="vacancies-beta">Pesquisa experimental</span>
           </div>
           {error&&<div className="vacancies-error" role="alert">{error}</div>}
+          {(saveNotice||storageError)&&<p className="vacancies-save-feedback" role="status">{storageError||saveNotice}</p>}
           {loading&&<div className="vacancies-empty"><LoaderCircle size={32} className="vacancies-loading-icon"/><h3>Consultando vagas…</h3></div>}
           {!loading&&!result&&!error&&<div className="vacancies-empty"><BriefcaseBusiness size={34}/><h3>Encontre o próximo passo.</h3><p>Informe um cargo para pesquisar vagas reais, sem demonstrações fictícias.</p></div>}
           {!loading&&result&&<>
@@ -111,7 +116,18 @@ export default function Jobs() {
                     {salaryPending?"salário mínimo mensal; ":""}{city.trim()?"localidade; ":""}
                     {item.missing_information.join("; ")}.</p>}
                 <div className="vacancies-card-footer"><span>Fonte: <a href="https://himalayas.app" target="_blank" rel="noopener noreferrer">Himalayas</a></span>
-                  {job.source_url&&<a className="vacancies-open" href={job.source_url} target="_blank" rel="noopener noreferrer">Ver vaga original <ExternalLink size={15}/></a>}
+                  <div className="vacancies-card-actions">
+                    {job.source_url&&<button type="button"
+                      disabled={tracked.some(saved=>opportunityFingerprint(saved.source,saved.sourceId,saved.url)===opportunityFingerprint(job.source,job.external_id,job.source_url!))}
+                      onClick={()=>{
+                        const response=saveOpportunity({title:job.title,company:job.company,url:job.source_url!,
+                          source:job.source,sourceId:job.external_id});
+                        setSaveNotice(response.message);
+                      }}>
+                      {tracked.some(saved=>opportunityFingerprint(saved.source,saved.sourceId,saved.url)===opportunityFingerprint(job.source,job.external_id,job.source_url!))?"Salva":"Salvar vaga"}
+                    </button>}
+                    {job.source_url&&<a className="vacancies-open" href={job.source_url} target="_blank" rel="noopener noreferrer">Ver vaga original <ExternalLink size={15}/></a>}
+                  </div>
                 </div>
               </article>;
             })}

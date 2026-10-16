@@ -6,6 +6,7 @@ const pages = [
   { href: "/", label: "Início" },
   { href: "/studio", label: "Currículos" },
   { href: "/vagas", label: "Encontrar vagas" },
+  { href: "/candidaturas", label: "Acompanhar" },
   { href: "/preparar", label: "Preparar candidatura" },
 ];
 

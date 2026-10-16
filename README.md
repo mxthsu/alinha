@@ -33,7 +33,7 @@ O Alinha não simula notas de sistemas ATS, não prevê contratações e não de
 
 ## Community livre e Cloud opcional
 
-No Alinha Community você escolhe o provedor de IA, incluindo Gemini, Claude API, OpenAI API e Ollama local, além de ChatGPT quando elegível em uso local autorizado. A interface de conexão está disponível na análise e na aba **Melhorias com IA** do Studio. A licença do Alinha não exige pagamento; cobranças de APIs externas e uso do hardware são de responsabilidade do usuário.
+No Alinha Community você escolhe o provedor de IA, incluindo Gemini, Claude API, OpenAI API e Ollama local, além de ChatGPT quando elegível em uso local autorizado. A conexão é configurada uma vez na central **Conexões de IA** (`/conexoes`); as ferramentas passam a listar os provedores disponíveis sem exibir novamente formulários de chave. A licença do Alinha não exige pagamento; cobranças de APIs externas e uso do hardware são de responsabilidade do usuário.
 
 O **Alinha Cloud ainda não existe como serviço público**. A proposta futura é infraestrutura gerenciada mediante assinatura com créditos de IA mensais e gastos extras apenas com autorização prévia. Leia [modelo Community + Cloud](docs/product-model.md) e [estratégia comercial](docs/cloud-business-model.md). Não há preços nem checkout disponíveis nesta versão.
 
@@ -55,7 +55,7 @@ cd alinha
 python scripts/dev.py
 ```
 
-O primeiro início instala as dependências necessárias. Abra **http://localhost:3000**: a nova entrada oferece **Continuar com Google** (se OAuth configurado) ou **Continuar no Community local** (sem conta). Depois use **Início → Conexões de IA** para escolher seu modelo, ou acesse diretamente Studio, ATS e Analisar vaga. Recursos sem IA não exigem conexão. Confira o [guia de autenticação Google](docs/authentication.md). Pressione **Ctrl+C** para parar os serviços.
+O primeiro início instala as dependências necessárias. Abra **http://localhost:3000**: a home mantém o hero com a prévia e apresenta **Conectar IA** como configuração inicial em destaque. Escolha seu provedor em **Conexões de IA** (`/conexoes`) ou comece diretamente pelo Studio (`/studio`) e pelo diagnóstico ATS (`/ats`) sem precisar de IA. **Community não exige conta Google nem cadastro.** Leia [identidade Community e Cloud](docs/authentication.md) e [como a conexão funciona](docs/provider-experience.md). Pressione **Ctrl+C** para parar os serviços.
 
 No Windows, você também pode iniciar com `py -3 scripts/dev.py`. Para instruções manuais, configuração do provedor e solução de problemas, consulte o [guia de instalação](docs/getting-started.md).
 

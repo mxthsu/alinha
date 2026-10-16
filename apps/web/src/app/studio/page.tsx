@@ -10,6 +10,7 @@ import {
 import "./studio.css";
 import { type Provider } from "@/components/provider-selector";
 import { ConnectedProviderPicker } from "@/components/connected-provider-picker";
+import { ConnectionStatus } from "@/components/connection-status";
 
 type Contact = { name: string; headline: string; email: string; phone: string; city: string; links: string[] };
 type Experience = { role: string; organization: string; period: string; highlights: string[] };
@@ -155,7 +156,7 @@ export default function Studio() {
     finally { setBusy(""); }
   }
   return <div className="studio-app">
-    <header className="studio-topbar"><Link href="/" className="studio-logo">alinha<span>.</span></Link><div className="studio-title">Currículo Studio</div><div className="studio-global-links"><Link href="/inicio">Início</Link><Link href="/conexoes">Conexões</Link><Link href="/ats">ATS</Link><Link href="/analisar">Vagas</Link></div>
+    <header className="studio-topbar"><Link href="/" className="studio-logo">alinha<span>.</span></Link><div className="studio-title">Currículo Studio</div><div className="studio-global-links"><Link href="/">Início</Link><Link href="/ats">ATS</Link><Link href="/analisar">Vagas</Link><ConnectionStatus variant="compact" /></div>
       <div className="studio-top-actions">
         <input type="file" hidden accept=".json,application/json" ref={upload} onChange={loadJson}/>
         <button type="button" onClick={()=>upload.current?.click()}><FolderOpen size={16}/> <span>Importar JSON</span></button>

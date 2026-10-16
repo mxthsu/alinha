@@ -100,3 +100,11 @@
 @media(max-width:1200px){.studio-layout{grid-template-columns:190px minmax(300px,1fr);}.studio-preview{grid-column:2;position:static}.studio-sidebar{grid-row:1/3}}
 @media(max-width:780px){.studio-topbar{flex-wrap:wrap;height:auto;padding:13px 18px}.studio-top-actions{width:100%;justify-content:flex-start;flex-wrap:wrap}.studio-intro{align-items:start;flex-direction:column;padding-top:35px}.studio-layout{grid-template-columns:1fr}.studio-sidebar{position:static;grid-row:auto;display:flex;overflow-x:auto;gap:5px;white-space:nowrap}.studio-sidebar-label,.studio-side-note{display:none}.studio-sidebar>button{width:auto;flex-shrink:0}.studio-sidebar>button small{display:none}.studio-preview{grid-column:1}.studio-grid2{grid-template-columns:1fr}.studio-editor{padding:20px}}
 @media(prefers-reduced-motion:reduce){.studio-sidebar>button,.studio-top-actions button{transition:none}}
+
+/* Studio's integrated navigation gives IA configuration a separate emphasis. */
+.studio-global-links { display:flex; align-items:center; gap:15px; flex-wrap:wrap; margin-left:auto; }
+.studio-global-links>a:not(.ai-nav-link) {font-size:11px;font-weight:720;color:#627a68}
+.studio-global-links>a:not(.ai-nav-link):hover{color:#2b8b45}
+.studio-global-links .ai-nav-link{display:inline-flex;align-items:center;gap:7px;border-radius:9px;background:#1f4c34;color:white;padding:10px 12px;font-size:10px;font-weight:760;white-space:nowrap}
+.studio-global-links .ai-nav-link:hover{background:#327a4a;color:white}
+@media(max-width:1100px){.studio-topbar{height:auto;min-height:72px;flex-wrap:wrap;padding-block:15px}.studio-global-links{order:3;width:100%;margin-left:0;justify-content:flex-start}}

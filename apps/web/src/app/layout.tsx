@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./platform.css";
+import "./community.css";
 
 export const metadata: Metadata = {
   title: "Alinha — Sua experiência, novas oportunidades",

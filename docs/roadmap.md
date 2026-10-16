@@ -38,13 +38,13 @@
 
 ## Navegação e identidade
 
-- [x] Entrada orientada a conta Google quando OAuth está configurado, com modo Community local independente.
+- [x] Home Community recuperada sem login, com hero, prévia de análise e seção de código aberto.
 - [x] Navegação por áreas: Início, Meus currículos, Verificar ATS, Analisar vaga e Conexões de IA.
-- [x] Autenticação Google separada da autorização do provedor de IA; segredos apenas no servidor Next.js.
+- [x] Conexões de IA destacadas como configuração inicial e independentes das ferramentas.
 - [x] Retorno da autorização ChatGPT para a central `/conexoes`.
-- [ ] Configurar um cliente OAuth Google real e validar manualmente login/logout com consentimento.
+- [ ] Planejar identidade e eventual OAuth Google exclusivamente no Cloud, quando autenticação multitenant estiver pronta.
 - [ ] Criar identidade, autorização e isolamento de dados no backend para futuro Cloud.
-- [ ] Testes automatizados de autenticação com provedor de identidade isolado em ambiente de integração.
+- [ ] Testes de autenticação multitenant exclusivos da futura plataforma Cloud.
 
 ## Alinha Community e Cloud
 

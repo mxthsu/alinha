@@ -1,4 +1,4 @@
-/* Community navigation and account-first experience. Does not override existing Studio / ATS layout. */
+/* Community navigation and individual tool layouts. No Alinha account or identity required. */
 .platform-shell,.entry-shell{min-height:100vh;background:#f3f7f0;color:#1f3c2c}
 .platform-header{position:relative;background:#fff;border-bottom:1px solid #e1eadc;z-index:10}
 .platform-navigation{min-height:76px;max-width:1440px;margin:auto;padding:12px clamp(18px,4vw,64px);display:flex;align-items:center;gap:38px;justify-content:space-between}

@@ -4,7 +4,7 @@ O Alinha ajuda pessoas a preparar currículos que possam ser interpretados com m
 
 ## O que a primeira versão verifica
 
-Abra **Verificar ATS** na navegação do site, sem precisar conectar Gemini ou outro provedor. Envie um PDF, DOCX ou TXT de até 3 MB, ou cole o texto do currículo. A API realiza verificações determinísticas sem chamadas de IA:
+Abra **Preparar candidatura** (`/preparar`) na navegação do site, sem precisar conectar Gemini ou outro provedor. A etapa 1 verifica ATS; a etapa 2 compara com a vaga opcionalmente, utilizando IA somente quando autorizada. Envie um PDF, DOCX ou TXT de até 3 MB, ou cole o texto do currículo. A API realiza verificações determinísticas sem chamadas de IA:
 
 - Se o documento possui texto extraível, incluindo identificação de PDFs que não oferecem texto suficiente (frequentemente digitalizações).
 - Presença de tabelas, caixas de texto e colunas em DOCX, que podem alterar a ordem de extração.

@@ -44,3 +44,7 @@
 
 @media(max-width:700px){.alinha-home .nav-links .ai-nav-link{padding:10px 12px}}
 @media(prefers-reduced-motion:reduce){.ai-spin{animation:none}.alinha-home .nav-links .ai-nav-link{transition:none}.alinha-home .nav-links .ai-nav-link:hover{transform:none}}
+
+/* Two focused choices: edit the resume or prepare an application. */
+.home-tools-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:700px){.home-tools-grid{grid-template-columns:1fr}}

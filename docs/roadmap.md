@@ -36,6 +36,14 @@
 - [ ] Plano de preparação de entrevistas.
 - [ ] Histórico opcional e controles de exclusão.
 
+## Jornada unificada de candidatura
+
+- [x] Unificar leitura ATS e comparação com vaga na rota `/preparar`, preservando redirects das URLs anteriores.
+- [x] Reutilizar o arquivo escolhido na mesma página entre ATS e análise com IA, sem novo upload manual.
+- [x] Importar PDF/DOCX/TXT no Studio para rascunho estruturado com confirmação humana.
+- [ ] Transferir dados entre Studio e preparação de candidatura em memória sem novo upload ou persistência indevida.
+- [ ] Melhorar reconhecimento de CVs com seções pouco padronizadas e avaliar extração assistida por IA com citações.
+
 ## Navegação e identidade
 
 - [x] Home Community recuperada sem login, com hero, prévia de análise e seção de código aberto.

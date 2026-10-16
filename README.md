@@ -31,6 +31,10 @@ Também incluímos um [currículo e uma vaga inteiramente fictícios](examples/R
 
 O Alinha não simula notas de sistemas ATS, não prevê contratações e não deve ser usado como decisão automática sobre candidatos.
 
+## Crie seu currículo no Studio
+
+O [Currículo Studio](apps/web/src/app/studio) (rota `/studio`) permite preencher seções estruturadas, escolher dois modelos, acompanhar uma prévia em tempo real e exportar DOCX. Uma revisão opcional com IA usa LangGraph para gerar orientações baseadas em citações e exige decisão humana antes de qualquer mudança. É possível salvar o perfil como JSON no computador, sem conta e sem persistência no servidor. Consulte a [documentação do Studio](docs/studio.md).
+
 ## Verifique a legibilidade ATS
 
 Acesse **Verificar ATS** no menu (rota `/ats`) para identificar obstáculos comuns de leitura em PDF, DOCX ou TXT. A checagem não depende de uma conta de IA nem faz uma cobrança de inferência: o Alinha examina texto extraível e características da estrutura do documento, apresentando recomendações verificáveis. **Não há pontuação ATS universal ou garantia de aprovação.** Entenda os critérios e limites no [guia de compatibilidade ATS](docs/ats.md). Após o diagnóstico, você pode abrir o editor, ajustar manualmente e exportar um DOCX simples com texto selecionável.

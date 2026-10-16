@@ -93,7 +93,7 @@ export default function AtsCheck() {
             <span className="ats-mark"><ArrowRight size={19} aria-hidden="true" /></span>
             alinha<span>.</span>
           </Link>
-          <Link href="/" className="ats-back"><ArrowLeft size={16} aria-hidden="true" /> Voltar ao Alinha</Link>
+          <div style={{display:"flex",gap:16,alignItems:"center"}}><Link href="/studio" className="ats-back">Criar currículo <ArrowRight size={15}/></Link><Link href="/" className="ats-back"><ArrowLeft size={16} aria-hidden="true" /> Voltar ao Alinha</Link></div>
         </div>
       </header>
 

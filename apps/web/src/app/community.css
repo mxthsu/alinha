@@ -1,0 +1,11 @@
+.platform-navigation .ai-nav-link{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;font-size:11px;font-weight:780;min-height:42px;color:#fff;background:#1d4a32;border:1px solid #1d4a32;border-radius:10px;padding:10px 15px;transition:background .16s}
+.platform-navigation .ai-nav-link:hover{background:#327849;color:#fff}
+.ai-nav-live{width:7px;height:7px;border-radius:100%;background:#a9ec9d;box-shadow:0 0 0 3px #ffffff26}
+.platform-container>.ai-onboarding{margin:24px 0 50px}
+.platform-section-top{display:flex;align-items:end;justify-content:space-between;gap:20px;margin:45px 0 22px}
+.platform-section-top span{font-size:10px;font-weight:800;color:#56955f;letter-spacing:.1em}
+.platform-section-top h2{color:#244634;font-weight:790;letter-spacing:-.045em;font-size:29px;margin:7px 0 0}
+.platform-section-top>a{display:flex;align-items:center;gap:7px;font-size:11px;color:#478455;font-weight:770}
+.platform-cards:has(> .platform-card:nth-child(3):last-child){grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:1000px){.platform-cards:has(> .platform-card:nth-child(3):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.platform-cards:has(> .platform-card:nth-child(3):last-child){grid-template-columns:1fr}.platform-section-top{flex-direction:column;align-items:flex-start}}

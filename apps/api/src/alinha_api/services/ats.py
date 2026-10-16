@@ -5,10 +5,10 @@ vendor's private screening algorithm. Never store the candidate's document.
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
-import re
 from typing import Literal
 
 from docx import Document

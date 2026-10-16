@@ -46,11 +46,11 @@ python scripts/dev.py --reinstall
 
 ## Experimente uma análise de demonstração
 
-1. Abra http://localhost:3000. O Community não pede login: o topo e o rodapé apresentam o produto e a seção **Conectar IA** fica em destaque. Acesse `/conexoes` para configurar seu provedor, ou `/studio` e `/ats` para ferramentas que não exigem IA. Consulte [Community e autenticação Cloud futura](authentication.md).
-2. O Alinha inicia na aba **1. Conectar IA**. Configure a chave do seu provedor ou escolha uma conexão suportada. Para explorar o site sem provedor, utilize **Ver uma demonstração**.
-3. Após conectar, clique em **Continuar para análise** e vá para a aba **2. Analisar currículo**.
-4. Informe currículo e descrição de vaga e clique em **Analisar correspondência**.
-5. Confira as evidências e limitações do relatório. A demonstração é explicitamente fictícia e não chama um modelo.
+1. Abra http://localhost:3000. O Community não pede login: o hero e o rodapé apresentam o produto. O status da IA aparece na navegação e no botão principal do hero.
+2. Clique em **Conectar IA** se não houver um provedor ativo, ou em **IA conectada** para gerenciar a conexão existente. Configure uma chave, ChatGPT autorizado ou Ollama em `/conexoes`.
+3. Escolha **Criar currículo** (`/studio`) ou **Verificar ATS** (`/ats`) mesmo sem IA. Para comparar currículo e vaga, entre em **Analisar vaga** (`/analisar`).
+4. Informe currículo e descrição da oportunidade e clique em **Analisar correspondência**. É possível visualizar um relatório demonstrativo fictício sem chamar o provedor.
+5. Confira as evidências e limitações do relatório. Consulte [Community e Cloud](authentication.md) antes de enviar documentos próprios.
 
 É a forma recomendada de conhecer a interface antes de enviar documentos próprios. Para testar o preenchimento, use os [arquivos fictícios de exemplo](../examples/README.md).
 

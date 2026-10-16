@@ -55,7 +55,7 @@ cd alinha
 python scripts/dev.py
 ```
 
-O primeiro início instala as dependências necessárias. Abra **http://localhost:3000**: a home mantém o hero com a prévia e apresenta **Conectar IA** como configuração inicial em destaque. Escolha seu provedor em **Conexões de IA** (`/conexoes`) ou comece diretamente pelo Studio (`/studio`) e pelo diagnóstico ATS (`/ats`) sem precisar de IA. **Community não exige conta Google nem cadastro.** Leia [identidade Community e Cloud](docs/authentication.md) e [como a conexão funciona](docs/provider-experience.md). Pressione **Ctrl+C** para parar os serviços.
+O primeiro início instala as dependências necessárias. Abra **http://localhost:3000**: a home mantém o hero com a prévia e mostra o estado real **Conectar IA / IA conectada** na navegação e no botão principal, sem seções de onboarding repetidas. Escolha seu provedor em **Conexões de IA** (`/conexoes`) ou comece diretamente pelo Studio (`/studio`) e pelo diagnóstico ATS (`/ats`) sem precisar de IA. **Community não exige conta Google nem cadastro.** Leia [identidade Community e Cloud](docs/authentication.md) e [como a conexão funciona](docs/provider-experience.md). Pressione **Ctrl+C** para parar os serviços.
 
 No Windows, você também pode iniciar com `py -3 scripts/dev.py`. Para instruções manuais, configuração do provedor e solução de problemas, consulte o [guia de instalação](docs/getting-started.md).
 

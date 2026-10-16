@@ -77,6 +77,7 @@ export function ProviderSelector({
     const response = await fetch(apiUrl + "/api/v1/providers/status", { cache: "no-store" });
     const next = await readResponse(response) as ProviderStatus;
     setStatus(next);
+    window.dispatchEvent(new Event("provider-connection-changed"));
     return next;
   }, [apiUrl]);
 

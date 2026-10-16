@@ -6,6 +6,10 @@ Fornecer uma análise de correspondência entre currículo e vaga **fundamentada
 
 > **Evolução do produto:** a arquitetura desta página documenta o núcleo de análise já funcional. O novo domínio independente de candidaturas está em [contratos do agente](agent-application-contract.md) e [fronteira Community/Pro](open-core-boundaries.md). A política em código ainda não executa ações externas.
 
+### Extensão: descoberta segura de vagas
+
+O primeiro conector está em apps/api/src/alinha_api/agent/discovery.py e a interface em /vagas. A API consulta somente o endpoint HTTPS fixo do Himalayas, valida links, não segue redirecionamentos, limita tempo/tamanho/frequência e não realiza candidaturas. Seu uso depende de Community local; não é proxy público. Contrato do agente: docs/agent-application-contract.md. Auditoria: docs/security-review.md.
+
 ## Componentes
 
 - `apps/web`: Next.js, interface client-side, formulário e relatório.

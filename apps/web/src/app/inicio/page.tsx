@@ -3,6 +3,7 @@ import { ArrowRight, BriefcaseBusiness, FilePenLine, ShieldCheck } from "lucide-
 import { PlatformNav } from "@/components/platform-nav";
 
 const actions = [
+  { href: "/vagas", icon: BriefcaseBusiness, title: "Encontrar vagas", description: "Descubra oportunidades remotas com informações de uma fonte pública autorizada." },
   { href: "/studio", icon: FilePenLine, title: "Criar currículo", description: "Edite por seções, escolha modelos e exporte seu currículo em DOCX." },
   { href: "/preparar", icon: BriefcaseBusiness, title: "Preparar candidatura", description: "Verifique a leitura ATS e compare com a vaga sem reenviar o currículo." },
 ];

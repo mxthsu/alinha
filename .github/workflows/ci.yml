@@ -23,6 +23,11 @@ jobs:
       - run: uv sync --dev --frozen
       - run: uv run pytest -q
       - run: uv run ruff check .
+      # Dependency audits share the existing PR job; no extra workflow per commit.
+      - name: Auditoria de dependências Python (produção)
+        run: |
+          uv export --locked --no-dev --no-hashes -o "$RUNNER_TEMP/alinha-requirements.txt"
+          uvx --from pip-audit==2.10.1 pip-audit --no-deps --disable-pip -r "$RUNNER_TEMP/alinha-requirements.txt"
   web:
     name: Build e lint do site
     runs-on: ubuntu-latest
@@ -39,3 +44,5 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+      - name: Auditoria de dependências web (produção)
+        run: npm audit --omit=dev --audit-level=moderate

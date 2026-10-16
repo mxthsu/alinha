@@ -48,6 +48,10 @@ No Alinha Community você escolhe o provedor de IA, incluindo Gemini, Claude API
 
 O **Alinha Cloud ainda não existe como serviço público**. A proposta futura é infraestrutura gerenciada mediante assinatura com créditos de IA mensais e gastos extras apenas com autorização prévia. Leia [modelo Community + Cloud](docs/product-model.md) e [estratégia comercial](docs/cloud-business-model.md). Não há preços nem checkout disponíveis nesta versão.
 
+## Encontre vagas remotas disponíveis para o Brasil
+
+A área **Encontrar vagas** (/vagas) consulta uma fonte pública autorizada (Himalayas), mantém atribuição visível e abre o link da vaga na fonte original. É possível informar cargo, preferência de modalidade, vínculo CLT/PJ, cidade e salário pretendido. Como a fonte inicial oferece somente vagas remotas, dados brasileiros não publicados permanecem **a confirmar**, nunca são inventados. A busca não armazena perfil nem envia candidaturas. Veja [como funciona a descoberta](docs/job-discovery.md) e [revisão de segurança](docs/security-review.md).
+
 ## Crie seu currículo no Studio
 
 O [Currículo Studio](apps/web/src/app/studio) (rota `/studio`) permite preencher seções estruturadas, escolher dois modelos, acompanhar uma prévia em tempo real e exportar DOCX. As sugestões de melhoria são oferecidas em Preparar candidatura, após a comparação com os requisitos de uma vaga informada. É possível salvar o perfil como JSON no computador, sem conta e sem persistência no servidor. Consulte a [documentação do Studio](docs/studio.md).

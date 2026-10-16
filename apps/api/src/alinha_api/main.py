@@ -2,12 +2,14 @@
 import os
 from typing import Annotated
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, Response
 from pydantic import BaseModel, Field, ValidationError
 from pypdf.errors import PdfReadError
 
+from alinha_api.agent.discovery import JobSearchResult, JobSearchUnavailable, search_jobs
+from alinha_api.agent.models import CandidateCriteria
 from alinha_api.resume_schema import (
     ResumeProfile,
     ResumeReviewRequest,
@@ -78,6 +80,38 @@ def _local_only(request: Request, *, mutation: bool = False, require_oauth: bool
         raise HTTPException(status_code=403, detail="Esta operação só funciona no computador local.")
     if mutation and request.headers.get("origin") not in FRONTEND_ORIGINS:
         raise HTTPException(status_code=403, detail="Origem não autorizada para esta operação.")
+
+
+@app.get("/api/v1/jobs/search", response_model=JobSearchResult)
+def discover_jobs(
+    request: Request,
+    q: str = Query(min_length=2, max_length=80),
+    page: int = Query(default=1, ge=1, le=5),
+    remote_only: bool = Query(default=True),
+) -> JobSearchResult:
+    """Community-only remote job search through a single vetted public source.
+
+    No credentials or arbitrary URLs, and no application submission. The
+    Community desktop service must not become a publicly exposed free proxy.
+    """
+    _local_only(request, mutation=False, require_oauth=False)
+    if request.headers.get("origin") not in (None, *FRONTEND_ORIGINS):
+        raise HTTPException(status_code=403, detail="Origem não autorizada.")
+    try:
+        return search_jobs(
+            q,
+            page=page,
+            criteria=CandidateCriteria(
+                allowed_work_modes=["remote"] if remote_only else ["onsite"],
+            ),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="Busca inválida.") from exc
+    except JobSearchUnavailable as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="A fonte de vagas está temporariamente indisponível. Tente novamente mais tarde.",
+        ) from exc
 
 
 @app.get("/api/v1/providers/status")

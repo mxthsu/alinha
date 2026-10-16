@@ -25,3 +25,7 @@ Para bugs sem implicação de segurança, utilize o [formulário de issue](https
 - Testes de segurança e exemplos devem utilizar **dados sintéticos**.
 
 Este documento não constitui certificação, auditoria de segurança ou promessa de tratamento de dados em produção.
+
+## Revisão de segurança e limites de implantação
+
+A revisão delimitada de outubro de 2026, incluindo varredura de segredos rastreados, npm audit, pip-audit e testes de segurança do conector, está documentada em [docs/security-review.md](docs/security-review.md). Não disponibilize o Community como API pública ou atrás de túnel aberto. Habilite alertas de dependências, proteção contra vazamento de segredos e reporte privado de vulnerabilidades nas configurações do repositório, quando disponíveis.

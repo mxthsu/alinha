@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   ArrowRight, ArrowUpRight, BookOpen, Check, CheckCircle2, CircleHelp,
-  Code2, FilePenLine, FileSearch, BriefcaseBusiness, ShieldCheck, Sparkles,
+  Code2, FilePenLine, BriefcaseBusiness, ShieldCheck, Sparkles,
   XCircle,
 } from "lucide-react";
 import { ConnectionStatus } from "@/components/connection-status";
@@ -9,8 +9,7 @@ import "./home.css";
 
 const tools = [
   { icon: FilePenLine, title: "Criar currículo", label: "ESTÚDIO DE CURRÍCULOS", description: "Edite por seções, visualize modelos e exporte um DOCX com texto selecionável.", href: "/studio", hint: "Sem IA obrigatória" },
-  { icon: FileSearch, title: "Verificar currículo (ATS)", label: "LEITURA DO DOCUMENTO · SEM IA", description: "Avalie estrutura, formatação e extração de texto. Não compara seu perfil com uma vaga.", href: "/ats", hint: "Sem IA obrigatória" },
-  { icon: BriefcaseBusiness, title: "Comparar com uma vaga", label: "REQUISITOS DA VAGA · COM IA", description: "Descubra quais exigências de uma vaga aparecem no seu currículo, com evidências e orientações.", href: "/analisar", hint: "Requer IA conectada" },
+  { icon: BriefcaseBusiness, title: "Preparar candidatura", label: "ATS + REQUISITOS DA VAGA", description: "Envie o currículo uma vez: verifique a leitura sem IA e compare com a vaga quando desejar.", href: "/preparar", hint: "Análise da vaga usa sua IA conectada" },
 ];
 
 export default function Home() {
@@ -64,7 +63,7 @@ export default function Home() {
           <div className="section-heading">
             <span className="section-label">SUAS FERRAMENTAS</span>
             <h2>Uma ferramenta para cada momento.</h2>
-            <p>Escolha por onde começar. Currículos e diagnóstico ATS são independentes da conexão com IA.</p>
+            <p>Crie seu currículo ou prepare uma candidatura. A checagem ATS funciona sem IA; a comparação com vaga é opcional.</p>
           </div>
           <div className="home-tools-grid">
             {tools.map(({icon:Icon,title,label,description,href,hint})=>

@@ -39,6 +39,7 @@ from alinha_api.services.provider import (
     provider_status,
 )
 from alinha_api.services.resume_editor import export_resume_docx
+from alinha_api.services.structured_import import ProfileImportPreview, draft_profile
 from alinha_api.services.structured_resume import export_structured_docx, render_profile_text
 from alinha_api.workflows.analysis import build_workflow
 from alinha_api.workflows.resume_review import build_resume_review_workflow
@@ -296,6 +297,21 @@ def ats_editor_export_docx(payload: AtsTextRequest) -> Response:
             "Cache-Control": "no-store",
         },
     )
+
+
+@app.post("/api/v1/resumes/structured/import/upload", response_model=ProfileImportPreview)
+def import_structured_resume(file: Annotated[UploadFile, File()]) -> ProfileImportPreview:
+    """Draft editable sections from PDF/DOCX/TXT, with no AI or persistence."""
+    content = file.file.read(MAX_UPLOAD_BYTES + 1)
+    try:
+        text = extract_resume(file.filename, content)
+        return draft_profile(text)
+    except (ValueError, ValidationError) as exc:
+        raise HTTPException(status_code=422, detail="Não foi possível estruturar o currículo. Confira o documento.") from exc
+    except PdfReadError as exc:
+        raise HTTPException(status_code=422, detail="Não foi possível ler o PDF enviado.") from exc
+    finally:
+        file.file.close()
 
 
 @app.post("/api/v1/resumes/structured/preview/text")

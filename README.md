@@ -41,7 +41,13 @@ O **Alinha Cloud ainda não existe como serviço público**. A proposta futura �
 
 O [Currículo Studio](apps/web/src/app/studio) (rota `/studio`) permite preencher seções estruturadas, escolher dois modelos, acompanhar uma prévia em tempo real e exportar DOCX. Uma revisão opcional com IA usa LangGraph para gerar orientações baseadas em citações e exige decisão humana antes de qualquer mudança. É possível salvar o perfil como JSON no computador, sem conta e sem persistência no servidor. Consulte a [documentação do Studio](docs/studio.md).
 
-## Verifique a legibilidade ATS
+## Prepare sua candidatura
+
+Acesse **Preparar candidatura** (`/preparar`) para verificar a leitura ATS do currículo e, opcionalmente, comparar o mesmo arquivo com os requisitos de uma vaga usando sua IA conectada. Você não precisa selecionar o documento duas vezes dentro dessa jornada. As antigas rotas `/ats` e `/analisar` redirecionam para ela.
+
+No **Currículo Studio**, use **Preencher com meu currículo** para importar PDF/DOCX/TXT, revisar os campos identificados e confirmar explicitamente sua aplicação. A extração estruturada não usa IA e mantém trechos não reconhecidos para revisão. Consulte [fluxo de candidatura](docs/application-workflow.md).
+
+### Verifique a legibilidade ATS
 
 Acesse **Verificar ATS** no menu (rota `/ats`) para identificar obstáculos comuns de leitura em PDF, DOCX ou TXT. A checagem não depende de uma conta de IA nem faz uma cobrança de inferência: o Alinha examina texto extraível e características da estrutura do documento, apresentando recomendações verificáveis. **Não há pontuação ATS universal ou garantia de aprovação.** Entenda os critérios e limites no [guia de compatibilidade ATS](docs/ats.md). Após o diagnóstico, você pode abrir o editor, ajustar manualmente e exportar um DOCX simples com texto selecionável.
 

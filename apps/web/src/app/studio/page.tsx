@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   ArrowLeft, BriefcaseBusiness, Check, ChevronRight, Download,
   FilePenLine, FolderOpen, GraduationCap, LayoutTemplate, Lightbulb, ListChecks,
-  Plus, ShieldCheck, Sparkles, Trash2, UserRound,
+  Plus, ShieldCheck, Sparkles, Trash2, UploadCloud, UserRound,
 } from "lucide-react";
 import "./studio.css";
 import { type Provider } from "@/components/provider-selector";
@@ -21,6 +21,7 @@ type Pane = "informacoes" | "experiencias" | "formacao" | "projetos" | "habilida
 type Template = "classico" | "compacto";
 type Suggestion = { requirement: string; job_evidence: string; resume_evidence: string | null; status: string; guidance: string };
 type Review = { summary: string; suggestions: Suggestion[]; limitations: string[] };
+type ImportedDraft = { profile: Resume; source_text: string; unassigned_lines: string[]; warnings: string[]; requires_confirmation: boolean };
 const blank: Resume = {
   schema_version: 1, contact: { name: "", headline: "", email: "", phone: "", city: "", links: [] },
   summary: "", experiences: [], education: [], projects: [], skills: [], languages: [],
@@ -86,6 +87,9 @@ export default function Studio() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const upload = useRef<HTMLInputElement>(null);
+  const resumeUpload = useRef<HTMLInputElement>(null);
+  const [importPreview, setImportPreview] = useState<ImportedDraft | null>(null);
+  const [importConfirmed, setImportConfirmed] = useState(false);
   const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
   function update<K extends keyof Resume>(key: K, value: Resume[K]) {
@@ -129,6 +133,31 @@ export default function Studio() {
     } catch (e) { setError(e instanceof Error ? e.message : "Falha na importação."); }
     finally { event.target.value=""; }
   }
+  async function importResume(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    messages(); setBusy("import"); setImportPreview(null); setImportConfirmed(false);
+    try {
+      if (!/\.(pdf|docx|txt)$/i.test(file.name) || file.size > 3 * 1024 * 1024 || !file.size) {
+        throw new Error("Envie um PDF, DOCX ou TXT de até 3 MB.");
+      }
+      const uploadData = new FormData();
+      uploadData.append("file", file);
+      const response = await fetch(api + "/api/v1/resumes/structured/import/upload", { method:"POST", body: uploadData });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(typeof payload.detail === "string" ? payload.detail : "Falha ao ler currículo.");
+      setImportPreview(payload as ImportedDraft);
+      setSuccess("Texto extraído. Revise a prévia e confirme antes de importar os campos.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Falha na importação.");
+    } finally { setBusy(""); event.target.value = ""; }
+  }
+  function applyImportedResume() {
+    if (!importPreview || !importConfirmed) return;
+    setProfile(importPreview.profile);
+    setImportPreview(null); setImportConfirmed(false); setReview(null); setChecked([]); setPane("informacoes");
+    messages(); setSuccess("Campos preenchidos. Revise cada seção antes de exportar.");
+  }
   async function exportDocx() {
     messages(); setBusy("docx");
     try {
@@ -156,9 +185,10 @@ export default function Studio() {
     finally { setBusy(""); }
   }
   return <div className="studio-app">
-    <header className="studio-topbar"><Link href="/" className="studio-logo">alinha<span>.</span></Link><div className="studio-title">Currículo Studio</div><div className="studio-global-links"><Link href="/">Início</Link><Link href="/ats">ATS</Link><Link href="/analisar">Vagas</Link><ConnectionStatus variant="compact" /></div>
+    <header className="studio-topbar"><Link href="/" className="studio-logo">alinha<span>.</span></Link><div className="studio-title">Currículo Studio</div><div className="studio-global-links"><Link href="/">Início</Link><Link href="/preparar">Preparar candidatura</Link><ConnectionStatus variant="compact" /></div>
       <div className="studio-top-actions">
         <input type="file" hidden accept=".json,application/json" ref={upload} onChange={loadJson}/>
+        <input type="file" hidden accept=".pdf,.docx,.txt" ref={resumeUpload} onChange={importResume}/>
         <button type="button" onClick={()=>upload.current?.click()}><FolderOpen size={16}/> <span>Importar JSON</span></button>
         <button type="button" onClick={saveJson}><Download size={16}/> <span>Salvar perfil</span></button>
         <button type="button" className="studio-primary" disabled={Boolean(busy)} onClick={exportDocx}><Download size={16}/> {busy==="docx"?"Exportando…":"Exportar DOCX"}</button>
@@ -170,6 +200,36 @@ export default function Studio() {
       </div>
       <button type="button" className="studio-demo" onClick={()=>{setProfile(demo);setPane("informacoes");setReview(null);messages();}}><FilePenLine size={16}/> Carregar exemplo fictício</button>
     </div>
+    <section className="studio-import" aria-label="Importar currículo existente">
+      <div className="studio-import-intro"><div className="studio-import-symbol"><UploadCloud size={20}/></div>
+        <div><strong>Já tem um currículo?</strong><p>Importe PDF, DOCX ou TXT para gerar um rascunho dos campos. Nenhuma IA é utilizada e o arquivo não é armazenado.</p></div>
+      </div>
+      <button type="button" disabled={Boolean(busy)} onClick={() => resumeUpload.current?.click()} className="studio-import-button">
+        <UploadCloud size={16}/>{busy === "import" ? "Lendo arquivo…" : "Preencher com meu currículo"}
+      </button>
+      {importPreview && <div className="studio-import-preview" role="region" aria-label="Revisão dos campos extraídos">
+        <h2>Confira os campos antes de aplicar</h2>
+        <p>Os trechos abaixo são sugestões de organização, não informações validadas. Ao aplicar, os campos atuais serão substituídos.</p>
+        <div className="studio-import-preview-grid">
+          <div><span>Nome extraído</span><strong>{importPreview.profile.contact.name || "Não identificado"}</strong></div>
+          <div><span>Experiências identificadas</span><strong>{importPreview.profile.experiences.length}</strong></div>
+          <div><span>Formações identificadas</span><strong>{importPreview.profile.education.length}</strong></div>
+          <div><span>Competências</span><strong>{importPreview.profile.skills.join(", ") || "Não identificadas"}</strong></div>
+        </div>
+        {importPreview.warnings.map((notice,i)=><p key={i} className="studio-import-warning">{notice}</p>)}
+        {importPreview.unassigned_lines.length>0 && <details className="studio-import-unassigned">
+          <summary>Trechos que não foram classificados ({importPreview.unassigned_lines.length})</summary>
+          <pre>{importPreview.unassigned_lines.join("\n")}</pre>
+        </details>}
+        <details className="studio-import-unassigned"><summary>Ver todo o texto extraído</summary><pre>{importPreview.source_text}</pre></details>
+        <label className="studio-import-agree"><input type="checkbox" checked={importConfirmed}
+          onChange={e=>setImportConfirmed(e.target.checked)}/> Conferi que os campos extraídos precisam de revisão e autorizo substituir meu rascunho atual.</label>
+        <div className="studio-import-actions">
+          <button type="button" disabled={!importConfirmed} onClick={applyImportedResume}>Aplicar campos ao Studio</button>
+          <button type="button" onClick={()=>{setImportPreview(null);setImportConfirmed(false);}}>Cancelar</button>
+        </div>
+      </div>}
+    </section>
     <div className="studio-layout">
       <nav className="studio-sidebar" aria-label="Partes do currículo"><div className="studio-sidebar-label">EDITAR CURRÍCULO</div>
         {panes.map(({id,label,icon:Icon},i)=><button key={id} type="button" onClick={()=>{setPane(id);messages();}} aria-current={pane===id?"step":undefined} className={pane===id?"active":""}>
@@ -257,6 +317,6 @@ export default function Studio() {
         <p>O documento DOCX usará texto selecionável e estrutura de uma coluna. Isso não garante aprovação em ATS.</p>
       </aside>
     </div>
-    <footer className="studio-footer"><span>Alinha Community · Código aberto · Licença MIT</span><Link href="/ats">Diagnóstico ATS <ChevronRight size={15}/></Link></footer>
+    <footer className="studio-footer"><span>Alinha Community · Código aberto · Licença MIT</span><Link href="/preparar">Preparar candidatura <ChevronRight size={15}/></Link></footer>
   </div>;
 }

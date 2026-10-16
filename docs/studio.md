@@ -4,6 +4,12 @@ O **Currículo Studio** (rota `/studio`) é o início do criador de currículos 
 
 ![Prévia do Alinha Studio com currículo demonstrativo fictício](assets/studio-preview.png)
 
+## Importação assistida de PDF/DOCX/TXT
+
+Clique em **Preencher com meu currículo** para selecionar um documento. O sistema extrai as seções explicitamente reconhecidas, apresenta prévia, avisos e texto não classificado e aguarda uma **confirmação ativa** antes de substituir os campos atuais. Não usa IA nem armazena o arquivo. Formatos livres ou PDFs digitalizados podem exigir digitação manual.
+
+O Studio permanece independente da verificação ATS e da comparação com vagas, que agora ficam unificadas em [Preparar candidatura](application-workflow.md).
+
 ## Funcionalidades desta versão
 
 - Informações pessoais, resumo profissional, experiências, formação, projetos, competências e idiomas.

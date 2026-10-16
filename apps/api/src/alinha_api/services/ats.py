@@ -212,6 +212,8 @@ def check_document(filename: str | None, payload: bytes) -> AtsReport:
     # potentially expensive DOCX or PDF document structures.
     try:
         text = extract_resume(filename, payload)
+    except PdfReadError as exc:
+        raise ValueError("O arquivo PDF não pôde ser interpretado.") from exc
     except ValueError as exc:
         if "texto suficiente" not in str(exc):
             raise

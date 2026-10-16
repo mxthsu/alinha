@@ -8,7 +8,7 @@ import { ResumeUpload } from "@/components/resume-upload";
 import { ConnectedProviderPicker } from "@/components/connected-provider-picker";
 import { AtsEditor } from "@/components/ats-editor";
 import { AnalysisReport } from "@/components/analysis-report";
-import { type AnalysisResult, DEMO_REPORT } from "@/lib/analysis";
+import { type AnalysisResult } from "@/lib/analysis";
 import type { Provider } from "@/components/provider-selector";
 import "../ats/ats.css";
 import "./preparar.css";
@@ -139,7 +139,7 @@ export default function PrepareApplication() {
       <section className={"journey-card journey-job"+(!ats?" journey-locked":"")} id="vaga">
         <div className="journey-card-header"><span>02 · CORRESPONDÊNCIA COM A VAGA</span>
           <h2>Quais requisitos você já demonstra?</h2>
-          <p>Etapa opcional. Apenas aqui a IA é utilizada, mediante sua confirmação. Não precisa enviar o currículo novamente.</p></div>
+          <p>As sugestões serão geradas somente depois da comparação com os requisitos da vaga informada. Não precisa enviar o currículo novamente.</p></div>
         {!ats?<div className="journey-step-locked"><Info size={20}/> Verifique a leitura do currículo na etapa 1 para continuar.</div>:
           <div className="journey-columns">
             <form className="journey-form" onSubmit={compare}>
@@ -158,13 +158,13 @@ export default function PrepareApplication() {
               {busy==="job"&&<button type="button" className="journey-cancel" onClick={()=>{abort.current?.abort();setBusy(null);}}>Cancelar</button>}
             </form>
             <div className="journey-result">
-              <AnalysisReport result={result} loading={busy==="job"} onDemo={()=>setResult(DEMO_REPORT)} onReset={()=>setResult(null)}/>
+              <AnalysisReport result={result} loading={busy==="job"} onReset={()=>setResult(null)}/>
             </div>
           </div>}
       </section>
 
       <section className="journey-finish" id="melhorar"><div><span>03 · PRÓXIMO PASSO</span><h2>Revise, melhore e exporte.</h2>
-        <p>Abra o Studio para preencher ou importar campos estruturados, revisar sugestões e exportar um currículo pronto para sua candidatura.</p></div>
+        <p>As recomendações aparecem no resultado da comparação com a vaga. Use o Studio para editar os campos do seu currículo e exportar o documento.</p></div>
         <Link href="/studio" className="journey-finish-button"><FilePenLine size={17}/> Abrir Studio <ArrowRight size={17}/></Link>
       </section>
       <p className="journey-disclaimer"><Info size={17}/> Esta jornada não garante classificação, entrevista ou contratação. As decisões dependem dos critérios de cada empresa.</p>

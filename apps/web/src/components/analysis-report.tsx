@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import {
-  AlertCircle, ArrowRight, CheckCircle2, ChevronDown, CircleHelp,
+  AlertCircle, CheckCircle2, ChevronDown, CircleHelp,
   ClipboardCheck, FileSearch, RotateCcw, Sparkles, WandSparkles,
 } from "lucide-react";
 import { type AnalysisResult, type MatchStatus, statusLabels } from "@/lib/analysis";
@@ -16,11 +16,10 @@ const statusIcons = {
 type AnalysisReportProps = {
   result: AnalysisResult | null;
   loading: boolean;
-  onDemo: () => void;
   onReset: () => void;
 };
 
-export function AnalysisReport({ result, loading, onDemo, onReset }: AnalysisReportProps) {
+export function AnalysisReport({ result, loading, onReset }: AnalysisReportProps) {
   const [expanded, setExpanded] = useState<number | null>(0);
 
   if (loading) {
@@ -47,11 +46,7 @@ export function AnalysisReport({ result, loading, onDemo, onReset }: AnalysisRep
         </div>
         <span className="result-kicker">A PRÓXIMA ETAPA COMEÇA AQUI</span>
         <h3>Conheça os pontos fortes da sua trajetória.</h3>
-        <p>Preencha os campos ao lado para descobrir quais requisitos estão descritos no seu currículo e onde você pode trazer mais contexto.</p>
-        <div className="empty-divider" />
-        <button className="text-link" type="button" onClick={onDemo}>
-          Explorar um resultado de exemplo <ArrowRight size={17} aria-hidden="true" />
-        </button>
+        <p>A análise será apresentada quando você informar uma vaga e solicitar a comparação. As sugestões serão específicas dos requisitos fornecidos.</p>
       </div>
     );
   }

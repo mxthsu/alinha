@@ -48,7 +48,7 @@ python scripts/dev.py --reinstall
 
 1. Abra http://localhost:3000. O Community não pede login: o hero e o rodapé apresentam o produto. O status da IA aparece na navegação e no botão principal do hero.
 2. Clique em **Conectar IA** se não houver um provedor ativo, ou em **IA conectada** para gerenciar a conexão existente. Configure uma chave, ChatGPT autorizado ou Ollama em `/conexoes`.
-3. Escolha **Criar currículo** (`/studio`) ou **Preparar candidatura** (`/preparar`), que reúne leitura ATS sem IA e comparação opcional com vaga. O Studio permite importar PDF/DOCX/TXT para preencher campos após confirmação.
+3. Escolha **Criar currículo** (`/studio`) ou **Preparar candidatura** (`/preparar`), que reúne leitura ATS sem IA e comparação opcional com vaga. O Studio permite importar PDF/DOCX/TXT e preencher diretamente os campos, que podem ser editados no formulário.
 4. Informe currículo e descrição da oportunidade e clique em **Analisar correspondência**. É possível visualizar um relatório demonstrativo fictício sem chamar o provedor.
 5. Confira as evidências e limitações do relatório. Consulte [Community e Cloud](authentication.md) antes de enviar documentos próprios.
 

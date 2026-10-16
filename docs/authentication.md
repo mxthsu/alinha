@@ -12,7 +12,7 @@ A página **Conexões de IA** (`/conexoes`) é uma configuração do provedor, *
 
 Autorizar ChatGPT no Community **não cria conta Alinha**; apenas permite utilizar o provedor de IA localmente, conforme os limites e condições aplicáveis. A configuração e as credenciais dos provedores podem ter custos próprios. Nunca cole cookies, senhas ou tokens de sessão de sites no Alinha.
 
-Você pode usar quantos provedores quiser e escolher entre os que estão disponíveis ao realizar uma análise. A conexão com IA é necessária apenas nas ferramentas que usam inferência: por exemplo, comparação de requisitos com a vaga e revisão com IA no Studio.
+Você pode usar quantos provedores quiser e escolher entre os que estão disponíveis ao realizar uma análise. A conexão com IA é necessária apenas nas ferramentas que usam inferência: como a comparação de requisitos com uma vaga em Preparar candidatura. O Studio não utiliza IA.
 
 Os recursos offline sem IA continuam funcionais mesmo se nenhum provedor estiver conectado. O perfil do currículo não é armazenado automaticamente; exporte JSON ou DOCX para salvar seu trabalho.
 

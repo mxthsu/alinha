@@ -4,8 +4,9 @@ from typing import Annotated
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from pydantic import BaseModel, Field, ValidationError
+from pypdf.errors import PdfReadError
 
 from alinha_api.schemas import (
     AnalysisRequest,
@@ -31,6 +32,7 @@ from alinha_api.services.provider import (
     ProviderError,
     provider_status,
 )
+from alinha_api.services.resume_editor import export_resume_docx
 from alinha_api.workflows.analysis import build_workflow
 
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
@@ -254,3 +256,35 @@ def ats_check_upload(file: Annotated[UploadFile, File()]) -> AtsReport:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     finally:
         file.file.close()
+
+
+
+@app.post("/api/v1/ats/editor/import")
+def ats_editor_import(file: Annotated[UploadFile, File()]) -> dict[str, str]:
+    """Recover text for explicit candidate editing; never persist the file."""
+    content = file.file.read(MAX_UPLOAD_BYTES + 1)
+    try:
+        return {"resume_text": extract_resume(file.filename, content)}
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except PdfReadError as exc:
+        raise HTTPException(status_code=422, detail="N?o foi poss?vel ler o PDF enviado.") from exc
+    finally:
+        file.file.close()
+
+
+@app.post("/api/v1/ats/editor/export/docx")
+def ats_editor_export_docx(payload: AtsTextRequest) -> Response:
+    """Export exactly the approved text to a simple, readable DOCX."""
+    try:
+        output = export_resume_docx(payload.resume_text)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return Response(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={
+            "Content-Disposition": 'attachment; filename="alinha-curriculo.docx"',
+            "Cache-Control": "no-store",
+        },
+    )

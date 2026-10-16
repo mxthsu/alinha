@@ -33,7 +33,7 @@ O Alinha não simula notas de sistemas ATS, não prevê contratações e não de
 
 ## Verifique a legibilidade ATS
 
-Acesse **Verificar ATS** no menu (rota `/ats`) para identificar obstáculos comuns de leitura em PDF, DOCX ou TXT. A checagem não depende de uma conta de IA nem faz uma cobrança de inferência: o Alinha examina texto extraível e características da estrutura do documento, apresentando recomendações verificáveis. **Não há pontuação ATS universal ou garantia de aprovação.** Entenda os critérios e limites no [guia de compatibilidade ATS](docs/ats.md).
+Acesse **Verificar ATS** no menu (rota `/ats`) para identificar obstáculos comuns de leitura em PDF, DOCX ou TXT. A checagem não depende de uma conta de IA nem faz uma cobrança de inferência: o Alinha examina texto extraível e características da estrutura do documento, apresentando recomendações verificáveis. **Não há pontuação ATS universal ou garantia de aprovação.** Entenda os critérios e limites no [guia de compatibilidade ATS](docs/ats.md). Após o diagnóstico, você pode abrir o editor, ajustar manualmente e exportar um DOCX simples com texto selecionável.
 
 ## Experimente no seu computador
 

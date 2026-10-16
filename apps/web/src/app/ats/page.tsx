@@ -4,9 +4,10 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import {
   AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, ChevronRight,
-  FileCheck2, FileText, Info, LoaderCircle, ShieldCheck, UploadCloud,
+  FileCheck2, FilePenLine, FileText, Info, LoaderCircle, ShieldCheck, UploadCloud,
 } from "lucide-react";
 import "./ats.css";
+import { AtsEditor } from "@/components/ats-editor";
 
 type Finding = {
   code: string;
@@ -36,6 +37,7 @@ export default function AtsCheck() {
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [editing, setEditing] = useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -45,6 +47,7 @@ export default function AtsCheck() {
     setLoading(true);
     setError("");
     setReport(null);
+    setEditing(false);
     try {
       let url: string;
       let options: RequestInit;
@@ -110,11 +113,11 @@ export default function AtsCheck() {
               </div>
               <div className="ats-modeSwitch" role="group" aria-label="Origem do currículo">
                 <button type="button" className={mode === "file" ? "ats-current" : ""} aria-pressed={mode === "file"}
-                  onClick={() => { setMode("file"); setReport(null); setError(""); }}>
+                  onClick={() => { setMode("file"); setReport(null); setEditing(false); setError(""); }}>
                   <UploadCloud size={16} aria-hidden="true" /> Enviar arquivo
                 </button>
                 <button type="button" className={mode === "text" ? "ats-current" : ""} aria-pressed={mode === "text"}
-                  onClick={() => { setMode("text"); setReport(null); setError(""); }}>
+                  onClick={() => { setMode("text"); setReport(null); setEditing(false); setError(""); }}>
                   <FileText size={16} aria-hidden="true" /> Colar texto
                 </button>
               </div>
@@ -126,14 +129,14 @@ export default function AtsCheck() {
                     <span>{file ? `${(file.size / 1024).toFixed(0)} KB selecionados` : "PDF, DOCX ou TXT · até 3 MB"}</span>
                   </label>
                   <input id="ats-file" type="file" accept=".pdf,.docx,.txt" disabled={loading}
-                    onChange={event => { setFile(event.target.files?.[0] || null); setReport(null); setError(""); }} />
+                    onChange={event => { setFile(event.target.files?.[0] || null); setReport(null); setEditing(false); setError(""); }} />
                 </div>
               ) : (
                 <div className="ats-textBox">
                   <label htmlFor="ats-resume">Conteúdo do currículo</label>
                   <textarea id="ats-resume" value={resumeText} maxLength={22000} rows={10}
                     placeholder="Cole aqui o texto que deseja verificar…"
-                    onChange={event => { setResumeText(event.target.value); setReport(null); setError(""); }}
+                    onChange={event => { setResumeText(event.target.value); setReport(null); setEditing(false); setError(""); }}
                     disabled={loading} />
                   <small>{resumeText.length.toLocaleString("pt-BR")} / 22.000 caracteres</small>
                 </div>
@@ -172,6 +175,12 @@ export default function AtsCheck() {
                     <Info size={17} aria-hidden="true" />
                     <div>{report.limitations.map(item => <p key={item}>{item}</p>)}</div>
                   </div>
+                  <button type="button" className="ats-editor-trigger" onClick={() => {
+                    setEditing(true);
+                    requestAnimationFrame(() => document.getElementById("ats-editor")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+                  }}>
+                    <FilePenLine size={17} aria-hidden="true" /> Abrir editor de currículo <ArrowRight size={16} aria-hidden="true" />
+                  </button>
                   <Link href="/" className="ats-analyze">Comparar com uma vaga <ChevronRight size={18} /></Link>
                 </>
               ) : (
@@ -189,6 +198,7 @@ export default function AtsCheck() {
               )}
             </section>
           </div>
+          {editing && report && <AtsEditor apiUrl={apiUrl} sourceText={mode === "text" ? resumeText : null} file={mode === "file" ? file : null} />}
           <div className="ats-disclaimer">
             <Info size={18} aria-hidden="true" />
             Compatibilidade de leitura é diferente de aprovação em uma vaga. Os critérios e decisões variam entre plataformas e empregadores.

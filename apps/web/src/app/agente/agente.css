@@ -129,3 +129,21 @@
 @media(max-width:780px){.agent-hero{grid-template-columns:1fr;padding:30px}.agent-hero-art{display:none}.agent-columns{grid-template-columns:1fr}.agent-sidebar{grid-template-columns:1fr 1fr}.agent-steps-card{grid-column:1/-1}}
 @media(max-width:540px){.agent-page{padding-block:20px 50px}.agent-topline .agent-privacy{display:none}.agent-hero{padding:25px 22px;border-radius:16px;min-height:0}.agent-hero h1{font-size:33px}.agent-workspace{padding-top:28px}.agent-workspace-header{align-items:flex-start;flex-direction:column}.agent-columns{gap:14px}.agent-profile-card,.agent-search-card,.agent-matches{padding:17px}.agent-query-row{flex-wrap:wrap}.agent-query-row input{flex-basis:calc(100% - 35px);min-height:35px}.agent-query-row button{width:100%}.agent-job-top{flex-wrap:wrap}.agent-sidebar{grid-template-columns:1fr}.agent-card-heading h3{font-size:14px}}
 @media(prefers-reduced-motion:reduce){.agent-page{scroll-behavior:auto}}
+
+.agent-dropzone{transition:border-color .2s,background .2s}
+.agent-dropzone-active{border-color:#5a9c65;background:#e7f5e5}
+.agent-dropzone button{display:inline-flex;align-items:center;gap:8px;background:#275a39;color:white;border:0;border-radius:9px;font-size:12px;font-weight:780;padding:13px 16px;cursor:pointer;min-height:44px;margin-top:3px}
+.agent-dropzone button:disabled{opacity:.6;cursor:wait}
+.agent-dropzone small{font-size:10.5px;color:#7e9783;line-height:1.6}
+.agent-file-input{position:absolute!important;width:1px!important;height:1px!important;opacity:0;overflow:hidden}
+.agent-dropzone>a{color:#437e51!important;background:transparent!important;padding:6px!important;margin:0!important;font-weight:650!important;font-size:11px!important}
+.agent-import-notice,.agent-review-notice{display:flex;align-items:flex-start;gap:9px;border-radius:12px;padding:13px 15px;background:#eff8ec;border:1px solid #d9ead4;color:#46794e;font-size:12px;line-height:1.7}
+.agent-review-notice{background:#fffaf0;border-color:#f2e5c9;color:#8a7645}
+.agent-import-notice svg,.agent-review-notice svg{flex-shrink:0;margin-top:2px}
+.agent-review-notice a{text-decoration:underline;font-weight:800}
+
+.agent-profile-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.agent-profile-actions button,.agent-profile-actions a{display:inline-flex;gap:6px;align-items:center;min-height:35px;border-radius:8px;padding:8px 11px;font-size:11px;font-weight:750}
+.agent-profile-actions button{border:1px solid #d0e4c9;color:#367549;background:white}
+.agent-profile-actions button:disabled{opacity:.5}
+.agent-profile-actions a{color:#3e7d4d}

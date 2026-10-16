@@ -29,7 +29,7 @@ pausa e revisão humana quando necessário. **Nenhuma candidatura é enviada nes
 
 ## Meu agente: do currículo à oportunidade
 
-A rota **Meu agente** (`/agente`) inicia uma jornada conectada: recupera o currículo
+A rota **Meu agente** (`/agente`) inicia uma jornada conectada: permite enviar ou recuperar o currículo diretamente
 do Studio no navegador, sugere cargos citados no perfil, apresenta termos
 comprovados e **solicita autorização antes de pesquisar vagas**.
 Os resultados são organizados por indícios literais no anúncio e podem ser

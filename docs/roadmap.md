@@ -12,6 +12,7 @@ Política: [contratos e segurança](agent-application-contract.md).
 - [ ] Adicionar fontes de vagas autorizadas para CLT/PJ, híbrido, presencial, estágio e trainee.
 - [ ] Persistir preferências somente com consentimento e critérios claros de exclusão.
 - [x] Primeira jornada assistida `/agente`: perfil local, sugestões de cargo, busca consentida, triagem por indícios literais e encaminhamento à preparação.
+- [x] Upload direto de currículo na tela do agente com busca iniciada na mesma ação e revisão opcional.
 - [ ] Agente com planejamento orientado por IA, ferramentas com permissões e execução acompanhável de ponta a ponta.
 - [ ] Explicar relevância usando descrição completa e preparar versões de currículo vinculadas à vaga, com revisão humana.
 - [x] Quadro Kanban Community para acompanhamento manual, com armazenamento no navegador e importação/exportação JSON.

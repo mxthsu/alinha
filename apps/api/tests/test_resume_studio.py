@@ -56,6 +56,15 @@ def test_api_preview_and_export_without_ai():
     preview = client.post("/api/v1/resumes/structured/preview/text", json=EXAMPLE)
     assert preview.status_code == 200
     assert "Pessoa Exemplo" in preview.json()["resume_text"]
+    assert preview.json()["profile"]["contact"]["name"] == "Pessoa Exemplo"
+    assert preview.json()["profile"]["schema_version"] == 1
+    partial = client.post(
+        "/api/v1/resumes/structured/preview/text",
+        json={"schema_version": 1, "contact": {"name": "Pessoa Fictícia"}},
+    )
+    assert partial.status_code == 200
+    assert partial.json()["profile"]["contact"]["links"] == []
+    assert partial.json()["profile"]["skills"] == []
     export = client.post(
         "/api/v1/resumes/structured/export/docx",
         json={"profile": EXAMPLE, "template": "compacto"},

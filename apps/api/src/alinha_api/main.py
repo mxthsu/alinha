@@ -299,9 +299,9 @@ def ats_editor_export_docx(payload: AtsTextRequest) -> Response:
 
 
 @app.post("/api/v1/resumes/structured/preview/text")
-def preview_structured_resume(profile: ResumeProfile) -> dict[str, str]:
+def preview_structured_resume(profile: ResumeProfile) -> dict:
     """Preview human-editable plain text; does not store profile information."""
-    return {"resume_text": render_profile_text(profile)}
+    return {"resume_text": render_profile_text(profile), "profile": profile.model_dump()}
 
 
 @app.post("/api/v1/resumes/structured/export/docx")

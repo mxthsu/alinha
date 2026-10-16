@@ -118,7 +118,8 @@ export default function Studio() {
         method:"POST", headers:{"Content-Type":"application/json"},body:JSON.stringify(data),
       });
       if (!response.ok) throw new Error("Arquivo incompatível com o perfil Alinha versão 1.");
-      setProfile(data as Resume); setReview(null); setChecked([]);
+      const normalized = await response.json() as { profile: Resume };
+      setProfile(normalized.profile); setReview(null); setChecked([]);
       setSuccess("Perfil importado. Revise os dados antes de exportar.");
     } catch (e) { setError(e instanceof Error ? e.message : "Falha na importação."); }
     finally { event.target.value=""; }

@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-from pydantic import ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 from alinha_api.schemas import (
     AnalysisRequest,
@@ -15,6 +15,7 @@ from alinha_api.schemas import (
     ProviderName,
 )
 from alinha_api.services.analysis import NoVerifiedRequirements
+from alinha_api.services.ats import AtsReport, check_document, check_text
 from alinha_api.services.api_key_store import ConnectionError, api_key, connect, disconnect
 from alinha_api.services.chatgpt_auth import AuthError, chatgpt_auth, enabled
 from alinha_api.services.deployment import get_mode, hosted_analysis_ready, local_ollama_allowed
@@ -231,3 +232,25 @@ def analyze_upload(
     finally:
         file.file.close()
     return run_analysis(payload)
+
+
+class AtsTextRequest(BaseModel):
+    resume_text: str = Field(min_length=1, max_length=22000)
+
+
+@app.post("/api/v1/ats/check/text", response_model=AtsReport)
+def ats_check_text(payload: AtsTextRequest) -> AtsReport:
+    """Check basic parseability without calling any model."""
+    return check_text(payload.resume_text)
+
+
+@app.post("/api/v1/ats/check/upload", response_model=AtsReport)
+def ats_check_upload(file: Annotated[UploadFile, File()]) -> AtsReport:
+    """Local, in-memory PDF/DOCX/TXT inspection. No persistence."""
+    content = file.file.read(MAX_UPLOAD_BYTES + 1)
+    try:
+        return check_document(file.filename, content)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    finally:
+        file.file.close()

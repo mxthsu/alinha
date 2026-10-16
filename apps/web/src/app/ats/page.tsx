@@ -6,7 +6,7 @@ import {
   AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, ChevronRight,
   FileCheck2, FileText, Info, LoaderCircle, ShieldCheck, UploadCloud,
 } from "lucide-react";
-import styles from "./ats.module.css";
+import "./ats.css";
 
 type Finding = {
   code: string;
@@ -83,43 +83,43 @@ export default function AtsCheck() {
   }
 
   return (
-    <div className={styles.shell}>
-      <header className={styles.header}>
-        <div className={styles.container}>
-          <Link href="/" className={styles.brand} aria-label="Alinha, página inicial">
-            <span className={styles.mark}><ArrowRight size={19} aria-hidden="true" /></span>
+    <div className="ats-shell">
+      <header className="ats-header">
+        <div className="ats-container">
+          <Link href="/" className="ats-brand" aria-label="Alinha, página inicial">
+            <span className="ats-mark"><ArrowRight size={19} aria-hidden="true" /></span>
             alinha<span>.</span>
           </Link>
-          <Link href="/" className={styles.back}><ArrowLeft size={16} aria-hidden="true" /> Voltar ao Alinha</Link>
+          <Link href="/" className="ats-back"><ArrowLeft size={16} aria-hidden="true" /> Voltar ao Alinha</Link>
         </div>
       </header>
 
-      <main className={styles.main}>
-        <div className={styles.container}>
-          <div className={styles.heading}>
-            <div className={styles.eyebrow}><ShieldCheck size={16} aria-hidden="true" /> LEITURA E COMPATIBILIDADE ATS</div>
+      <main className="ats-main">
+        <div className="ats-container">
+          <div className="ats-heading">
+            <div className="ats-eyebrow"><ShieldCheck size={16} aria-hidden="true" /> LEITURA E COMPATIBILIDADE ATS</div>
             <h1>Seu currículo pode ser <em>lido com clareza?</em></h1>
             <p>Verifique características que podem dificultar a leitura do arquivo por plataformas de recrutamento. Sem notas ATS inventadas e sem consumir sua IA.</p>
           </div>
 
-          <div className={styles.columns}>
-            <form className={styles.inputPanel} onSubmit={submit}>
-              <div className={styles.panelHeading}>
-                <span className={styles.number}>01</span>
+          <div className="ats-columns">
+            <form className="ats-inputPanel" onSubmit={submit}>
+              <div className="ats-panelHeading">
+                <span className="ats-number">01</span>
                 <div><h2>Verifique seu documento</h2><p>A checagem acontece na API local, sem enviar o currículo para um modelo de IA.</p></div>
               </div>
-              <div className={styles.modeSwitch} role="group" aria-label="Origem do currículo">
-                <button type="button" className={mode === "file" ? styles.current : ""} aria-pressed={mode === "file"}
+              <div className="ats-modeSwitch" role="group" aria-label="Origem do currículo">
+                <button type="button" className={mode === "file" ? "ats-current" : ""} aria-pressed={mode === "file"}
                   onClick={() => { setMode("file"); setReport(null); setError(""); }}>
                   <UploadCloud size={16} aria-hidden="true" /> Enviar arquivo
                 </button>
-                <button type="button" className={mode === "text" ? styles.current : ""} aria-pressed={mode === "text"}
+                <button type="button" className={mode === "text" ? "ats-current" : ""} aria-pressed={mode === "text"}
                   onClick={() => { setMode("text"); setReport(null); setError(""); }}>
                   <FileText size={16} aria-hidden="true" /> Colar texto
                 </button>
               </div>
               {mode === "file" ? (
-                <div className={styles.fileBox}>
+                <div className="ats-fileBox">
                   <label htmlFor="ats-file">
                     <UploadCloud size={29} aria-hidden="true" />
                     <strong>{file ? file.name : "Selecione seu currículo"}</strong>
@@ -129,7 +129,7 @@ export default function AtsCheck() {
                     onChange={event => { setFile(event.target.files?.[0] || null); setReport(null); setError(""); }} />
                 </div>
               ) : (
-                <div className={styles.textBox}>
+                <div className="ats-textBox">
                   <label htmlFor="ats-resume">Conteúdo do currículo</label>
                   <textarea id="ats-resume" value={resumeText} maxLength={22000} rows={10}
                     placeholder="Cole aqui o texto que deseja verificar…"
@@ -138,49 +138,49 @@ export default function AtsCheck() {
                   <small>{resumeText.length.toLocaleString("pt-BR")} / 22.000 caracteres</small>
                 </div>
               )}
-              <div className={styles.privacy}><ShieldCheck size={18} aria-hidden="true" />
+              <div className="ats-privacy"><ShieldCheck size={18} aria-hidden="true" />
                 O diagnóstico não armazena o documento nem utiliza sua chave Gemini.</div>
-              {error && <p role="alert" className={styles.error}><AlertCircle size={17} aria-hidden="true" />{error}</p>}
-              <button className={styles.submit} disabled={loading || (mode === "file" ? !file : !resumeText.trim())}>
-                {loading ? <LoaderCircle size={18} className={styles.spin} aria-hidden="true" /> : <FileCheck2 size={18} aria-hidden="true" />}
+              {error && <p role="alert" className="ats-error"><AlertCircle size={17} aria-hidden="true" />{error}</p>}
+              <button className="ats-submit" disabled={loading || (mode === "file" ? !file : !resumeText.trim())}>
+                {loading ? <LoaderCircle size={18} className="ats-spin" aria-hidden="true" /> : <FileCheck2 size={18} aria-hidden="true" />}
                 {loading ? "Verificando documento…" : "Verificar compatibilidade"}
                 {!loading && <ArrowRight size={17} aria-hidden="true" />}
               </button>
             </form>
 
-            <section className={styles.results} aria-live="polite" aria-label="Diagnóstico de legibilidade ATS">
+            <section className="ats-results" aria-live="polite" aria-label="Diagnóstico de legibilidade ATS">
               {report ? (
                 <>
-                  <div className={styles.reportTop}><span className={styles.eyebrow}>02 · DIAGNÓSTICO</span><span className={styles.reportType}>{report.document_type.toUpperCase()}</span></div>
+                  <div className="ats-reportTop"><span className="ats-eyebrow">02 · DIAGNÓSTICO</span><span className="ats-reportType">{report.document_type.toUpperCase()}</span></div>
                   <h2>{report.assessment === "basic_readability_confirmed" ? "Nenhum problema básico identificado" : "Pontos para revisar"}</h2>
                   <p>O Alinha conseguiu recuperar {report.readable_characters.toLocaleString("pt-BR")} caracteres de texto. Isso não garante a interpretação por todos os ATS.</p>
                   {report.findings.length ? (
-                    <div className={styles.findings}>
+                    <div className="ats-findings">
                       {report.findings.map(finding => (
-                        <article className={styles.finding} key={finding.code}>
-                          <div className={styles.findingTop}><AlertCircle size={18} aria-hidden="true" />
+                        <article className="ats-finding" key={finding.code}>
+                          <div className="ats-findingTop"><AlertCircle size={18} aria-hidden="true" />
                             <span>{labels[finding.severity]}</span>
                           </div>
                           <h3>{finding.title}</h3>
                           <p>{finding.explanation}</p>
-                          <div className={styles.action}><strong>Como melhorar:</strong> {finding.action}</div>
+                          <div className="ats-action"><strong>Como melhorar:</strong> {finding.action}</div>
                         </article>
                       ))}
                     </div>
-                  ) : <div className={styles.ok}><CheckCircle2 size={20} /> A checagem básica não identificou alertas neste documento.</div>}
-                  <div className={styles.limitations}>
+                  ) : <div className="ats-ok"><CheckCircle2 size={20} /> A checagem básica não identificou alertas neste documento.</div>}
+                  <div className="ats-limitations">
                     <Info size={17} aria-hidden="true" />
                     <div>{report.limitations.map(item => <p key={item}>{item}</p>)}</div>
                   </div>
-                  <Link href="/" className={styles.analyze}>Comparar com uma vaga <ChevronRight size={18} /></Link>
+                  <Link href="/" className="ats-analyze">Comparar com uma vaga <ChevronRight size={18} /></Link>
                 </>
               ) : (
-                <div className={styles.empty}>
-                  <div className={styles.symbol}><FileCheck2 size={29} aria-hidden="true" /></div>
-                  <span className={styles.eyebrow}>02 · RESULTADO</span>
+                <div className="ats-empty">
+                  <div className="ats-symbol"><FileCheck2 size={29} aria-hidden="true" /></div>
+                  <span className="ats-eyebrow">02 · RESULTADO</span>
                   <h2>Um currículo mais fácil de interpretar.</h2>
                   <p>Envie o arquivo para identificar problemas de extração de texto, tabelas, cabeçalhos e organização de seções.</p>
-                  <div className={styles.features}>
+                  <div className="ats-features">
                     <div><CheckCircle2 size={17} /> Leitura de PDF, DOCX e TXT</div>
                     <div><CheckCircle2 size={17} /> Recomendações com motivo claro</div>
                     <div><CheckCircle2 size={17} /> Sem pontuação ATS fictícia</div>
@@ -189,7 +189,7 @@ export default function AtsCheck() {
               )}
             </section>
           </div>
-          <div className={styles.disclaimer}>
+          <div className="ats-disclaimer">
             <Info size={18} aria-hidden="true" />
             Compatibilidade de leitura é diferente de aprovação em uma vaga. Os critérios e decisões variam entre plataformas e empregadores.
           </div>

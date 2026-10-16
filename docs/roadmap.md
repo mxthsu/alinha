@@ -24,6 +24,8 @@
 
 ## v0.3 — Recursos para candidatos
 
+- [x] Diagnóstico inicial determinístico de legibilidade ATS para PDF, DOCX e TXT; sem nota universal ou alegação de aprovação.
+- [ ] Validar diagnóstico ATS com diferentes documentos sintéticos e parsers (incluindo PDFs com layouts complexos).
 - [ ] Editor e versões de currículo.
 - [ ] Exportação DOCX/PDF.
 - [ ] Plano de preparação de entrevistas.

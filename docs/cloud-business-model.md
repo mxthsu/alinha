@@ -94,10 +94,10 @@ Idempotência, locks/transações de concorrência, reconciliação, retenção,
 
 ## Processamento de pagamentos: opções viáveis
 
-- **Stripe Billing + pagamentos:** assinaturas e recursos de billing por uso/créditos; analisar disponibilidade de recursos na conta brasileira, taxas em BRL, tributação e políticas de crédito antes de escolher. Referências: [Stripe Billing Brasil](https://stripe.com/br/billing/pricing) e [cobrança baseada em uso](https://docs.stripe.com/billing/subscriptions/metered-billing/thresholds).
-- **Mercado Pago Assinaturas:** API para planos, assinaturas recorrentes e faturas, com pagamentos adaptados ao mercado brasileiro. Para créditos por uso, a contabilidade de consumo continua sendo responsabilidade do Alinha. Referência: [API de Assinaturas](https://www.mercadopago.com.br/developers/pt/reference/online-payments/subscriptions/overview).
+- **Stripe Billing + pagamentos:** assinaturas e recursos de billing por uso/créditos; analisar disponibilidade de recursos na conta de cobrança, taxas em BRL, tributação e políticas de crédito antes de escolher. Referências: [Stripe Billing Brasil](https://stripe.com/br/billing/pricing) e [cobrança baseada em uso](https://docs.stripe.com/billing/subscriptions/metered-billing/thresholds).
+- **Mercado Pago Assinaturas:** API para planos, assinaturas recorrentes e faturas, com pagamentos adaptados ao mercado local. Para créditos por uso, a contabilidade de consumo continua sendo responsabilidade do Alinha. Referência: [API de Assinaturas](https://www.mercadopago.com.br/developers/pt/reference/online-payments/subscriptions/overview).
 
-**Escolha provisória:** investigar Stripe Billing primeiro se precisarmos de recursos integrados para medição e assinatura; validar Mercado Pago para pagamentos brasileiros e conversão. A escolha definitiva dependerá de um protótipo sandbox, tributação local e taxas negociadas. Não adicionar dependência de nenhum gateway à API Community agora.
+**Escolha provisória:** investigar Stripe Billing primeiro se precisarmos de recursos integrados para medição e assinatura; validar Mercado Pago para pagamentos locais e conversão. A escolha definitiva dependerá de um protótipo sandbox, tributação local e taxas negociadas. Não adicionar dependência de nenhum gateway à API Community agora.
 
 ## Critérios objetivos antes de lançar
 

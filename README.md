@@ -4,7 +4,7 @@
 
 **Sua experiência, novas oportunidades.**
 
-O Alinha está evoluindo para um **agente de carreira brasileiro**: da criação do currículo à descoberta de vagas, preparação de candidaturas e acompanhamento. A versão atual já oferece Studio, legibilidade ATS e comparação de evidências com vagas; **busca e envio automático ainda não estão disponíveis**.
+O Alinha está evoluindo para um **agente de carreira**: da criação do currículo à descoberta de vagas, preparação de candidaturas e acompanhamento. A versão atual já oferece Studio, legibilidade ATS e comparação de evidências com vagas; **envio automático de candidaturas ainda não está disponível**.
 
 [![CI](https://github.com/mxthsu/alinha/actions/workflows/ci.yml/badge.svg)](https://github.com/mxthsu/alinha/actions/workflows/ci.yml)
 [![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-286443)](LICENSE)
@@ -16,7 +16,7 @@ O Alinha está evoluindo para um **agente de carreira brasileiro**: da criação
 
 ![Prévia da interface do Alinha, com comparação de requisitos e evidências](docs/assets/site-preview.png)
 
-## Próxima fase: agente de carreira brasileiro
+## Próxima fase: agente de carreira
 
 O projeto terá uma edição Community open source e uma futura oferta Pro gerenciada.
 O modelo de autonomia previsto é **automático com autorização prévia delimitada**:
@@ -51,21 +51,21 @@ O **Alinha Cloud ainda não existe como serviço público**. A proposta futura �
 ## Acompanhe as oportunidades no Community
 
 O quadro **Acompanhar candidaturas** (/candidaturas) permite salvar vagas da pesquisa
-ou adicionar manualmente links de plataformas brasileiras. Cada etapa é declarada
+ou adicionar manualmente links de plataformas de emprego. Cada etapa é declarada
 pelo usuário: o Alinha **não confirma candidaturas, entrevistas ou propostas** e
 **não acessa automaticamente as páginas adicionadas**. As informações ficam somente
 no navegador, sem conta, com exportação/importação JSON validada. Não inclui
 currículos nem dados de candidatos no armazenamento do quadro.
 
-Veja [como o acompanhamento funciona](docs/opportunity-tracking.md).
+Veja [como o acompanhamento funciona](docs/opportunity-tracking.md). As vagas salvas também podem abrir diretamente a preparação da candidatura, mantendo título, empresa e link da oportunidade.
 
 ## Encontre vagas remotas disponíveis para o Brasil
 
-A área **Encontrar vagas** (/vagas) consulta uma fonte pública autorizada (Himalayas), mantém atribuição visível e abre o link da vaga na fonte original. É possível informar cargo, preferência de modalidade, vínculo CLT/PJ, cidade e salário pretendido. Como a fonte inicial oferece somente vagas remotas, dados brasileiros não publicados permanecem **a confirmar**, nunca são inventados. A busca não armazena perfil nem envia candidaturas. Veja [como funciona a descoberta](docs/job-discovery.md) e [revisão de segurança](docs/security-review.md).
+A área **Encontrar vagas** (/vagas) consulta uma fonte pública autorizada (Himalayas), mantém atribuição visível e abre o link da vaga na fonte original. É possível informar cargo, preferência de modalidade, vínculo CLT/PJ, cidade e salário pretendido. Como a fonte inicial oferece somente vagas remotas, informações contratuais ou salariais não publicadas permanecem **a confirmar**, nunca são inventadas. A busca não armazena perfil nem envia candidaturas. Veja [como funciona a descoberta](docs/job-discovery.md) e [revisão de segurança](docs/security-review.md).
 
 ## Crie seu currículo no Studio
 
-O [Currículo Studio](apps/web/src/app/studio) (rota `/studio`) permite preencher seções estruturadas, escolher dois modelos, acompanhar uma prévia em tempo real e exportar DOCX. As sugestões de melhoria são oferecidas em Preparar candidatura, após a comparação com os requisitos de uma vaga informada. É possível salvar o perfil como JSON no computador, sem conta e sem persistência no servidor. Consulte a [documentação do Studio](docs/studio.md).
+O [Currículo Studio](apps/web/src/app/studio) (rota `/studio`) permite preencher seções estruturadas, escolher dois modelos, acompanhar uma prévia em tempo real e exportar DOCX. As sugestões de melhoria são oferecidas em Preparar candidatura, após a comparação com os requisitos de uma vaga informada. O currículo é salvo automaticamente neste navegador e reutilizado em Preparar candidatura, sem conta ou persistência remota. JSON é apenas um backup opcional; você pode apagar o rascunho local. Consulte a [documentação do Studio](docs/studio.md).
 
 ## Prepare sua candidatura
 

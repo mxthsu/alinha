@@ -41,6 +41,6 @@ O Pro deve reutilizar os contratos e regras abertas. Isso não significa que o C
 
 ## Antes de criar serviços privados
 
-Primeiro provar um fluxo real de descoberta e candidatura assistida, medir custos, validar políticas das fontes, detalhar privacidade/LGPD e validar o modelo comercial com usuários brasileiros. O repositório privado de serviços Pro será criado em etapa própria; não precisamos dele para desenvolver o núcleo.
+Primeiro provar um fluxo real de descoberta e candidatura assistida, medir custos, validar políticas das fontes, detalhar privacidade/LGPD e validar o modelo comercial com usuários. O repositório privado de serviços Pro será criado em etapa própria; não precisamos dele para desenvolver o núcleo.
 
 Referências internas: career-product-vision.md, agent-application-contract.md e cloud-business-model.md.

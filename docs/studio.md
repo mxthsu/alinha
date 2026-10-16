@@ -8,11 +8,11 @@ O **Currículo Studio** (rota `/studio`) é o início do criador de currículos 
 
 Use **Importar currículo**, na barra de ações do Studio. O PDF, DOCX ou TXT é interpretado e os campos são **preenchidos diretamente no editor**. Não há uma tela separada de confirmação, formulário de prévia nem botão de exemplo fictício. O usuário pode editar qualquer informação, navegar pelas seções e usar **Desfazer importação** para recuperar o rascunho anterior antes de começar a alterá-lo.
 
-Se algum trecho não for reconhecido, fica disponível somente na seção expansível **Trechos do arquivo que precisam de revisão** dentro de **Informações**. Não usamos IA nesse processo nem armazenamos o arquivo. Uma nova importação substitui o conteúdo editado, com opção imediata de desfazer; para guardar versões, exporte o perfil JSON.
+Se algum trecho não for reconhecido, fica disponível somente na seção expansível **Trechos do arquivo que precisam de revisão** dentro de **Informações**. Não usamos IA nesse processo nem armazenamos o arquivo. Uma nova importação substitui o conteúdo editado, com opção imediata de desfazer. O rascunho é salvo automaticamente neste dispositivo; JSON é apenas um backup opcional.
 
 O importador reconhece cabeçalhos em português e inglês, experiências com datas em linhas separadas, formatos empilhados (empresa antes ou depois do cargo), atividades quebradas por linha, competências agrupadas e projetos com tópicos. DOCX com tabelas mantém a ordem dos blocos e TXT aceita UTF-8 e Windows-1252. PDFs digitalizados sem texto e layouts multicoluna difíceis continuam exigindo intervenção manual. O sistema usa somente informações literais e não deduz qualificações ausentes.
 
-O Studio permanece independente da verificação ATS e da comparação com vagas, que agora ficam unificadas em [Preparar candidatura](application-workflow.md).
+O Studio compartilha o currículo salvo no navegador com [Preparar candidatura](application-workflow.md), que reúne a verificação ATS e a comparação com vagas.
 
 ## Funcionalidades desta versão
 
@@ -21,7 +21,9 @@ O Studio permanece independente da verificação ATS e da comparação com vagas
 - Exportação DOCX com texto selecionável, estrutura de uma coluna e sem tabelas.
 - Importação/exportação de perfil em JSON de formato aberto (`schema_version: 1`). Não há conta ou sincronização nesta versão.
 
-O perfil permanece apenas na memória do navegador durante a edição. Não gravamos em `localStorage` ou banco de dados. **Para continuar depois, use Salvar perfil (JSON)**. Fechar/recarregar a página perde alterações não exportadas.
+**Salvamento automático:** o perfil estruturado e o modelo são armazenados no IndexedDB do navegador após alterações. Ao reabrir o Studio no mesmo dispositivo e perfil de navegador, o currículo é recuperado automaticamente. O botão de backup JSON continua disponível no menu Opções, junto da função de apagar o rascunho.
+
+**Privacidade:** o IndexedDB não é criptografado pelo Alinha. Pessoas que compartilham o mesmo perfil do navegador podem acessar os dados; em computadores compartilhados, apague o rascunho. Arquivos de backup JSON também não são criptografados. O PDF/DOCX original não é armazenado no rascunho.
 
 ## Sugestões de melhoria ligadas à vaga
 
@@ -38,7 +40,7 @@ O Studio não possui área de **Melhorias com IA**, seletor de provedor ou descr
 
 ## Evoluções planejadas
 
-- Transferência opcional, controlada pelo usuário, de um currículo do Studio para Preparar candidatura sem persistência automática.
+- Reutilização do perfil estruturado do Studio na preparação de candidatura, sem exigir novo upload.
 - Exportação em PDF textual, com validação de extração posterior.
 - Mais modelos com prévia fiel, acessibilidade e testes visuais em tamanhos de tela distintos.
 - Avaliações padronizadas com dataset totalmente sintético para medir erros de interpretação e de reescrita.

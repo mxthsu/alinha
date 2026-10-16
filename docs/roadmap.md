@@ -1,6 +1,6 @@
 ## Próxima fase — Alinha como agente de carreira (planejado)
 
-Visão: [agente de carreira no Brasil](career-product-vision.md).
+Visão: [agente de carreira](career-product-vision.md).
 Arquitetura: [Community/Pro](open-core-boundaries.md).
 Política: [contratos e segurança](agent-application-contract.md).
 
@@ -9,7 +9,7 @@ Política: [contratos e segurança](agent-application-contract.md).
 - [ ] Preferências do candidato na UI (modalidade, cidade, CLT/PJ/estágio, salário).
 - [x] Primeira fonte pública de descoberta remota elegível a candidatos no Brasil, com atribuição e validação de links.
 - [x] Página inicial de pesquisa e preferências temporárias, com dados desconhecidos sinalizados.
-- [ ] Adicionar conectores brasileiros autorizados para CLT/PJ, híbrido, presencial, estágio e trainee.
+- [ ] Adicionar fontes de vagas autorizadas para CLT/PJ, híbrido, presencial, estágio e trainee.
 - [ ] Persistir preferências somente com consentimento e critérios claros de exclusão.
 - [ ] Explicar relevância e preparar respostas/documentos vinculados à vaga.
 - [x] Quadro Kanban Community para acompanhamento manual, com armazenamento no navegador e importação/exportação JSON.
@@ -22,7 +22,7 @@ Política: [contratos e segurança](agent-application-contract.md).
 
 ## v0.1 — Fundação reproduzível
 
-- [x] Definir produto e posicionamento em português brasileiro.
+- [x] Definir produto e posicionamento em pt-BR.
 - [x] Criar site responsivo, formulário e demonstração fictícia.
 - [x] Criar API FastAPI com contratos estruturados.
 - [x] Integrar provedor Gemini isolado e fluxo LangGraph.
@@ -61,7 +61,7 @@ Política: [contratos e segurança](agent-application-contract.md).
 - [x] Unificar leitura ATS e comparação com vaga na rota `/preparar`, preservando redirects das URLs anteriores.
 - [x] Reutilizar o arquivo escolhido na mesma página entre ATS e análise com IA, sem novo upload manual.
 - [x] Importar PDF/DOCX/TXT no Studio para rascunho estruturado editável diretamente.
-- [ ] Transferir dados entre Studio e preparação de candidatura em memória sem novo upload ou persistência indevida.
+- [x] Reutilizar o currículo do Studio em Preparar candidatura com salvamento local e sem novo upload.
 - [ ] Melhorar reconhecimento de CVs com seções pouco padronizadas e avaliar extração assistida por IA com citações.
 
 ## Navegação e identidade

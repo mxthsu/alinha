@@ -1,7 +1,7 @@
 # Guia para agentes de desenvolvimento
 
-- Este repositório é o **Alinha**: editor e análise responsável de currículos em evolução para um agente de carreira brasileiro com autorização explícita para ações.
-- Interfaces, mensagens destinadas ao usuário e documentação pública: **português brasileiro (pt-BR)**.
+- Este repositório é o **Alinha**: editor e análise responsável de currículos em evolução para um agente de carreira com autorização explícita para ações.
+- Interfaces, mensagens destinadas ao usuário e documentação pública: **pt-BR**.
 - Identificadores de código, contratos técnicos, diretórios, arquivos de código e mensagens de commit: **inglês**, seguindo convenções usuais.
 - Não inventar habilidades, experiências, números, compatibilidade ATS ou garantias de contratação.
 - Nunca usar currículos ou dados reais em testes, exemplos, logs, screenshots ou commits.

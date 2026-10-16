@@ -1,6 +1,6 @@
 # Interface do Alinha
 
-Aplicação Next.js em português brasileiro. Veja as instruções e os avisos de privacidade no [README principal](../../README.md).
+Aplicação Next.js em pt-BR. Veja as instruções e os avisos de privacidade no [README principal](../../README.md).
 
 ```bash
 npm ci

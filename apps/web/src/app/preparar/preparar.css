@@ -51,3 +51,16 @@
 @media(max-width:900px){.journey-columns{grid-template-columns:1fr}.journey-progress{flex-wrap:wrap}.journey-progress-connector{display:none}}
 @media(max-width:600px){.journey-progress{flex-direction:column;align-items:stretch}.journey-finish{flex-direction:column;align-items:flex-start}.journey-finish-button{width:100%}}
 @media(prefers-reduced-motion:reduce){.journey-spin{animation:none}.journey-submit{transition:none}.journey-submit:hover:not(:disabled){transform:none}}
+
+.journey-shared-resume{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:11px 0}
+.journey-shared-resume button,.journey-shared-resume a{display:inline-flex;align-items:center;gap:7px;border:1px solid #cbdcca;border-radius:9px;padding:10px 12px;background:#f3faf0;color:#367148;font-weight:750;font-size:12px;min-height:41px}
+.journey-shared-resume button:disabled{opacity:.6;cursor:wait}
+.journey-shared-resume a{background:#fff}
+.journey-shared-notice{padding:10px 13px;border-radius:9px;background:#eaf5e5;color:#497850;font-size:12px;line-height:1.6}
+.journey-selected-job{background:#f5faf2;border:1px solid #d5e6d1;border-radius:12px;padding:17px;margin:12px 0 22px;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.journey-selected-job>div{flex:1;display:flex;flex-direction:column;gap:5px;min-width:190px}
+.journey-selected-job strong{font-size:12.5px;color:#235334}
+.journey-selected-job span,.journey-selected-job p{font-size:11px;color:#698671;line-height:1.65}
+.journey-selected-job a{display:inline-flex;align-items:center;gap:5px;color:#39784b;font-size:11px;font-weight:750}
+.journey-selected-job p{flex-basis:100%;margin:0}
+.journey-selected-job button{border:1px solid #d1dfcb;border-radius:8px;background:#fff;color:#6c866e;padding:8px 10px;font-size:11px}

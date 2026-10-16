@@ -2,11 +2,11 @@
 
 > **Decisão de produto, não anúncio de serviço disponível.** O Alinha Cloud, planos pagos e login ChatGPT num site centralizado ainda não foram lançados. Não publicar preços, cotas ou promessas comerciais sem validação de custos, privacidade e viabilidade.
 
-> **Atualização de direção (outubro/2026):** o Alinha evolui de um analisador de currículos para um **agente de carreira brasileiro**, com busca de vagas, preparação e candidaturas autorizadas no roteiro. O Cloud ainda não existe; contratos e políticas iniciais estão em [visão de produto](career-product-vision.md), [open-core](open-core-boundaries.md) e [política do agente](agent-application-contract.md).
+> **Atualização de direção (outubro/2026):** o Alinha evolui de um analisador de currículos para um **agente de carreira**, com busca de vagas, preparação e candidaturas autorizadas no roteiro. O Cloud ainda não existe; contratos e políticas iniciais estão em [visão de produto](career-product-vision.md), [open-core](open-core-boundaries.md) e [política do agente](agent-application-contract.md).
 
 ## Visão
 
-O Alinha é um produto brasileiro para analisar currículos em relação a oportunidades, com requisitos identificados, evidências do currículo e recomendações fundamentadas. A distribuição combina uma edição **Community**, livre e independente, com uma oferta de infraestrutura hospedada **inteiramente opcional**. O produto mantém sua identidade, objetivos e arquitetura próprios.
+O Alinha é uma plataforma para analisar currículos em relação a oportunidades, com requisitos identificados, evidências do currículo e recomendações fundamentadas. A distribuição combina uma edição **Community**, livre e independente, com uma oferta de infraestrutura hospedada **inteiramente opcional**. O produto mantém sua identidade, objetivos e arquitetura próprios.
 
 ### Princípios inegociáveis
 
@@ -16,7 +16,7 @@ O Alinha é um produto brasileiro para analisar currículos em relação a oport
 4. **Separação entre pagar pela infraestrutura e pagar pela IA**: a assinatura ChatGPT, o consumo de API e a assinatura do Alinha Cloud são produtos distintos, com custos e limites próprios.
 5. **Nenhuma alegação artificial sobre ATS**: correspondência é explicada por requisitos, evidências e limitações, não por porcentagens apresentadas como notas oficiais.
 6. **Privacidade de currículos**: consentimento claro, minimização de dados, controle de retenção e exclusão, registro de eventos sem conteúdo sensível e atendimento à LGPD antes da disponibilização pública.
-7. **Lançamento em pt-BR**: interface, README e documentação pública em português brasileiro; código-fonte e identificadores técnicos em inglês. Preparado para tradução futura.
+7. **Lançamento em pt-BR**: interface, README e documentação pública em pt-BR; código-fonte e identificadores técnicos em inglês. Preparado para tradução futura.
 
 ## As duas formas de usar
 

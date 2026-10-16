@@ -1,4 +1,4 @@
-# Alinha — visão do agente de carreira brasileiro
+# Alinha — visão do agente de carreira
 
 > Planejamento aprovado. O produto atual oferece Studio, importação de currículos, legibilidade ATS e comparação com uma vaga. Busca contínua, candidaturas automáticas, agentes em nuvem e assinaturas ainda não foram lançados.
 
@@ -6,7 +6,7 @@
 
 Transformar o Alinha num assistente de carreira que ajude a **encontrar vagas, comparar requisitos, preparar currículos específicos, candidatar-se dentro de autorizações e acompanhar resultados**. O LoopCV é referência de categoria e funcionalidade, não fonte para copiar código, textos, marca ou identidade.
 
-**Brasil primeiro**: pt-BR, BRL, contratação CLT/PJ/estágio/trainee, opções remoto/híbrido/presencial, cidades e regiões brasileiras. Idiomas adicionais depois, com contratos preparados para internacionalização.
+**Localização e formatos**: interface pt-BR, valores em BRL quando aplicável, contratação CLT/PJ/estágio/trainee, opções remoto/híbrido/presencial e localidades configuráveis. A arquitetura deve permitir tradução e adaptação a outros idiomas, moedas e modalidades de contrato.
 
 ## Experiência planejada
 

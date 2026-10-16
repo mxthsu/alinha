@@ -10,7 +10,7 @@
 4. Revise cada informação desconhecida na plataforma da vaga. Um vínculo Full Time estrangeiro **não** é equivalente a CLT, e um salário anual em USD não é salário mensal em BRL.
 5. Abra o link original do Himalayas ou use **Preparar candidatura** para comparar a vaga com o currículo.
 
-As preferências permanecem apenas na memória da página, sem autenticação ou armazenamento persistente. A fonte atual não cobre vagas híbridas ou presenciais. Preferências de cidade, contrato CLT/PJ e salário não são filtros confiáveis nesta fonte, portanto aparecem como **a confirmar**, sem afirmar correspondência. Novos conectores brasileiros só devem ser adicionados após revisão dos termos e permissões.
+As preferências permanecem apenas na memória da página, sem autenticação ou armazenamento persistente. A fonte atual não cobre vagas híbridas ou presenciais. Preferências de cidade, contrato CLT/PJ e salário não são filtros confiáveis nesta fonte, portanto aparecem como **a confirmar**, sem afirmar correspondência. Novos conectores só devem ser adicionados após revisão dos termos e permissões.
 
 ## Fonte, atribuição e segurança
 
@@ -26,7 +26,7 @@ Himalayas exige crédito visível ao site e que os links de candidatura utilizem
 
 ## Evoluções
 
-Construir filtros e preferências persistentes somente com consentimento, deduplicação, ranking explicável, conectores brasileiros permitidos, Kanban, respostas confirmadas e candidaturas assistidas. Não automatizar CAPTCHA, MFA ou ações contra termos de plataformas.
+Construir filtros e preferências persistentes somente com consentimento, deduplicação, ranking explicável, novos conectores permitidos, Kanban, respostas confirmadas e candidaturas assistidas. Não automatizar CAPTCHA, MFA ou ações contra termos de plataformas.
 
 Testes sintéticos: apps/api/tests/test_jobs_discovery.py.
 Regras do agente: docs/agent-application-contract.md.

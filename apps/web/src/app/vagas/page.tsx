@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, BriefcaseBusiness, ExternalLink, Globe2, LoaderCircle, MapPin, Search, ShieldCheck, SlidersHorizontal, Wallet } from "lucide-react";
 import { PlatformNav } from "@/components/platform-nav";
 import { useOpportunityTracker } from "@/hooks/use-opportunity-tracker";
+import { selectOpportunity } from "@/lib/career-handoff";
 import { opportunityFingerprint } from "@/lib/opportunity-tracker";
 import "./vagas.css";
 
@@ -34,7 +35,7 @@ export default function Jobs() {
     if(workMode!=="remote"){
       setResult({jobs:[],source_name:"Himalayas",source_url:"https://himalayas.app",
         description:"Esta fonte inicial oferece apenas vagas remotas.",
-        limitations:["Vagas híbridas e presenciais dependem de futuras fontes brasileiras autorizadas."]});
+        limitations:["Vagas híbridas e presenciais dependem de outras fontes autorizadas."]});
       setLoading(false);return;
     }
     const controller=new AbortController();abort.current=controller;
@@ -117,6 +118,10 @@ export default function Jobs() {
                     {item.missing_information.join("; ")}.</p>}
                 <div className="vacancies-card-footer"><span>Fonte: <a href="https://himalayas.app" target="_blank" rel="noopener noreferrer">Himalayas</a></span>
                   <div className="vacancies-card-actions">
+                    {job.source_url&&<Link href="/preparar" className="vacancies-prepare" onClick={()=>
+                      selectOpportunity({title:job.title,company:job.company,url:job.source_url!,
+                        source:job.source,excerpt:item.excerpt})
+                    }>Preparar candidatura <ArrowRight size={14}/></Link>}
                     {job.source_url&&<button type="button"
                       disabled={tracked.some(saved=>opportunityFingerprint(saved.source,saved.sourceId,saved.url)===opportunityFingerprint(job.source,job.external_id,job.source_url!))}
                       onClick={()=>{

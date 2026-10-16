@@ -1,9 +1,11 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, FileCheck2, FilePenLine, FileSearch, Info, LoaderCircle, ShieldCheck, Sparkles, AlertCircle } from "lucide-react";
 import { PlatformNav } from "@/components/platform-nav";
+import { clearSelectedOpportunity, selectedOpportunity, type SelectedOpportunity } from "@/lib/career-handoff";
+import { hasResumeContent, loadResumeDraft } from "@/lib/career-workspace";
 import { ResumeUpload } from "@/components/resume-upload";
 import { ConnectedProviderPicker } from "@/components/connected-provider-picker";
 import { AtsEditor } from "@/components/ats-editor";
@@ -25,6 +27,10 @@ export default function PrepareApplication() {
   const [resume, setResume] = useState("");
   const [ats, setAts] = useState<AtsReport|null>(null);
   const [job, setJob] = useState("");
+  const [selectedJob,setSelectedJob]=useState<SelectedOpportunity|null>(null);
+  const [studioMessage,setStudioMessage]=useState("");
+  const [loadingStudio,setLoadingStudio]=useState(false);
+  const userSelectedSource=useRef(false);
   const [provider, setProvider] = useState<Provider>("gemini");
   const [model, setModel] = useState("");
   const [providerReady, setProviderReady] = useState(false);
@@ -35,10 +41,55 @@ export default function PrepareApplication() {
   const abort = useRef<AbortController|null>(null);
   const hasResume = mode === "file" ? Boolean(file) : resume.trim().length >= 50;
 
+  useEffect(()=>{
+    const selected=selectedOpportunity();
+    const selectionFrame=window.requestAnimationFrame(()=>{if(selected)setSelectedJob(selected);});
+    let active=true;
+    void loadResumeDraft().then(async draft=>{
+      if(!active||!draft||!hasResumeContent(draft.profile)||userSelectedSource.current)return;
+      const response=await fetch(api+"/api/v1/resumes/structured/preview/text",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(draft.profile),
+      });
+      if(!response.ok)throw new Error("Não foi possível carregar o currículo salvo.");
+      const data=await response.json() as {resume_text:string};
+      if(!active||userSelectedSource.current||!data.resume_text.trim())return;
+      setMode("text");setResume(data.resume_text);setFile(null);
+      setStudioMessage("Seu currículo do Studio foi carregado automaticamente. Você pode editá-lo ou escolher outro arquivo.");
+    }).catch(()=>{
+      if(active)setStudioMessage("Não foi possível recuperar o rascunho do Studio. Você ainda pode enviar outro currículo.");
+    });
+    return ()=>{active=false;window.cancelAnimationFrame(selectionFrame);};
+  },[]);
+
+  async function loadStudioResume(){
+    if(loadingStudio||busy)return;
+    setLoadingStudio(true);
+    try{
+      const draft=await loadResumeDraft();
+      if(!draft||!hasResumeContent(draft.profile))throw new Error("Nenhum currículo salvo no Studio.");
+      const response=await fetch(api+"/api/v1/resumes/structured/preview/text",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(draft.profile),
+      });
+      if(!response.ok)throw new Error("Não foi possível carregar o currículo do Studio.");
+      const data=await response.json() as {resume_text:string};
+      userSelectedSource.current=false;
+      resetResume();setMode("text");setFile(null);setResume(data.resume_text);
+      setStudioMessage("Currículo do Studio carregado. Verifique a leitura ATS para continuar.");
+    }catch(cause){
+      setStudioMessage(cause instanceof Error?cause.message:"Falha ao carregar currículo.");
+    }finally{setLoadingStudio(false);}
+  }
+  function clearJobSelection(){
+    clearSelectedOpportunity();setSelectedJob(null);setJob("");setResult(null);
+  }
+
+
   function resetResume() { setAts(null);setResult(null);setShowEditor(false);setError("");abort.current?.abort();setBusy(null); }
-  function changeMode(next:"file"|"text") { setMode(next);resetResume(); }
-  function changeFile(next:File|null) { setFile(next);resetResume(); }
-  function changeText(next:string) { setResume(next);resetResume(); }
+  function changeMode(next:"file"|"text") { userSelectedSource.current=true;setMode(next);resetResume(); }
+  function changeFile(next:File|null) { userSelectedSource.current=true;setFile(next);resetResume(); }
+  function changeText(next:string) { userSelectedSource.current=true;setResume(next);resetResume(); }
 
   async function checkAts(event:FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -110,6 +161,13 @@ export default function PrepareApplication() {
           <form className="journey-form" onSubmit={checkAts}>
             <ResumeUpload mode={mode} onModeChange={changeMode} resumeText={resume}
               onResumeTextChange={changeText} file={file} onFileChange={changeFile}/>
+            <div className="journey-shared-resume">
+              <button type="button" disabled={loadingStudio||Boolean(busy)} onClick={()=>void loadStudioResume()}>
+                <FilePenLine size={16}/> {loadingStudio?"Carregando...":"Usar currículo salvo no Studio"}
+              </button>
+              <Link href="/studio">Editar meu currículo <ArrowRight size={15}/></Link>
+            </div>
+            {studioMessage&&<p className="journey-shared-notice" role="status">{studioMessage}</p>}
             <div className="journey-privacy"><ShieldCheck size={16}/> Não armazenamos o arquivo enviado. A mesma seleção será reutilizada na próxima etapa.</div>
             {error&&<p className="journey-error" role="alert"><AlertCircle size={16}/>{error}</p>}
             <button className="journey-submit" type="submit" disabled={!hasResume||Boolean(busy)}>
@@ -140,6 +198,12 @@ export default function PrepareApplication() {
         <div className="journey-card-header"><span>02 · CORRESPONDÊNCIA COM A VAGA</span>
           <h2>Quais requisitos você já demonstra?</h2>
           <p>As sugestões serão geradas somente depois da comparação com os requisitos da vaga informada. Não precisa enviar o currículo novamente.</p></div>
+              {selectedJob&&<div className="journey-selected-job">
+                <div><strong>Vaga selecionada: {selectedJob.title}</strong><span>{selectedJob.company}</span></div>
+                <a href={selectedJob.url} target="_blank" rel="noopener noreferrer">Ver anúncio original <ArrowRight size={14}/></a>
+                <p>O Alinha manteve o contexto desta oportunidade. Cole a descrição completa da vaga abaixo para comparar os requisitos — não utilizamos apenas um resumo parcial.</p>
+                <button type="button" onClick={clearJobSelection}>Remover seleção</button>
+              </div>}
         {!ats?<div className="journey-step-locked"><Info size={20}/> Verifique a leitura do currículo na etapa 1 para continuar.</div>:
           <div className="journey-columns">
             <form className="journey-form" onSubmit={compare}>

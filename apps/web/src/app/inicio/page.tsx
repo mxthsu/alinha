@@ -4,8 +4,8 @@ import { PlatformNav } from "@/components/platform-nav";
 
 const actions = [
   { href: "/studio", icon: FilePenLine, title: "Criar currículo", description: "Edite por seções, escolha modelos e exporte seu currículo em DOCX." },
-  { href: "/ats", icon: FileSearch, title: "Verificar ATS", description: "Confira legibilidade e obstáculos de leitura sem depender de IA." },
-  { href: "/analisar", icon: BriefcaseBusiness, title: "Analisar vaga", description: "Compare seu currículo com uma oportunidade utilizando a IA conectada." },
+  { href: "/ats", icon: FileSearch, title: "Verificar currículo (ATS)", description: "Confira formatação, estrutura e leitura do arquivo. Não compara requisitos de vaga e não usa IA." },
+  { href: "/analisar", icon: BriefcaseBusiness, title: "Comparar com uma vaga", description: "Confira requisitos específicos de uma oportunidade usando a IA conectada e evidências do currículo." },
 ];
 
 export default function Dashboard() {

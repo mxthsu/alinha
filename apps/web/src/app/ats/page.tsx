@@ -95,7 +95,7 @@ export default function AtsCheck() {
           <div className="ats-heading">
             <div className="ats-eyebrow"><ShieldCheck size={16} aria-hidden="true" /> LEITURA E COMPATIBILIDADE ATS</div>
             <h1>Seu currículo pode ser <em>lido com clareza?</em></h1>
-            <p>Verifique características que podem dificultar a leitura do arquivo por plataformas de recrutamento. Sem notas ATS inventadas e sem consumir sua IA.</p>
+            <p>Confira a estrutura e a leitura do arquivo por sistemas de recrutamento. Esta verificação não compara o currículo com uma vaga, não inventa notas ATS e não consome sua IA.</p>
           </div>
 
           <div className="ats-columns">

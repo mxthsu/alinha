@@ -1,3 +1,19 @@
+## Próxima fase — Alinha como agente de carreira (planejado)
+
+Visão: [agente de carreira no Brasil](career-product-vision.md).
+Arquitetura: [Community/Pro](open-core-boundaries.md).
+Política: [contratos e segurança](agent-application-contract.md).
+
+- [x] Aprovar autonomia automática com autorização prévia limitada, com modo assistido.
+- [x] Definir os contratos de oportunidade, critérios, consentimento e decisão **sem envio real**.
+- [ ] Preferências do candidato na UI (modalidade, cidade, CLT/PJ/estágio, salário).
+- [ ] Testar um conector autorizado de descoberta, normalizar e deduplicar vagas.
+- [ ] Explicar relevância e preparar respostas/documentos vinculados à vaga.
+- [ ] Kanban com estados reais de candidatura e persistência opt-in.
+- [ ] Candidatura assistida; não simular confirmações de envio externo.
+- [ ] Identidade, consentimento auditável, transações, quotas e conectores de envio antes da automação.
+- [ ] Infraestrutura hospedada e funções Pro privadas com economia unitária validada.
+
 # Roteiro do projeto
 
 ## v0.1 — Fundação reproduzível
@@ -28,7 +44,7 @@
 - [ ] Validar diagnóstico ATS com diferentes documentos sintéticos e parsers (incluindo PDFs com layouts complexos).
 - [x] Editor manual de currículo com comparação do original, revalidação ATS e exportação DOCX textual.
 - [x] Studio com perfil estruturado (JSON v1), importação PDF/DOCX/TXT, prévia ao vivo, modelos e exportação DOCX. Recomendações baseadas na vaga concentram-se em Preparar candidatura.
-- [ ] Importação assistida de CV em seções com confirmação humana.
+- [x] Importação assistida de CV em seções com preenchimento direto no Studio e opção de desfazer.
 - [ ] Sugestões de reescrita por IA com aprovação individual e evidências verdadeiras.
 - [ ] Versões persistentes opt-in do currículo.
 - [x] Exportação DOCX de coluna única, testada por leitura de texto.
@@ -40,7 +56,7 @@
 
 - [x] Unificar leitura ATS e comparação com vaga na rota `/preparar`, preservando redirects das URLs anteriores.
 - [x] Reutilizar o arquivo escolhido na mesma página entre ATS e análise com IA, sem novo upload manual.
-- [x] Importar PDF/DOCX/TXT no Studio para rascunho estruturado com confirmação humana.
+- [x] Importar PDF/DOCX/TXT no Studio para rascunho estruturado editável diretamente.
 - [ ] Transferir dados entre Studio e preparação de candidatura em memória sem novo upload ou persistência indevida.
 - [ ] Melhorar reconhecimento de CVs com seções pouco padronizadas e avaliar extração assistida por IA com citações.
 
@@ -56,7 +72,7 @@
 
 ## Alinha Community e Cloud
 
-- [x] Conexão BYOK/conta autorizada ou Ollama no Community e seleção no Studio.
+- [x] Conexão BYOK/conta autorizada ou Ollama no Community, utilizada em Preparar candidatura (não no Studio).
 - [x] Contrato de implantação Community/Cloud com inferência Cloud bloqueada até o lançamento seguro.
 - [x] Estratégia de monetização proposta: assinatura Cloud com créditos de IA incluídos, sem excedentes automáticos.
 - [ ] Medir custos reais por operação/modelo com telemetria sem conteúdo sensível.

@@ -4,7 +4,7 @@
 
 **Sua experiência, novas oportunidades.**
 
-Compare um currículo com os requisitos de uma vaga. Entenda **o que está comprovado**, **o que está parcialmente demonstrado** e **onde faltam evidências** — sem inventar competências ou prometer aprovação.
+O Alinha está evoluindo para um **agente de carreira brasileiro**: da criação do currículo à descoberta de vagas, preparação de candidaturas e acompanhamento. A versão atual já oferece Studio, legibilidade ATS e comparação de evidências com vagas; **busca e envio automático ainda não estão disponíveis**.
 
 [![CI](https://github.com/mxthsu/alinha/actions/workflows/ci.yml/badge.svg)](https://github.com/mxthsu/alinha/actions/workflows/ci.yml)
 [![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-286443)](LICENSE)
@@ -15,6 +15,17 @@ Compare um currículo com os requisitos de uma vaga. Entenda **o que está compr
 </div>
 
 ![Prévia da interface do Alinha, com comparação de requisitos e evidências](docs/assets/site-preview.png)
+
+## Próxima fase: agente de carreira brasileiro
+
+O projeto terá uma edição Community open source e uma futura oferta Pro gerenciada.
+O modelo de autonomia previsto é **automático com autorização prévia delimitada**:
+fontes permitidas, critérios, versões de currículo aprovadas, prazo, limites por dia,
+pausa e revisão humana quando necessário. **Nenhuma candidatura é enviada nesta fase.**
+
+- [Visão de produto e etapas](docs/career-product-vision.md)
+- [Fronteira de arquitetura open-core](docs/open-core-boundaries.md)
+- [Contratos técnicos e segurança de candidaturas](docs/agent-application-contract.md)
 
 ## Por que o Alinha?
 

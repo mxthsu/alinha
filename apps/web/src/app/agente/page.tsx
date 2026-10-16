@@ -1,5 +1,5 @@
 "use client";
-import {useEffect,useMemo,useRef,useState} from "react";
+import {useEffect,useMemo,useRef,useState,type ChangeEvent,type DragEvent} from "react";
 import Link from "next/link";
 import {
  ArrowRight,ArrowUpRight,BookmarkPlus,BriefcaseBusiness,Check,CheckCircle2,
@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import {PlatformNav} from "@/components/platform-nav";
 import {useOpportunityTracker} from "@/hooks/use-opportunity-tracker";
-import {loadResumeDraft,hasResumeContent,type ResumeProfile} from "@/lib/career-workspace";
+import {loadResumeDraft,saveResumeDraft,hasResumeContent,type ResumeProfile} from "@/lib/career-workspace";
+import {parseResumeImport,resumeFileProblem} from "@/lib/agent-import";
 import {selectOpportunity} from "@/lib/career-handoff";
 import {planCareerSearch,assessAgentJob,orderAgentJobs,
  COMMUNITY_AGENT_PERMISSIONS,type AgentJob,type AgentSearchPlan} from "@/lib/career-agent";
@@ -25,6 +26,11 @@ export default function CareerAgent(){
  const [plan,setPlan]=useState<AgentSearchPlan>(emptyPlan);
  const [loadingProfile,setLoadingProfile]=useState(true);
  const [profileError,setProfileError]=useState("");
+ const [importing,setImporting]=useState(false);
+ const [importNotice,setImportNotice]=useState("");
+ const [reviewNotice,setReviewNotice]=useState("");
+ const [dragged,setDragged]=useState(false);
+ const fileInput=useRef<HTMLInputElement|null>(null);
  const [query,setQuery]=useState("");
  const [searchedQuery,setSearchedQuery]=useState("");
  const [run,setRun]=useState<RunState>("ready");
@@ -52,25 +58,77 @@ export default function CareerAgent(){
 
  const ordered=useMemo(()=>jobs?orderAgentJobs(jobs.jobs,plan,searchedQuery):[],[jobs,plan,searchedQuery]);
  const firstName=profile?.contact.name.trim().split(/\s+/)[0]||"";
- const canRun=query.trim().length>=2&&query.trim().length<=80&&run!=="searching";
+ const canRun=query.trim().length>=2&&query.trim().length<=80&&run!=="searching"&&!importing;
 
- async function execute(){
-  if(!canRun||COMMUNITY_AGENT_PERMISSIONS.search_public_jobs!=="ask")return;
+ async function execute(roleOverride?:string){
+  const term=(roleOverride??query).trim();
+  if(term.length<2||term.length>80||run==="searching"||
+    COMMUNITY_AGENT_PERMISSIONS.search_public_jobs!=="ask")return;
   abort.current?.abort();
   const controller=new AbortController();abort.current=controller;
   setRun("searching");setError("");setNotice("");setJobs(null);
   try{
-   const search=new URLSearchParams({q:query.trim(),page:"1",remote_only:"true"});
+   const search=new URLSearchParams({q:term,page:"1",remote_only:"true"});
    const response=await fetch(API+"/api/v1/jobs/search?"+search,{signal:controller.signal,cache:"no-store"});
    const data=await response.json();
    if(!response.ok)throw new Error(typeof data.detail==="string"?data.detail:"Falha na consulta à fonte de vagas.");
-   if(!controller.signal.aborted){setSearchedQuery(query.trim());setJobs(data as RemoteResult);setRun("completed");}
+   if(!controller.signal.aborted){setSearchedQuery(term);setJobs(data as RemoteResult);setRun("completed");}
   }catch(cause){
    if(!controller.signal.aborted){
     setError(cause instanceof Error?cause.message:"Não foi possível concluir a pesquisa.");
     setRun("failed");
    }
   }
+ }
+ async function uploadResume(file:File){
+  if(importing||run==="searching")return;
+  if(profile&&!window.confirm("Substituir o currículo salvo por este novo documento? Seu perfil anterior será trocado após a importação."))return;
+  const problem=resumeFileProblem(file);
+  if(problem){setProfileError(problem);return;}
+  setImporting(true);setProfileError("");setImportNotice("");setReviewNotice("");
+  try{
+    const data=new FormData();
+    data.append("file",file);
+    const response=await fetch(API+"/api/v1/resumes/structured/import/upload",{
+      method:"POST",body:data,
+    });
+    const payload:unknown=await response.json();
+    if(!response.ok){
+      const detail=payload&&typeof payload==="object"&&"detail" in payload
+        ?(payload as {detail:unknown}).detail:null;
+      throw new Error(typeof detail==="string"?detail:"Não foi possível ler o currículo.");
+    }
+    const imported=parseResumeImport(payload);
+    // Save only the structured profile, not the raw PDF, text or parser metadata.
+    await saveResumeDraft(imported.profile,"classico");
+    const nextPlan=planCareerSearch(imported.profile);
+    setProfile(imported.profile);setPlan(nextPlan);setQuery(nextPlan.roleQueries[0]||"");
+    const needsReview=imported.unassigned_lines.length>0||imported.warnings.length>0;
+    setReviewNotice(needsReview
+      ?"Algumas informações não foram classificadas com segurança. Você pode conferir no Studio quando quiser."
+      :"");
+    if(nextPlan.roleQueries[0]){
+      setImportNotice("Currículo organizado. Procurando oportunidades para seu perfil…");
+      await execute(nextPlan.roleQueries[0]);
+      setImportNotice('Currículo importado e salvo automaticamente.');
+    }else{
+      setImportNotice("Currículo organizado. Informe o cargo desejado para encontrar vagas.");
+    }
+  }catch(cause){
+    setProfileError(cause instanceof Error?cause.message:"Não foi possível processar o currículo.");
+  }finally{setImporting(false);}
+ }
+ function acceptFile(event:ChangeEvent<HTMLInputElement>){
+  const selected=event.target.files?.[0];
+  event.target.value="";
+  if(selected)void uploadResume(selected);
+ }
+ function dropFile(event:DragEvent<HTMLDivElement>){
+  event.preventDefault();setDragged(false);
+  if(event.dataTransfer.files.length!==1){
+    setProfileError("Envie apenas um currículo por vez.");return;
+  }
+  void uploadResume(event.dataTransfer.files[0]);
  }
  const progress=[
   {name:"Perfil profissional",detail:profile?"Lido no seu dispositivo":"Aguardando currículo",done:Boolean(profile)},
@@ -81,6 +139,10 @@ export default function CareerAgent(){
 
  return <div className="platform-shell"><PlatformNav/>
   <main className="platform-container agent-page">
+   <input ref={fileInput} type="file" className="agent-file-input"
+     accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+     aria-label="Selecionar currículo PDF, DOCX ou TXT" onChange={acceptFile} disabled={importing}/>
+
    <div className="agent-topline"><span><Sparkles size={15}/> SEU AGENTE DE CARREIRA</span>
     <span className="agent-privacy"><LockKeyhole size={14}/> Currículo preservado no dispositivo</span></div>
    <section className="agent-hero">
@@ -88,7 +150,9 @@ export default function CareerAgent(){
      <h1>{firstName?"Vamos encontrar seu próximo passo, "+firstName+".":"Sua carreira, com menos trabalho repetitivo."}</h1>
      <p>O Alinha parte do seu currículo para sugerir buscas, encontrar oportunidades e ajudar a preparar candidaturas. Você acompanha as etapas e mantém o controle.</p>
      <div className="agent-hero-actions">
-      <a href="#agent-workspace" className="agent-hero-primary">Explorar minhas oportunidades <ArrowRight size={17}/></a>
+      <a href="#agent-workspace" className="agent-hero-primary">
+        {profile?"Explorar minhas oportunidades":"Começar pelo currículo"} <ArrowRight size={17}/>
+      </a>
       <Link href="/studio">Editar meu currículo <ArrowUpRight size={17}/></Link>
      </div></div>
     <div className="agent-hero-art" aria-hidden="true">
@@ -110,19 +174,35 @@ export default function CareerAgent(){
        <h3>Seu perfil profissional</h3><p>Informações já confirmadas no Studio.</p></div></div>
       {loadingProfile?<div className="agent-profile-wait">Recuperando seu currículo…</div>:
        profileError?<div role="alert" className="agent-error">{profileError} <Link href="/studio">Abrir Studio</Link></div>:
-       !profile?<div className="agent-onboarding">
+       !profile?<div className={"agent-onboarding agent-dropzone"+(dragged?" agent-dropzone-active":"")}
+         onDragOver={event=>{event.preventDefault();if(!importing)setDragged(true);}}
+         onDragLeave={()=>setDragged(false)}
+         onDrop={dropFile}>
         <div className="agent-onboarding-icon"><FileUp size={27}/></div>
-        <strong>Comece pelo seu currículo.</strong><p>Importe PDF ou DOCX uma vez. O Alinha organiza seu perfil para as próximas etapas.</p>
-        <Link href="/studio">Importar ou criar currículo <ArrowRight size={16}/></Link></div>:
+        <strong>{importing?"Organizando seu perfil…":"Seu currículo é o ponto de partida."}</strong>
+        <p>Envie seu arquivo e deixe o Alinha organizar as informações e procurar vagas relacionadas.</p>
+        <button type="button" disabled={importing} onClick={()=>fileInput.current?.click()}>
+          {importing?"Importando currículo…":"Enviar currículo e encontrar vagas"} <ArrowRight size={16}/>
+        </button>
+        <small>PDF, DOCX ou TXT, até 3 MB. Você também pode arrastar o arquivo aqui.</small>
+        <Link href="/studio">Prefiro criar ou editar meu currículo</Link>
+       </div>:
        <div className="agent-profile-ready">
         <div className="agent-profile-status"><CheckCircle2 size={17}/><strong>Currículo conectado</strong><span>Salvo no navegador</span></div>
         <p>{profile.contact.headline||"Perfil profissional cadastrado"}</p>
         <div className="agent-profile-facts">
          <span><BriefcaseBusiness size={14}/>{profile.experiences.length} experiências</span>
          <span><FileCheck2 size={14}/>{profile.skills.length} competências declaradas</span></div>
-        <Link href="/studio">Atualizar meu perfil <ArrowRight size={14}/></Link>
+        <div className="agent-profile-actions">
+          <button type="button" disabled={importing||run==="searching"} onClick={()=>fileInput.current?.click()}>
+            <FileUp size={14}/>{importing?"Importando…":"Trocar currículo"}
+          </button>
+          <Link href="/studio">Editar informações <ArrowRight size={14}/></Link>
+        </div>
        </div>}
      </div>
+     {importNotice&&<div className="agent-import-notice" role="status"><CheckCircle2 size={16}/>{importNotice}</div>}
+     {reviewNotice&&<div className="agent-review-notice"><CircleAlert size={16}/><span>{reviewNotice} <Link href="/studio">Revisar currículo</Link></span></div>}
      <div className="agent-search-card">
       <div className="agent-card-heading"><span className="agent-number">02</span><div>
        <h3>O que você quer encontrar?</h3><p>Revise a sugestão baseada no seu perfil antes de pesquisar.</p></div></div>

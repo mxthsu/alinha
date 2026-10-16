@@ -366,7 +366,7 @@ export default function Studio() {
             <div className={"studio-model studio-model-"+t}><div/><span/><span/><span/></div>
             <strong>{t==="classico"?"Clássico":"Compacto"}</strong><small>{t==="classico"?"Mais respiro":"Espaçamento reduzido"}</small>
             {t===template&&<Check size={18}/>}</button>)}</div>
-          <p className="studio-tip">O modelo escolhido também será aplicado ao DOCX. A prévia é ilustrativa; a paginação final depende do editor de documentos.</p>
+
         </>}
         <div className="studio-step-navigation" aria-label="Navegar entre seções">
           <button type="button" disabled={paneIndex===0} onClick={()=>navigatePane(-1)}>
@@ -384,7 +384,7 @@ export default function Studio() {
           <div className="studio-preview-meta"><small>{template==="classico"?"Clássico":"Compacto"}</small><small>A4</small></div>
         </div>
         <Preview profile={profile} template={template}/>
-        <p>Prévia contínua para leitura. As quebras de página são definidas ao abrir o DOCX.</p>
+
       </aside>
     </div>
     <footer className="studio-footer"><span>Alinha Community · Código aberto · Licença MIT</span><Link href="/preparar">Preparar candidatura <ChevronRight size={15}/></Link></footer>

@@ -4,16 +4,25 @@
 
 ## Experiência
 
+A pessoa pode enviar **PDF, DOCX ou TXT de até 3 MB diretamente no agente**,
+sem passar por abas do Studio. A ação **Enviar currículo e encontrar vagas**
+autoriza organizar o perfil e executar a primeira consulta de cargo: o
+arquivo é interpretado pelo backend local; somente o perfil estruturado é salvo
+no navegador, nunca o PDF original ou o texto integral de origem. O agente
+identifica cargos explícitos, inicia a busca quando possível e avisa caso falte
+alguma informação essencial. Revisar os campos detalhadamente é opcional;
+substituir um currículo existente requer confirmação.
+
 A rota `/agente` organiza a jornada:
 
-1. Recuperar o currículo estruturado salvo no Studio (IndexedDB do mesmo navegador).
+1. Importar currículo diretamente no agente ou recuperar o perfil salvo no Studio (IndexedDB do mesmo navegador).
 2. Extrair **somente cargos declarados** no título profissional e nas experiências; exibir sugestões de busca editáveis.
 3. Identificar termos técnicos escritos explicitamente no currículo, sem inferir tecnologias ou experiências.
-4. Consultar uma fonte pública autorizada **apenas após o clique** em “Encontrar vagas”, enviando somente a expressão de busca, sem currículo completo, nome, contato ou documentos.
+4. Consultar a fonte pública após clicar em **Encontrar vagas** ou **Enviar currículo e encontrar vagas**, enviando somente o cargo, sem currículo completo, nome, contato ou documentos.
 5. Apresentar resultados reais do conector já existente, classificados por **indícios literais** no título ou resumo disponível, com avisos sobre dados incompletos. Não há pontuação ATS, garantia de compatibilidade nem aprovação automática.
 6. Abrir o anúncio original, salvar a oportunidade no Kanban ou avançar para Preparar candidatura com o contexto da vaga. A descrição completa continua necessária antes de pedir sugestões para o currículo.
 
-Uma pessoa sem currículo pode pesquisar manualmente, mas não recebe sinais personalizados. O importador de PDF/DOCX/TXT permanece no Studio; **não criamos outro upload duplicado**.
+Uma pessoa sem currículo pode pesquisar manualmente, mas não recebe sinais personalizados. Ambas as telas reutilizam a mesma API de importação e o mesmo perfil; o Studio fica disponível somente para edições detalhadas quando desejadas.
 
 ## Referências de produto e arquitetura
 

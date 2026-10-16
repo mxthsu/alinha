@@ -128,9 +128,9 @@ def chatgpt_callback(
     # Run uvicorn with --no-access-log to avoid OAuth codes in URL access logs.
     try:
         chatgpt_auth.finish(state=state, code=code, issued_client_id=client_id, error=error)
-        return RedirectResponse(f"{FRONTEND_ORIGIN}/?chatgpt=connected", status_code=303)
+        return RedirectResponse(f"{FRONTEND_ORIGIN}/conexoes?chatgpt=connected", status_code=303)
     except AuthError:
-        return RedirectResponse(f"{FRONTEND_ORIGIN}/?chatgpt=error", status_code=303)
+        return RedirectResponse(f"{FRONTEND_ORIGIN}/conexoes?chatgpt=error", status_code=303)
 
 
 @app.get("/api/v1/providers/chatgpt/models")

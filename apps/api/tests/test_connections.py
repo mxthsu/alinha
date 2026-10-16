@@ -183,3 +183,33 @@ def test_headless_environment_without_keyring(monkeypatch):
     )
     assert response.status_code == 503
     assert "cofre" not in response.text
+
+
+
+def test_chatgpt_callback_returns_to_central_connections(monkeypatch):
+    """The separate provider page receives OAuth outcomes, never the account login."""
+    from alinha_api.services.chatgpt_auth import AuthError
+
+    monkeypatch.setenv("ALINHA_DEPLOYMENT_MODE", "community")
+    monkeypatch.setenv("ALINHA_LOCAL_AUTH_ENABLED", "1")
+    monkeypatch.setattr(
+        "alinha_api.main.chatgpt_auth.finish",
+        lambda **_: None,
+    )
+    success = local_client().get(
+        "/auth/callback?state=synthetic&code=synthetic",
+        follow_redirects=False,
+    )
+    assert success.status_code == 303
+    assert success.headers["location"] == "http://localhost:3000/conexoes?chatgpt=connected"
+
+    def reject(**_):
+        raise AuthError("Falha sintética.")
+
+    monkeypatch.setattr("alinha_api.main.chatgpt_auth.finish", reject)
+    failure = local_client().get(
+        "/auth/callback?state=synthetic&code=invalid",
+        follow_redirects=False,
+    )
+    assert failure.status_code == 303
+    assert failure.headers["location"] == "http://localhost:3000/conexoes?chatgpt=error"

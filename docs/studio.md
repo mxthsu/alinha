@@ -11,7 +11,7 @@ O **Currículo Studio** (rota `/studio`) é o início do criador de currículos 
 - Exportação DOCX com texto selecionável, estrutura de uma coluna e sem tabelas.
 - Importação/exportação de perfil em JSON de formato aberto (`schema_version: 1`). Não há conta ou sincronização nesta versão.
 - Revisão opcional com IA a partir dos requisitos de uma vaga: sugestões e evidências verificadas, **sem mudanças automáticas**.
-- Central de conexões integrada à aba **Melhorias com IA**: escolha Gemini, Claude API, OpenAI API, Ollama local ou ChatGPT local autorizado. As chaves são guardadas no cofre do sistema, sem duplicação de formulários. Se não houver provedor pronto, não é possível iniciar a revisão. O modelo ChatGPT é selecionado na própria conexão.
+- Gerenciamento centralizado em **Conexões de IA** (`/conexoes`): escolha Gemini, Claude API, OpenAI API, Ollama local ou ChatGPT local autorizado. Na aba **Melhorias com IA** do Studio, selecione uma conexão já configurada. As chaves ficam no cofre do sistema, sem duplicação de formulários. Se não houver provedor pronto, não é possível iniciar a revisão.
 
 O perfil permanece apenas na memória do navegador durante a edição. Não gravamos em `localStorage` ou banco de dados. **Para continuar depois, use Salvar perfil (JSON)**. Fechar/recarregar a página perde alterações não exportadas.
 

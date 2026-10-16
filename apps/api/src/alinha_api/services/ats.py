@@ -14,9 +14,9 @@ from typing import Literal
 from docx import Document
 from pydantic import BaseModel, Field
 from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 
 from alinha_api.services.document_reader import (
-    MAX_DOCX_UNCOMPRESSED_BYTES,
     MAX_UPLOAD_BYTES,
     extract_resume,
 )
@@ -208,17 +208,22 @@ def check_document(filename: str | None, payload: bytes) -> AtsReport:
         raise ValueError("Formato inválido. Envie PDF, DOCX ou TXT.")
     if not payload or len(payload) > MAX_UPLOAD_BYTES:
         raise ValueError("O arquivo deve ter no máximo 3 MB.")
-    if kind == "docx":
-        signals = _docx_structure(payload)
-    elif kind == "pdf":
-        signals = _pdf_structure(payload)
-    else:
-        signals = StructuralSignals()
+    # Run existing archive-size/page-count validation before inspecting
+    # potentially expensive DOCX or PDF document structures.
     try:
         text = extract_resume(filename, payload)
     except ValueError as exc:
-        # Distinguish unreadable/scanned files from invalid or oversized files.
         if "texto suficiente" not in str(exc):
             raise
         text = ""
+
+    try:
+        if kind == "docx":
+            signals = _docx_structure(payload)
+        elif kind == "pdf":
+            signals = _pdf_structure(payload)
+        else:
+            signals = StructuralSignals()
+    except (PdfReadError, ValueError, KeyError, TypeError, AttributeError) as exc:
+        raise ValueError("Não foi possível verificar a estrutura do documento.") from exc
     return _report(text, kind, signals)

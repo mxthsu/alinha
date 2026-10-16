@@ -104,3 +104,12 @@ def test_api_reports_scanned_pdf_instead_of_500() -> None:
     )
     assert response.status_code == 200
     assert response.json()["findings"][0]["code"] == "insufficient_text"
+
+
+def test_malformed_pdf_returns_validation_error_not_server_failure() -> None:
+    response = TestClient(app).post(
+        "/api/v1/ats/check/upload",
+        files={"file": ("curriculo.pdf", b"%PDF-1.7\\nthis is not a real PDF", "application/pdf")},
+    )
+    assert response.status_code == 422
+    assert "detail" in response.json()

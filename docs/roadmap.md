@@ -7,7 +7,10 @@ Política: [contratos e segurança](agent-application-contract.md).
 - [x] Aprovar autonomia automática com autorização prévia limitada, com modo assistido.
 - [x] Definir os contratos de oportunidade, critérios, consentimento e decisão **sem envio real**.
 - [ ] Preferências do candidato na UI (modalidade, cidade, CLT/PJ/estágio, salário).
-- [ ] Testar um conector autorizado de descoberta, normalizar e deduplicar vagas.
+- [x] Primeira fonte pública de descoberta remota elegível a candidatos no Brasil, com atribuição e validação de links.
+- [x] Página inicial de pesquisa e preferências temporárias, com dados desconhecidos sinalizados.
+- [ ] Adicionar conectores brasileiros autorizados para CLT/PJ, híbrido, presencial, estágio e trainee.
+- [ ] Persistir preferências somente com consentimento e critérios claros de exclusão.
 - [ ] Explicar relevância e preparar respostas/documentos vinculados à vaga.
 - [ ] Kanban com estados reais de candidatura e persistência opt-in.
 - [ ] Candidatura assistida; não simular confirmações de envio externo.

@@ -8,6 +8,7 @@ import { ConnectionStatus } from "@/components/connection-status";
 import "./home.css";
 
 const tools = [
+  { icon: BriefcaseBusiness, title: "Encontrar vagas", label: "BUSCA DE OPORTUNIDADES", description: "Pesquise vagas remotas disponíveis no Brasil por uma fonte pública, sem envios automáticos.", href: "/vagas", hint: "Sem cadastro nem IA obrigatória" },
   { icon: FilePenLine, title: "Criar currículo", label: "ESTÚDIO DE CURRÍCULOS", description: "Edite por seções, visualize modelos e exporte um DOCX com texto selecionável.", href: "/studio", hint: "Sem IA obrigatória" },
   { icon: BriefcaseBusiness, title: "Preparar candidatura", label: "ATS + REQUISITOS DA VAGA", description: "Envie o currículo uma vez: verifique a leitura sem IA e compare com a vaga quando desejar.", href: "/preparar", hint: "Análise da vaga usa sua IA conectada" },
 ];

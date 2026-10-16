@@ -5,6 +5,7 @@ import { ConnectionStatus } from "@/components/connection-status";
 const pages = [
   { href: "/", label: "Início" },
   { href: "/studio", label: "Currículos" },
+  { href: "/vagas", label: "Encontrar vagas" },
   { href: "/preparar", label: "Preparar candidatura" },
 ];
 

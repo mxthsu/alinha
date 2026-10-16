@@ -98,6 +98,12 @@ apps/api (FastAPI: validação, análise, relatórios)
 - Não afirmar que uso do ChatGPT OSS preserva uma franquia separada do Codex; limites podem ser compartilhados por aplicativos.
 - Não criar planos/pricing de fachada na interface.
 
+## Modelo comercial proposto
+
+A decisão mais concreta para o Cloud é **assinatura com franquia de créditos de IA**, sem cobrança por excedentes não autorizados. A versão local preserva a seleção de provedor e não paga licença do Alinha; cada pessoa assume os custos próprios de API, assinatura ou hardware. O serviço hospedado cobra conveniência de infraestrutura, sincronização e inferência gerenciada.
+
+As regras de autorização prévia, reserva atômica de créditos, cobrança e limites financeiros estão detalhadas no [plano de monetização Cloud](cloud-business-model.md). Nenhum checkout ou plano Cloud está disponível no site atual. Stripe Billing e Mercado Pago são alternativas a testar em sandbox, não decisões de fornecedor definitivas.
+
 ## Próxima decisão técnica
 
 O PR [#3](https://github.com/mxthsu/alinha/pull/3) implementa **integrações locais** e continua separado da versão hospedada. Antes do merge, revisar especialmente:

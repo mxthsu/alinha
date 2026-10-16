@@ -8,6 +8,7 @@ import {
   Plus, ShieldCheck, Sparkles, Trash2, UserRound,
 } from "lucide-react";
 import "./studio.css";
+import { ProviderSelector, type Provider } from "@/components/provider-selector";
 
 type Contact = { name: string; headline: string; email: string; phone: string; city: string; links: string[] };
 type Experience = { role: string; organization: string; period: string; highlights: string[] };
@@ -74,7 +75,9 @@ export default function Studio() {
   const [pane, setPane] = useState<Pane>("informacoes");
   const [template, setTemplate] = useState<Template>("classico");
   const [job, setJob] = useState("");
-  const [provider, setProvider] = useState("gemini");
+  const [provider, setProvider] = useState<Provider>("gemini");
+  const [model, setModel] = useState("");
+  const [providerReady, setProviderReady] = useState(false);
   const [review, setReview] = useState<Review | null>(null);
   const [checked, setChecked] = useState<number[]>([]);
   const [busy, setBusy] = useState("");
@@ -137,12 +140,12 @@ export default function Studio() {
     finally { setBusy(""); }
   }
   async function reviewWithAI() {
-    if (job.trim().length<60 || busy) return;
+    if (job.trim().length<60 || busy || !providerReady) return;
     messages(); setBusy("ia"); setReview(null); setChecked([]);
     try {
       const r=await fetch(api+"/api/v1/resumes/structured/review",{
         method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({profile,job_description:job,provider}),
+        body:JSON.stringify({profile,job_description:job,provider,model:provider==="chatgpt"?model||null:null}),
       });
       const body=await r.json();
       if (!r.ok) throw new Error(typeof body.detail==="string"?body.detail:"Não foi possível gerar orientações.");
@@ -224,13 +227,19 @@ export default function Studio() {
           <p className="studio-tip">O modelo escolhido também será aplicado ao DOCX. A prévia é ilustrativa; a paginação final depende do editor de documentos.</p>
         </>}
         {pane==="ia"&&<>
-          <label className="studio-field"><span>Provedor conectado</span><select value={provider} onChange={e=>setProvider(e.target.value)}>
-            <option value="gemini">Gemini</option><option value="anthropic">Claude (API)</option>
-            <option value="openai_api">OpenAI API</option><option value="ollama">Ollama</option><option value="chatgpt">ChatGPT OAuth</option>
-          </select></label>
+          <div className="studio-provider-connection">
+            <ProviderSelector apiUrl={api} provider={provider} onProviderChange={setProvider}
+              model={model} onModelChange={setModel} onReadyChange={setProviderReady}
+              disabled={Boolean(busy)} />
+          </div>
+          <p className="studio-provider-ready" role="status">
+            {providerReady
+              ? "Provedor pronto. Sua revisão utilizará a conexão escolhida."
+              : "Conecte um provedor acima para habilitar a revisão por IA."}
+          </p>
           <Field label="Descrição da vaga" multiline value={job} onChange={v=>{setJob(v);setReview(null);}} hint="Cole aqui a descrição da oportunidade…" />
           <div className="studio-tip"><ShieldCheck size={18}/> Uma análise é feita somente quando você solicitar. Pode consumir o limite de seu provedor; o limitador do Gemini permanece ativo.</div>
-          <button type="button" className="studio-add studio-ai-start" disabled={Boolean(busy)||job.trim().length<60} onClick={reviewWithAI}><Sparkles size={17}/> {busy==="ia"?"Analisando…":"Gerar orientações com evidências"}</button>
+          <button type="button" className="studio-add studio-ai-start" disabled={Boolean(busy)||job.trim().length<60||!providerReady} onClick={reviewWithAI}><Sparkles size={17}/> {busy==="ia"?"Analisando…":"Gerar orientações com evidências"}</button>
           {review&&<div className="studio-review"><h3>{review.summary}</h3>{review.suggestions.map((item,i)=><article key={i}>
             <div className="studio-review-header"><span>{item.status==="evidenciado"?"Com evidência":item.status==="parcial"?"Parcial":"Não identificado"}</span><strong>{item.requirement}</strong></div>
             <p><b>Da vaga:</b> {item.job_evidence}</p>{item.resume_evidence&&<p><b>Do currículo:</b> {item.resume_evidence}</p>}

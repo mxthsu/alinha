@@ -55,6 +55,11 @@
 .studio-model-compacto>span{margin:3px 0}
 .studio-tip{display:flex;gap:9px;align-items:flex-start;background:#f1f8ed;border-radius:9px;padding:13px;color:#658169;font-size:11px;line-height:1.7;margin:13px 0}
 .studio-tip svg{flex-shrink:0}
+.studio-provider-connection{border:1px solid #d8e7d3;border-radius:12px;padding:16px;background:#fbfdf9;margin-bottom:13px}
+.studio-provider-connection .provider-section{max-width:100%}
+.studio-provider-connection .panel-heading{margin-bottom:7px}
+.studio-provider-connection .provider-options{gap:7px}
+.studio-provider-ready{margin:8px 0 16px;color:#537a5a;font-size:11px;line-height:1.7}
 .studio-ai-start{width:100%;justify-content:center;margin:7px 0 20px;background:#224c34;color:#fff;border-color:#224c34}
 .studio-ai-start:hover{background:#347746}
 .studio-review h3{font-size:12px;line-height:1.65;color:#2d5038;margin-bottom:15px}

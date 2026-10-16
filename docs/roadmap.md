@@ -26,12 +26,26 @@
 
 - [x] Diagnóstico inicial determinístico de legibilidade ATS para PDF, DOCX e TXT; sem nota universal ou alegação de aprovação.
 - [ ] Validar diagnóstico ATS com diferentes documentos sintéticos e parsers (incluindo PDFs com layouts complexos).
-- [x] Editor manual de currículo com comparação do original, revalidação ATS e exportação DOCX textual.\n- [x] Studio inicial com perfil estruturado (JSON v1), prévia ao vivo, dois modelos e revisão orientativa via LangGraph com citações verificadas.
+- [x] Editor manual de currículo com comparação do original, revalidação ATS e exportação DOCX textual.
+- [x] Studio inicial com perfil estruturado (JSON v1), prévia ao vivo, dois modelos e revisão orientativa via LangGraph com citações verificadas.
 - [ ] Importação assistida de CV em seções com confirmação humana.
-- [ ] Sugestões de reescrita por IA com aprovação individual e evidências verdadeiras.\n- [ ] Versões persistentes opt-in do currículo.
-- [x] Exportação DOCX de coluna única, testada por leitura de texto.\n- [ ] Exportação PDF com texto selecionável e validação visual.
+- [ ] Sugestões de reescrita por IA com aprovação individual e evidências verdadeiras.
+- [ ] Versões persistentes opt-in do currículo.
+- [x] Exportação DOCX de coluna única, testada por leitura de texto.
+- [ ] Exportação PDF com texto selecionável e validação visual.
 - [ ] Plano de preparação de entrevistas.
 - [ ] Histórico opcional e controles de exclusão.
+
+## Alinha Community e Cloud
+
+- [x] Conexão BYOK/conta autorizada ou Ollama no Community e seleção no Studio.
+- [x] Contrato de implantação Community/Cloud com inferência Cloud bloqueada até o lançamento seguro.
+- [x] Estratégia de monetização proposta: assinatura Cloud com créditos de IA incluídos, sem excedentes automáticos.
+- [ ] Medir custos reais por operação/modelo com telemetria sem conteúdo sensível.
+- [ ] Autenticação multitenant, isolamento de dados, consentimento LGPD e política de retenção.
+- [ ] Ledger de créditos atômico e idempotente, reservas, ajustes, limites por usuário e operador.
+- [ ] Avaliar Stripe Billing e Mercado Pago em sandbox, inclusive webhooks assinados e estornos.
+- [ ] Validar preços, taxas, câmbio, tributos e economia unitária antes de publicar valores ou habilitar checkout.
 
 ## Futuro
 

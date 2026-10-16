@@ -2,6 +2,8 @@
 
 O **Currículo Studio** (rota `/studio`) é o início do criador de currículos estruturados do Alinha Community. Ele segue a identidade do Alinha, com formulário por seções, visualização contínua em A4 e dois modelos de documento.
 
+![Prévia do Alinha Studio com currículo demonstrativo fictício](assets/studio-preview.png)
+
 ## Funcionalidades desta versão
 
 - Informações pessoais, resumo profissional, experiências, formação, projetos, competências e idiomas.

@@ -2,17 +2,11 @@ import Link from "next/link";
 import {
   ArrowRight, ArrowUpRight, BookOpen, Check, CheckCircle2, CircleHelp,
   Code2, FilePenLine, FileSearch, BriefcaseBusiness, ShieldCheck, Sparkles,
-  XCircle, PlugZap,
+  XCircle,
 } from "lucide-react";
 import { ConnectionStatus } from "@/components/connection-status";
 import "./home.css";
 
-const steps = [
-  { number: "01", icon: PlugZap, title: "Conecte sua IA", text: "Escolha o provedor que você prefere. Essa etapa é necessária apenas para recursos com IA." },
-  { number: "02", icon: FilePenLine, title: "Organize seu currículo", text: "Preencha suas experiências reais, escolha o modelo e visualize o resultado." },
-  { number: "03", icon: FileSearch, title: "Revise a legibilidade", text: "Identifique obstáculos comuns de leitura ATS, sem prometer aprovação." },
-  { number: "04", icon: BriefcaseBusiness, title: "Prepare sua candidatura", text: "Compare seu perfil com a vaga e revise evidências e orientações." },
-];
 const tools = [
   { icon: FilePenLine, title: "Criar currículo", label: "ESTÚDIO DE CURRÍCULOS", description: "Edite por seções, visualize modelos e exporte um DOCX com texto selecionável.", href: "/studio", hint: "Sem IA obrigatória" },
   { icon: FileSearch, title: "Verificar ATS", label: "COMPATIBILIDADE DE LEITURA", description: "Descubra limitações de texto e estrutura que podem atrapalhar a interpretação do currículo.", href: "/ats", hint: "Sem IA obrigatória" },
@@ -28,10 +22,10 @@ export default function Home() {
           alinha<span className="brand-dot">.</span>
         </Link>
         <nav className="nav-links home-nav" aria-label="Navegação principal">
-          <a href="#como-funciona">Como funciona</a>
           <a href="#ferramentas">Ferramentas</a>
+          <a href="#codigo-aberto">Código aberto</a>
           <a href="https://github.com/mxthsu/alinha" target="_blank" rel="noreferrer"><Code2 size={16}/> GitHub</a>
-          <Link href="/conexoes" className="home-nav-ai"><PlugZap size={16}/> Conectar IA <ArrowUpRight size={15}/></Link>
+          <ConnectionStatus variant="compact" />
         </nav>
       </div>
     </header>
@@ -44,7 +38,7 @@ export default function Home() {
             <h1>Seu currículo tem uma história. <em>Faça ela contar.</em></h1>
             <p>Compare sua experiência com os requisitos de uma vaga, veja o que está comprovado e descubra como apresentar melhor seu potencial.</p>
             <div className="hero-actions">
-              <Link href="/conexoes" className="button button-primary">Conectar minha IA <ArrowUpRight size={18}/></Link>
+              <ConnectionStatus variant="hero" />
               <Link href="/studio" className="button button-outline">Criar currículo <ArrowRight size={18}/></Link>
             </div>
             <div className="hero-footnotes">
@@ -66,28 +60,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-      <section className="home-ai-section" id="conectar-ia">
-        <div className="container">
-          <ConnectionStatus/>
-        </div>
-      </section>
-      <section className="intro-section" id="como-funciona">
-        <div className="container">
-          <div className="section-heading">
-            <span className="section-label">COMO FUNCIONA</span>
-            <h2>Menos achismo. Mais contexto.</h2>
-            <p>Um fluxo simples para transformar experiências reais em candidaturas bem preparadas. Sem login no Community e sem promessas sobre resultados seletivos.</p>
-          </div>
-          <div className="steps">
-            {steps.map(({number,icon:Icon,title,text})=>
-              <article className="step" key={number}>
-                <div className="step-top"><span className="step-icon"><Icon size={21} strokeWidth={1.8}/></span><span className="step-num">{number}</span></div>
-                <h3>{title}</h3><p>{text}</p><span className="step-bottom-line" aria-hidden="true"/>
-              </article>
-            )}
-          </div>
-        </div>
-      </section>
       <section className="home-tools-section" id="ferramentas">
         <div className="container">
           <div className="section-heading">
@@ -106,10 +78,9 @@ export default function Home() {
               </Link>
             )}
           </div>
-          <Link className="home-hub-link" href="/inicio">Ver meu espaço de trabalho <ArrowRight size={17}/></Link>
         </div>
       </section>
-      <section className="community-section" aria-labelledby="community-heading">
+      <section className="community-section" id="codigo-aberto" aria-labelledby="community-heading">
         <div className="container">
           <div className="community-card">
             <div className="community-content">

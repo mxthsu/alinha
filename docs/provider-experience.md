@@ -16,7 +16,7 @@ Estas referências são de padrões de experiência e organização, **não de c
 ## Jornada proposta e implementada
 
 1. **Home sem login:** recuperar hero original e prévia de relatório, seção de transparência open source e navegação direta para ferramentas.
-2. **Conexão em destaque:** cartão entre o hero e o restante da página, com link para `/conexoes`, estado real consultado no backend e explicação de como funciona.
+2. **Conexão destacada sem poluição:** estado real no botão da navegação e no CTA do hero, utilizando uma consulta compartilhada ao backend. A configuração detalhada continua em `/conexoes`, sem cartão de onboarding duplicado na home.
 3. **Conectar uma vez:** o usuário escolhe Gemini, Claude API, OpenAI API, ChatGPT local autorizado ou Ollama. As credenciais pessoais de API permanecem no cofre do sistema operacional.
 4. **Usar em várias ferramentas:** análise de vagas e revisão com IA no Studio podem usar um dos provedores disponíveis, sem novo formulário de credenciais a cada análise.
 5. **Continuar sem IA:** criação/edição de currículo e verificação de legibilidade ATS ficam disponíveis independentemente da conexão.

@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { ArrowRight, BriefcaseBusiness, FilePenLine, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, FilePenLine, Settings2, ShieldCheck, Sparkles } from "lucide-react";
 import { PlatformNav } from "@/components/platform-nav";
 
 const actions = [
+  { href: "/meu-alinha", icon: Settings2, title: "Meu Alinha",
+    description: "Gerencie a IA, as fontes de vagas e as preferências locais em um único lugar." },
   { href: "/agente", icon: Sparkles, title: "Meu agente de carreira",
     description: "Busque oportunidades a partir do seu currículo, com recomendações explicadas." },
   { href: "/candidaturas", icon: BriefcaseBusiness, title: "Acompanhar candidaturas",

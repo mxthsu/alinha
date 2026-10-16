@@ -5,7 +5,10 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, FileCheck2, FilePenLine, FileSearch, Info, LoaderCircle, ShieldCheck, Sparkles, AlertCircle } from "lucide-react";
 import { PlatformNav } from "@/components/platform-nav";
 import { clearSelectedOpportunity, selectedOpportunity, type SelectedOpportunity } from "@/lib/career-handoff";
-import { hasResumeContent, loadResumeDraft } from "@/lib/career-workspace";
+import { hasResumeContent, loadResumeDraft, type ResumeProfile, type ResumeTemplate } from "@/lib/career-workspace";
+import { proposeTailoredResume, type TailoredProposal } from "@/lib/tailored-resume";
+import { approveResumeVersion, loadApprovedResume, type ApprovedResumeVersion } from "@/lib/approved-resume";
+import { TailoredResumePanel } from "@/components/tailored-resume-panel";
 import { ResumeUpload } from "@/components/resume-upload";
 import { ConnectedProviderPicker } from "@/components/connected-provider-picker";
 import { AtsEditor } from "@/components/ats-editor";
@@ -36,6 +39,12 @@ export default function PrepareApplication() {
   const [providerReady, setProviderReady] = useState(false);
   const [result, setResult] = useState<AnalysisResult|null>(null);
   const [showEditor, setShowEditor] = useState(false);
+  const [structuredProfile,setStructuredProfile]=useState<ResumeProfile|null>(null);
+  const [currentTemplate,setCurrentTemplate]=useState<ResumeTemplate>("classico");
+  const [proposal,setProposal]=useState<TailoredProposal|null>(null);
+  const [approvedVersion,setApprovedVersion]=useState<ApprovedResumeVersion|null>(null);
+  const [savingVersion,setSavingVersion]=useState(false);
+  const [versionNotice,setVersionNotice]=useState("");
   const [busy, setBusy] = useState<"ats"|"job"|null>(null);
   const [error, setError] = useState("");
   const abort = useRef<AbortController|null>(null);
@@ -43,7 +52,11 @@ export default function PrepareApplication() {
 
   useEffect(()=>{
     const selected=selectedOpportunity();
-    const selectionFrame=window.requestAnimationFrame(()=>{if(selected)setSelectedJob(selected);});
+    const selectionFrame=window.requestAnimationFrame(()=>{
+      if(selected)setSelectedJob(selected);
+      if(selected)void loadApprovedResume(selected).then(version=>{if(active)setApprovedVersion(version);})
+        .catch(()=>{if(active)setVersionNotice("Não foi possível consultar as versões salvas.");});
+    });
     let active=true;
     void loadResumeDraft().then(async draft=>{
       if(!active||!draft||!hasResumeContent(draft.profile)||userSelectedSource.current)return;
@@ -55,7 +68,14 @@ export default function PrepareApplication() {
       const data=await response.json() as {resume_text:string};
       if(!active||userSelectedSource.current||!data.resume_text.trim())return;
       setMode("text");setResume(data.resume_text);setFile(null);
-      setStudioMessage("Seu currículo do Studio foi carregado automaticamente. Você pode editá-lo ou escolher outro arquivo.");
+      setStructuredProfile(draft.profile);setCurrentTemplate(draft.template);
+      setStudioMessage("Seu currículo já está pronto. Confira a vaga e continue.");
+      const check=await fetch(api+"/api/v1/ats/check/text",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({resume_text:data.resume_text}),
+      });
+      if(check.ok&&active&&!userSelectedSource.current)
+        setAts(await check.json() as AtsReport);
     }).catch(()=>{
       if(active)setStudioMessage("Não foi possível recuperar o rascunho do Studio. Você ainda pode enviar outro currículo.");
     });
@@ -76,6 +96,7 @@ export default function PrepareApplication() {
       const data=await response.json() as {resume_text:string};
       userSelectedSource.current=false;
       resetResume();setMode("text");setFile(null);setResume(data.resume_text);
+      setStructuredProfile(draft.profile);setCurrentTemplate(draft.template);
       setStudioMessage("Currículo do Studio carregado. Verifique a leitura ATS para continuar.");
     }catch(cause){
       setStudioMessage(cause instanceof Error?cause.message:"Falha ao carregar currículo.");
@@ -83,13 +104,14 @@ export default function PrepareApplication() {
   }
   function clearJobSelection(){
     clearSelectedOpportunity();setSelectedJob(null);setJob("");setResult(null);
+    setProposal(null);setApprovedVersion(null);
   }
 
 
-  function resetResume() { setAts(null);setResult(null);setShowEditor(false);setError("");abort.current?.abort();setBusy(null); }
-  function changeMode(next:"file"|"text") { userSelectedSource.current=true;setMode(next);resetResume(); }
-  function changeFile(next:File|null) { userSelectedSource.current=true;setFile(next);resetResume(); }
-  function changeText(next:string) { userSelectedSource.current=true;setResume(next);resetResume(); }
+  function resetResume() { setAts(null);setResult(null);setProposal(null);setShowEditor(false);setError("");abort.current?.abort();setBusy(null); }
+  function changeMode(next:"file"|"text") { userSelectedSource.current=true;setStructuredProfile(null);setMode(next);resetResume(); }
+  function changeFile(next:File|null) { userSelectedSource.current=true;setStructuredProfile(null);setFile(next);resetResume(); }
+  function changeText(next:string) { userSelectedSource.current=true;setStructuredProfile(null);setResume(next);resetResume(); }
 
   async function checkAts(event:FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -133,12 +155,49 @@ export default function PrepareApplication() {
       }
       const payload=await response.json();
       if(!response.ok)throw new Error(typeof payload.detail==="string"?payload.detail:"Não foi possível comparar com a vaga.");
-      if(!controller.signal.aborted)setResult(payload as AnalysisResult);
+      if(!controller.signal.aborted){
+        const report=payload as AnalysisResult;
+        setResult(report);
+        setProposal(structuredProfile&&selectedJob?proposeTailoredResume(structuredProfile,report):null);
+        setVersionNotice("");
+      }
     } catch(cause) {
       if(!controller.signal.aborted)setError(cause instanceof Error?cause.message:"Falha na comparação.");
     } finally {
       if(abort.current===controller){setBusy(null);abort.current=null;}
     }
+  }
+
+  async function downloadVersion(profile:ResumeProfile,template:ResumeTemplate){
+    const response=await fetch(api+"/api/v1/resumes/structured/export/docx",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({profile,template}),
+    });
+    if(!response.ok)throw new Error("Não foi possível exportar o documento DOCX.");
+    const blob=await response.blob();
+    const url=URL.createObjectURL(blob);
+    try{
+      const anchor=document.createElement("a");
+      anchor.href=url;anchor.download="alinha-curriculo-vaga.docx";
+      anchor.click();
+    }finally{window.setTimeout(()=>URL.revokeObjectURL(url),1000);}
+  }
+  async function approveAndDownload(){
+    if(!proposal||!selectedJob||savingVersion)return;
+    setSavingVersion(true);setVersionNotice("");
+    try{
+      const saved=await approveResumeVersion(selectedJob,proposal.profile,currentTemplate);
+      setApprovedVersion(saved);setVersionNotice("Versão aprovada e salva neste navegador.");
+      await downloadVersion(saved.profile,saved.template);
+    }catch(cause){setVersionNotice(cause instanceof Error?cause.message:"Não foi possível concluir a exportação.");}
+    finally{setSavingVersion(false);}
+  }
+  async function redownload(){
+    if(!approvedVersion||savingVersion)return;
+    setSavingVersion(true);setVersionNotice("");
+    try{await downloadVersion(approvedVersion.profile,approvedVersion.template);}
+    catch(cause){setVersionNotice(cause instanceof Error?cause.message:"Falha ao exportar DOCX.");}
+    finally{setSavingVersion(false);}
   }
 
   return <div className="platform-shell journey-shell">
@@ -210,7 +269,7 @@ export default function PrepareApplication() {
               <ConnectedProviderPicker provider={provider} onProviderChange={setProvider} model={model}
                 onModelChange={setModel} onReadyChange={setProviderReady}/>
               <label className="journey-label" htmlFor="journey-job-description">Descrição da vaga</label>
-              <textarea id="journey-job-description" rows={8} maxLength={14000} value={job} onChange={event=>{setJob(event.target.value);setResult(null);}}
+              <textarea id="journey-job-description" rows={8} maxLength={14000} value={job} onChange={event=>{setJob(event.target.value);setResult(null);setProposal(null);}}
                 placeholder="Cole os requisitos e responsabilidades da oportunidade…"/>
               <div className="journey-counter">{job.length.toLocaleString("pt-BR")} / 14.000 caracteres · mínimo de 60</div>
               <p className="journey-privacy"><ShieldCheck size={16}/> O currículo e a vaga serão enviados apenas ao provedor selecionado nesta etapa.</p>
@@ -227,8 +286,21 @@ export default function PrepareApplication() {
           </div>}
       </section>
 
+      {proposal&&selectedJob&&<TailoredResumePanel
+        proposal={proposal} jobTitle={selectedJob.title} busy={savingVersion}
+        approved={Boolean(approvedVersion)}
+        onApprove={()=>void approveAndDownload()}
+        onDownload={()=>void redownload()}/>}
+      {!proposal&&approvedVersion&&selectedJob&&<div className="journey-approved-existing">
+        <div><CheckCircle2 size={19}/><span><strong>Você já tem uma versão aprovada para esta vaga.</strong>
+          <small>Salva neste navegador, sem alterar o currículo principal.</small></span></div>
+        <button type="button" onClick={()=>void redownload()} disabled={savingVersion}>
+          <FileCheck2 size={16}/> Baixar currículo da vaga
+        </button>
+      </div>}
+      {versionNotice&&<p role="status" className="journey-shared-notice">{versionNotice}</p>}
       <section className="journey-finish" id="melhorar"><div><span>03 · PRÓXIMO PASSO</span><h2>Revise, melhore e exporte.</h2>
-        <p>As recomendações aparecem no resultado da comparação com a vaga. Use o Studio para editar os campos do seu currículo e exportar o documento.</p></div>
+        <p>O Alinha prepara uma versão específica para cada oportunidade. Aprove ou baixe seu documento aqui; abra o Studio apenas se quiser editar o perfil original.</p></div>
         <Link href="/studio" className="journey-finish-button"><FilePenLine size={17}/> Abrir Studio <ArrowRight size={17}/></Link>
       </section>
       <p className="journey-disclaimer"><Info size={17}/> Esta jornada não garante classificação, entrevista ou contratação. As decisões dependem dos critérios de cada empresa.</p>

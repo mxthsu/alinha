@@ -1,0 +1,47 @@
+# Plano de conclusão do Alinha Community
+
+Este documento controla o escopo da edição local e open source. O Community deve ser útil sem assinatura, banco hospedado ou conta Cloud.
+
+## Experiência essencial
+
+- [x] Importar PDF/DOCX/TXT diretamente no agente, sem exigir preenchimento por abas.
+- [x] Salvar rascunho do perfil no navegador, reutilizado entre Studio e preparação.
+- [x] Sugerir cargos citados no currículo e buscar vagas mediante autorização.
+- [x] Mostrar sinais literais da vaga sem inventar classificação ou percentual ATS.
+- [x] Salvar e acompanhar oportunidades manualmente no navegador.
+- [x] Verificar leitura ATS local e solicitar IA conectada para analisar requisitos.
+- [ ] Aprovar e baixar versões de currículo para cada vaga — implementação em homologação, sem criar experiências fictícias.
+- [ ] Receber a descrição completa da vaga por fonte autorizada, reduzindo a necessidade de copiar conteúdo.
+- [ ] Apresentar a jornada principal em uma única tela com interrupção, revisão e retomada.
+
+## Persistência, privacidade e instalação
+
+- [x] Chaves de provedores de IA no cofre de credenciais do sistema operacional.
+- [x] Base local em SQLite e configuração tipada JSONC fora do repositório — primeira camada de infraestrutura, ainda sem migração do frontend.
+- [x] Primeira interface Meu Alinha para conexões de IA, permissões informativas e fonte Himalayas, sem editar JSONC manualmente.
+- [ ] Conectar todas as futuras fontes e preferências reais à mesma configuração.
+- [ ] Migrar rascunhos IndexedDB e oportunidades localStorage de forma opt-in com prévia, validação, conflitos e recuperação — nunca apagar o original antes de verificar a gravação.
+- [ ] Aplicar a persistência SQLite em todas as telas, com autosave, versões por vaga e revisões concorrentes.
+- [ ] Exportação e recuperação de backup local testadas, incluindo falha de disco e restauração.
+- [ ] Revisar caminhos e permissões em Windows, macOS e Linux; instalador/launcher simplificado.
+- [ ] Revisão de segurança de histórico Git, dependências e fluxo de dados; documentação de retenção.
+- [ ] Validação ponta a ponta com arquivos sintéticos em desktop e celular; UAT com usuário.
+
+## Fontes de vagas
+
+- [x] Primeira fonte remota autorizada com atribuição e links de origem.
+- [ ] Estudar feeds oficiais de ATS, APIs públicas de empregadores e dados JobPosting de páginas com crawling expressamente permitido, respeitando termos, robots, limites, atribuição, privacidade e deduplicação.
+- [ ] Adicionar conectores compatíveis com Community e um eventual produto pago.
+- [ ] Conservar URL, fonte, data de coleta e regras de confiança para evitar vagas inventadas.
+
+**Fora do Community atual:** hospedagem Cloud, autenticação multiusuário, sincronização entre dispositivos, pagamentos, execução recorrente em servidor e candidaturas automáticas externas.
+
+## Organização local
+
+- Windows: %APPDATA%/Alinha/config.jsonc e %LOCALAPPDATA%/Alinha/data/community.sqlite3.
+- macOS e Linux: diretórios convencionais do usuário via XDG na primeira implementação.
+- JSONC: preferências tipadas, conectores e permissões; **sem credenciais ou dados de currículo**.
+- SQLite: currículos, vagas, etapas e versões aprovadas, migrados gradualmente.
+- Cofre de credenciais: chaves e tokens — **nunca em JSONC, banco ou repositório**.
+
+A existência do schema/endpoint SQLite não significa que o navegador já tenha migrado: até a etapa de migração, os dados atuais permanecem no armazenamento do navegador.

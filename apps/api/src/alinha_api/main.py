@@ -27,6 +27,14 @@ from alinha_api.services.analysis import NoVerifiedRequirements
 from alinha_api.services.api_key_store import ConnectionError, api_key, connect, disconnect
 from alinha_api.services.ats import AtsReport, check_document, check_text
 from alinha_api.services.chatgpt_auth import AuthError, chatgpt_auth, enabled
+from alinha_api.services.community_storage import (
+    CommunitySettings,
+    RevisionConflict,
+    get_record,
+    read_settings,
+    save_record,
+    write_settings,
+)
 from alinha_api.services.deployment import get_mode, hosted_analysis_ready, local_ollama_allowed
 from alinha_api.services.document_reader import MAX_UPLOAD_BYTES, extract_resume
 from alinha_api.services.model_output import ModelOutputError
@@ -82,6 +90,67 @@ def _local_only(request: Request, *, mutation: bool = False, require_oauth: bool
         raise HTTPException(status_code=403, detail="Origem não autorizada para esta operação.")
 
 
+class CommunityDataWrite(BaseModel):
+    expected_revision: int = Field(ge=0)
+    value: object
+
+
+def _community_api_only(request: Request, *, mutation: bool = False) -> None:
+    _local_only(request, mutation=mutation, require_oauth=False)
+    origin = request.headers.get("origin")
+    if origin is not None and origin not in FRONTEND_ORIGINS:
+        raise HTTPException(status_code=403, detail="Origem não autorizada.")
+    if request.headers.get("sec-fetch-site") == "cross-site":
+        raise HTTPException(status_code=403, detail="Acesso não autorizado.")
+
+
+@app.get("/api/v1/community/settings", response_model=CommunitySettings)
+def community_get_settings(request: Request) -> CommunitySettings:
+    _community_api_only(request)
+    try:
+        return read_settings()
+    except (ValueError, OSError, ValidationError) as exc:
+        raise HTTPException(status_code=500, detail="Configuração local inválida ou inacessível.") from exc
+
+
+@app.put("/api/v1/community/settings", response_model=CommunitySettings)
+def community_put_settings(request: Request, body: CommunitySettings) -> CommunitySettings:
+    _community_api_only(request, mutation=True)
+    try:
+        write_settings(body)
+        return body
+    except OSError as exc:
+        raise HTTPException(status_code=500, detail="Não foi possível salvar a configuração local.") from exc
+
+
+@app.get("/api/v1/community/data/{kind}")
+def community_get_data(request: Request, kind: str) -> dict:
+    _community_api_only(request)
+    if kind not in ("resume", "opportunities"):
+        raise HTTPException(status_code=404, detail="Recurso não encontrado.")
+    try:
+        value, revision = get_record(kind)
+        return {"value": value, "revision": revision}
+    except (ValueError, OSError) as exc:
+        raise HTTPException(status_code=500, detail="Armazenamento local inacessível.") from exc
+
+
+@app.put("/api/v1/community/data/{kind}")
+def community_put_data(request: Request, kind: str, body: CommunityDataWrite) -> dict:
+    _community_api_only(request, mutation=True)
+    if kind not in ("resume", "opportunities"):
+        raise HTTPException(status_code=404, detail="Recurso não encontrado.")
+    try:
+        revision = save_record(kind, body.value, body.expected_revision)
+        return {"revision": revision}
+    except RevisionConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except (ValueError, ValidationError) as exc:
+        raise HTTPException(status_code=422, detail="Dados locais inválidos.") from exc
+    except OSError as exc:
+        raise HTTPException(status_code=500, detail="Não foi possível salvar os dados locais.") from exc
+
+
 @app.get("/api/v1/jobs/search", response_model=JobSearchResult)
 def discover_jobs(
     request: Request,
@@ -97,6 +166,11 @@ def discover_jobs(
     _local_only(request, mutation=False, require_oauth=False)
     if request.headers.get("origin") not in (None, *FRONTEND_ORIGINS):
         raise HTTPException(status_code=403, detail="Origem não autorizada.")
+    try:
+        if not read_settings().connectors.himalayas.enabled:
+            raise HTTPException(status_code=409, detail="Esta fonte está desativada nas configurações.")
+    except (ValueError, OSError, ValidationError) as exc:
+        raise HTTPException(status_code=503, detail="Configuração local inválida.") from exc
     try:
         return search_jobs(
             q,

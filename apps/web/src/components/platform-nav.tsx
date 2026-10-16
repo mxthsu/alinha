@@ -9,6 +9,7 @@ const pages = [
   { href: "/vagas", label: "Encontrar vagas" },
   { href: "/candidaturas", label: "Acompanhar" },
   { href: "/preparar", label: "Preparar candidatura" },
+  { href: "/meu-alinha", label: "Meu Alinha" },
 ];
 
 export function PlatformNav() {

@@ -22,3 +22,7 @@ Thumbs.db
 uploads/
 user_data/
 *.log
+
+# Community private data (never track per-user databases or settings)
+community.sqlite3*
+config.jsonc

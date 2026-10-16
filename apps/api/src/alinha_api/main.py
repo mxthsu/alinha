@@ -15,8 +15,8 @@ from alinha_api.schemas import (
     ProviderName,
 )
 from alinha_api.services.analysis import NoVerifiedRequirements
-from alinha_api.services.ats import AtsReport, check_document, check_text
 from alinha_api.services.api_key_store import ConnectionError, api_key, connect, disconnect
+from alinha_api.services.ats import AtsReport, check_document, check_text
 from alinha_api.services.chatgpt_auth import AuthError, chatgpt_auth, enabled
 from alinha_api.services.deployment import get_mode, hosted_analysis_ready, local_ollama_allowed
 from alinha_api.services.document_reader import MAX_UPLOAD_BYTES, extract_resume

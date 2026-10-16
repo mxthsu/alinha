@@ -4,10 +4,11 @@ import { useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import {
   ArrowRight, ArrowUpRight, BookOpen, Check, CheckCircle2, CircleHelp,
-  ClipboardList, Code2, FileText, LoaderCircle, SearchCheck,
+  ClipboardList, Code2, FileText, KeyRound, LoaderCircle, SearchCheck,
   ShieldCheck, Sparkles, XCircle,
 } from "lucide-react";
 import { ResumeUpload } from "@/components/resume-upload";
+import { ProviderSelector, type Provider } from "@/components/provider-selector";
 import { AnalysisReport } from "@/components/analysis-report";
 import { type AnalysisResult, DEMO_REPORT } from "@/lib/analysis";
 
@@ -17,9 +18,10 @@ function scrollToSection(id: string) {
 }
 
 const steps = [
-  { number: "01", icon: FileText, title: "Compartilhe seu currículo", description: "Envie PDF, DOCX, TXT ou cole o texto. Seu documento não é armazenado nesta versão." },
-  { number: "02", icon: ClipboardList, title: "Informe a vaga", description: "Cole a descrição para identificar os requisitos que realmente foram publicados." },
-  { number: "03", icon: SearchCheck, title: "Entenda as evidências", description: "Receba a comparação por requisito, trechos do currículo e orientações de melhoria." },
+  { number: "01", icon: KeyRound, title: "Conecte sua IA", description: "Primeiro, escolha um provedor e conecte sua conta autorizada, chave de API ou modelo local." },
+  { number: "02", icon: FileText, title: "Compartilhe seu currículo", description: "Envie PDF, DOCX ou TXT, ou cole seu texto diretamente no formulário." },
+  { number: "03", icon: ClipboardList, title: "Informe a vaga", description: "Cole a descrição para identificar os requisitos publicados." },
+  { number: "04", icon: SearchCheck, title: "Entenda as evidências", description: "Compare requisitos, trechos do currículo e sugestões fundamentadas." },
 ];
 
 export default function Home() {
@@ -30,13 +32,19 @@ export default function Home() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [provider, setProvider] = useState<Provider>("gemini");
+  const [model, setModel] = useState("");
+  const [providerReady, setProviderReady] = useState(false);
+  const [workspaceTab, setWorkspaceTab] = useState<"connect" | "analyze">("connect");
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
   const controllerRef = useRef<AbortController | null>(null);
 
   const canAnalyze =
-    jobDescription.trim().length >= 60 &&
+    providerReady && jobDescription.trim().length >= 60 &&
     (mode === "file" ? resumeFile !== null : resumeText.trim().length >= 50);
 
   function showDemo() {
+    setWorkspaceTab("analyze");
     if (loading) controllerRef.current?.abort();
     setLoading(false);
     setError("");
@@ -45,6 +53,7 @@ export default function Home() {
   }
 
   function resetReport() {
+    setWorkspaceTab("analyze");
     setResult(null);
     setError("");
     requestAnimationFrame(() => scrollToSection("analisar"));
@@ -65,7 +74,6 @@ export default function Home() {
     setError("");
     setResult(null);
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
     let endpoint: string;
     let options: RequestInit;
 
@@ -73,6 +81,8 @@ export default function Home() {
       const formData = new FormData();
       formData.append("file", resumeFile);
       formData.append("job_description", jobDescription);
+      formData.append("provider", provider);
+      if (provider === "chatgpt" && model) formData.append("model", model);
       endpoint = "/api/v1/analyses/upload";
       options = { method: "POST", body: formData, signal: controller.signal };
     } else {
@@ -80,7 +90,7 @@ export default function Home() {
       options = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resume_text: resumeText, job_description: jobDescription }),
+        body: JSON.stringify({ resume_text: resumeText, job_description: jobDescription, provider, model: provider === "chatgpt" ? model || null : null }),
         signal: controller.signal,
       };
     }
@@ -127,7 +137,7 @@ export default function Home() {
           </Link>
           <nav className="nav-links" aria-label="Navegação principal">
             <a href="#como-funciona">Como funciona</a>
-            <a className="nav-featured" href="#analisar">Analisar currículo <ArrowUpRight size={14} aria-hidden="true" /></a>
+            <a className="nav-featured" href="#analisar" onClick={() => setWorkspaceTab("connect")}>Começar <ArrowUpRight size={14} aria-hidden="true" /></a>
             <a href="https://github.com/mxthsu/alinha" target="_blank" rel="noreferrer">
               <Code2 size={16} aria-hidden="true" /> <span>GitHub</span>
             </a>
@@ -147,8 +157,8 @@ export default function Home() {
                 comprovado e descubra como apresentar melhor seu potencial.
               </p>
               <div className="hero-actions">
-                <a href="#analisar" className="button button-primary">
-                  Analisar meu currículo <ArrowUpRight size={18} aria-hidden="true" />
+                <a href="#analisar" className="button button-primary" onClick={() => setWorkspaceTab("connect")}>
+                  Começar pela conexão <ArrowUpRight size={18} aria-hidden="true" />
                 </a>
                 <button className="button button-outline" type="button" onClick={showDemo}>
                   <Sparkles size={16} aria-hidden="true" /> Ver uma demonstração
@@ -198,11 +208,44 @@ export default function Home() {
         <section className="workspace-section" id="analisar">
           <div className="container">
             <div className="section-heading">
-              <span className="section-label">SUA ANÁLISE</span>
-              <h2>Veja seu perfil com mais clareza.</h2>
-              <p>Comece gratuitamente. Para análises reais, a API precisa estar configurada com um provedor de IA.</p>
+              <span className="section-label">COMECE POR AQUI</span>
+              <h2>Primeiro, conecte sua IA.</h2>
+              <p>Conecte uma conta autorizada ou uma chave de API. Depois envie seu currículo e a vaga para receber a análise.</p>
             </div>
-            <div className="workspace">
+            <div className="workspace-tabs" role="tablist" aria-label="Etapas do Alinha">
+              <button id="tab-connect" role="tab" type="button" aria-selected={workspaceTab === "connect"}
+                aria-controls="panel-connect" className={workspaceTab === "connect" ? "active" : ""}
+                onClick={() => setWorkspaceTab("connect")}>
+                <span className="workspace-tab-number">01</span> Conectar IA {providerReady && <CheckCircle2 size={16} color="#418c51" aria-label="Conectado" />}
+              </button>
+              <button id="tab-analyze" role="tab" type="button" aria-selected={workspaceTab === "analyze"}
+                aria-controls="panel-analyze" className={workspaceTab === "analyze" ? "active" : ""}
+                onClick={() => setWorkspaceTab("analyze")}>
+                <span className="workspace-tab-number">02</span> Analisar currículo <ArrowRight size={16} aria-hidden="true" />
+              </button>
+            </div>
+            <div className="connection-workspace" id="panel-connect" role="tabpanel" aria-labelledby="tab-connect" hidden={workspaceTab !== "connect"}>
+              <div className="connection-main">
+                <div className="form-panel-top"><span className="form-status-dot" /> PRIMEIRA ETAPA · CONEXÃO</div>
+                <ProviderSelector apiUrl={apiUrl} provider={provider} onProviderChange={setProvider} model={model} onModelChange={setModel} onReadyChange={setProviderReady} disabled={loading} />
+                <div className="connection-next">
+                  <button type="button" className="button button-dark" disabled={!providerReady}
+                    onClick={() => setWorkspaceTab("analyze")}>
+                    Continuar para análise <ArrowRight size={17} aria-hidden="true" />
+                  </button>
+                  {!providerReady && <span>Conecte um provedor para continuar.</span>}
+                </div>
+              </div>
+              <aside className="connection-guide">
+                <span className="connection-guide-icon"><ShieldCheck size={23} aria-hidden="true" /></span>
+                <h3>Sua IA, sua escolha.</h3>
+                <p>Use a conta ChatGPT quando autorizada, uma chave própria de API ou o Ollama no computador.</p>
+                <div className="connection-guide-rule"><Check size={16} aria-hidden="true" /> Chaves protegidas no cofre do sistema</div>
+                <div className="connection-guide-rule"><Check size={16} aria-hidden="true" /> Sem copiar cookies ou senhas</div>
+                <div className="connection-guide-rule"><Check size={16} aria-hidden="true" /> O uso da API pode ter cobrança</div>
+              </aside>
+            </div>
+            <div className="workspace" id="panel-analyze" role="tabpanel" aria-labelledby="tab-analyze" hidden={workspaceTab !== "analyze"}>
               <form className="form-panel" onSubmit={analyze}>
                 <div className="form-panel-top"><span className="form-status-dot" /> Suas informações</div>
                 <div className="panel-heading"><span className="panel-index">01</span><h3>Seu currículo</h3></div>
@@ -227,7 +270,14 @@ export default function Home() {
                   <span id="job-help">{jobDescription.trim().length >= 60 ? <><Check size={13} aria-hidden="true" /> Descrição pronta para análise</> : "Mínimo de 60 caracteres"}</span>
                   <span className="mini-progress" aria-hidden="true"><span style={{ width: `${jobProgress}%` }} /></span>
                 </div>
-                <p className="form-note"><ShieldCheck size={16} aria-hidden="true" /> Seus dados não são armazenados pela API. O provedor de IA processa o conteúdo conforme seus próprios termos.</p>
+                {!providerReady && (
+                  <div className="connection-required" role="status">
+                    <KeyRound size={18} aria-hidden="true" />
+                    <span>Para analisar, você precisa conectar uma IA primeiro.</span>
+                    <button type="button" onClick={() => setWorkspaceTab("connect")}>Conectar agora <ArrowRight size={14} aria-hidden="true" /></button>
+                  </div>
+                )}
+                <p className="form-note"><ShieldCheck size={16} aria-hidden="true" /> Seus documentos não são armazenados no Alinha. O conteúdo é enviado ao provedor escolhido, exceto com Ollama local.</p>
                 {error && <div className="error-message" role="alert"><XCircle size={18} aria-hidden="true" /><span>{error}</span><button className="icon-button" type="button" onClick={() => setError("")} aria-label="Fechar aviso"><XCircle size={16} aria-hidden="true" /></button></div>}
                 <button type="submit" className="button button-dark submit-button" disabled={!canAnalyze || loading} aria-busy={loading}>
                   {loading ? <><LoaderCircle className="spinner" size={18} aria-hidden="true" /> Analisando…</> : <>Analisar correspondência <ArrowRight size={18} aria-hidden="true" /></>}

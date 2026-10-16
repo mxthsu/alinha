@@ -4,11 +4,23 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 MatchStatus = Literal["evidenciado", "parcial", "nao_identificado"]
+ProviderName = Literal["gemini", "anthropic", "openai_api", "ollama", "chatgpt"]
+
+
+class ProviderKeyInput(BaseModel):
+    provider: Literal["gemini", "anthropic", "openai_api"]
+    api_key: str = Field(min_length=12, max_length=4096)
+
+
+class ProviderKeyDelete(BaseModel):
+    provider: Literal["gemini", "anthropic", "openai_api"]
 
 
 class AnalysisRequest(BaseModel):
     resume_text: str = Field(min_length=50, max_length=22000)
     job_description: str = Field(min_length=60, max_length=14000)
+    provider: ProviderName = "gemini"
+    model: str | None = Field(default=None, max_length=100)
 
 
 class RequirementDraft(BaseModel):
@@ -17,6 +29,23 @@ class RequirementDraft(BaseModel):
     status: MatchStatus
     resume_evidence: str | None = Field(default=None, max_length=350)
     recommendation: str = Field(min_length=5, max_length=450)
+
+
+class ModelRequirement(BaseModel):
+    """Lenient external LLM contract. Never trust as validated report data."""
+
+    requirement: str | None = None
+    job_evidence: str | None = None
+    status: str | None = None
+    resume_evidence: str | None = None
+    recommendation: str | None = None
+
+
+class ModelAnalysisResponse(BaseModel):
+    """Provider wire response; final publication still requires AnalysisDraft."""
+
+    job_title: str | None = None
+    requirements: list[ModelRequirement] = Field(default_factory=list)
 
 
 class AnalysisDraft(BaseModel):

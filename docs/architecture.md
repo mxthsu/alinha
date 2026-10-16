@@ -8,9 +8,11 @@ Fornecer uma análise de correspondência entre currículo e vaga **fundamentada
 
 - `apps/web`: Next.js, interface client-side, formulário e relatório.
 - `apps/api`: FastAPI, contratos Pydantic, leitura limitada de arquivos.
-- `services/provider.py`: implementação Gemini isolada por protocolo `AnalysisProvider`.
+- `services/provider.py`: adaptadores Gemini, Ollama e ChatGPT, cada um usando o contrato `AnalysisProvider`.
+- `services/chatgpt_auth.py`: OAuth local de assinatura ChatGPT, validação de ID token, refresh e cofre de credenciais do sistema. A integração permanece desligada em hospedagens não locais.
 - `workflows/analysis.py`: LangGraph com nós `generate` e `verify_evidence`.
-- `services/analysis.py`: regras determinísticas de validação de trechos.
+- `services/model_output.py`: leitura tolerante do JSON do Gemini; remove itens incompletos, limita o tamanho de campos e reclassifica estados desconhecidos conservadoramente, sem inventar citações.
+- `services/analysis.py` e `services/evidence_quotes.py`: validação determinística das citações antes de publicar os resultados. Rejeita evidências inexistentes.
 
 ## Fluxo
 
@@ -22,13 +24,15 @@ flowchart TD
   D --> E[Relatório com limitações]
 ```
 
-A descrição da vaga e o currículo são **dados não confiáveis**, nunca instruções. As citações de requisitos sem correspondência na vaga são descartadas. Uma citação atribuída ao currículo que não aparece nele leva o requisito a `nao_identificado`. Isso **não prova** a correção semântica de cada classificação: avaliações com um conjunto de referência serão adicionadas antes de alegar qualidade medida.
+A descrição da vaga e o currículo são **dados não confiáveis**, nunca instruções. O modelo é orientado a citar trechos contínuos e exatos. Se ele parafrasear uma citação da vaga, `services/evidence_quotes.py` pode recuperar **um trecho real da fonte**, apenas quando houver correspondência suficientemente forte e inequívoca com o requisito e a evidência gerada. Caso contrário, o requisito é descartado. Nenhuma chamada extra ao modelo é feita nesse processo. Uma citação atribuída ao currículo que não aparece nele leva o requisito a `nao_identificado`, sem inventar experiência. Se não for possível validar nenhum requisito, a API informa uma falha de citação, em vez de culpar os textos do usuário. Isso **não prova** a correção semântica de cada classificação: avaliações com um conjunto de referência serão adicionadas antes de alegar qualidade medida.
 
 ## Decisões e limites
 
-- O fluxo de IA é executado apenas quando o ambiente tem chave Gemini.
+- O fluxo de IA depende do provedor selecionado: chave Gemini, Ollama local ou autorização ChatGPT na instalação local.
 - A demonstração local é fixa e marcada como fictícia.
-- O modelo é configurável via `GEMINI_MODEL`; as chamadas devem poder ser substituídas por um fake em testes.
+- Provedores são selecionados por solicitação, sem compartilhar credenciais ou alterar o fluxo de verificação.
+- Modelos ChatGPT são consultados na conta autenticada, com tokens mantidos apenas no backend local.
+- Modelos Gemini/Ollama são configurados localmente por variável de ambiente; as chamadas devem poder ser substituídas por fakes em testes.
 - Não há banco, RAG, embeddings, armazenamento de candidatos ou Langfuse **nesta etapa**. Essas tecnologias serão consideradas quando houver caso de uso e requisitos claros.
 - As respostas não têm uma porcentagem de compatibilidade ou rótulo de aprovação ATS.
 - Máximo de 3 MB por arquivo, 12 páginas PDF, conteúdo DOCX descompactado limitado; não existe OCR.

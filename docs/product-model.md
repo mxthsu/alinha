@@ -35,7 +35,7 @@ Não chamar de “IA ilimitada grátis”: custos de hardware, eletricidade, pro
 - Serviço de análise hospedado com modelos escolhidos e avaliados; créditos/cotas, proteção contra abuso e política transparente de custos.
 - Histórico criptografado, sincronização entre dispositivos, backup e disponibilidade operacional gerenciados **como serviços**, não como bloqueio do software Community.
 - Opções possíveis: **Cloud Free** (demonstração ou pequena franquia quando houver viabilidade) e **Cloud Plus** (uso mensal/franquia ampliada). Valores e limites só após medir custos reais.
-- O usuário poderá optar por API externa própria conforme arquitetura de segurança, mas **BYOK no navegador não deve armazenar segredos em localStorage**; desenhar armazenamento seguro ou modo de conexão adequado por provedor.
+- O usuário poderá optar por API externa própria conforme arquitetura de segurança, mas **BYOK no navegador não deve armazenar segredos em localStorage**. A edição Community já utiliza o cofre de credenciais do sistema operacional; para o Cloud, será necessária outra solução isolada por conta e protegida no servidor.
 - Futuramente, equipes/organizações podem contratar gestão e suporte — fora do escopo do primeiro MVP.
 
 **Proibição de atalho:** não utilizar a assinatura ChatGPT de um operador para atender outros visitantes. A autorização OSS local não dá automaticamente direito de oferecer uso de planos ChatGPT a visitantes de um SaaS remoto. Esse uso comercial/remotamente hospedado depende de aprovação e do fluxo aplicável; consulte [Sign in with ChatGPT](https://developers.openai.com/siwc) e [participação comercial](https://developers.openai.com/siwc/request-client-id).

@@ -27,6 +27,23 @@ pausa e revisão humana quando necessário. **Nenhuma candidatura é enviada nes
 - [Fronteira de arquitetura open-core](docs/open-core-boundaries.md)
 - [Contratos técnicos e segurança de candidaturas](docs/agent-application-contract.md)
 
+## Meu agente: do currículo à oportunidade
+
+A rota **Meu agente** (`/agente`) inicia uma jornada conectada: recupera o currículo
+do Studio no navegador, sugere cargos citados no perfil, apresenta termos
+comprovados e **solicita autorização antes de pesquisar vagas**.
+Os resultados são organizados por indícios literais no anúncio e podem ser
+salvos ou enviados à área de preparação, mantendo o contexto da vaga.
+
+Nesta primeira etapa, o planejador é **determinístico**, sem inferência de IA:
+não analisa descrições completas, não garante compatibilidade e não envia
+candidaturas. O próximo passo é acrescentar ferramentas e execução
+supervisionada com modelos de IA intercambiáveis. A inspiração funcional é
+a jornada do LoopCV com um modelo de tarefas e permissões semelhante ao
+OpenCode, **sem copiar códigos ou interfaces de terceiros**.
+
+Leia a [arquitetura e os limites desta experiência](docs/agent-experience.md).
+
 ## Por que o Alinha?
 
 Descrições de vagas costumam reunir várias competências, experiências e expectativas em um único texto. O Alinha organiza esse conteúdo e compara cada requisito com trechos do currículo, ajudando a pessoa a identificar evidências e melhorar sua apresentação profissional com **informações verdadeiras**.

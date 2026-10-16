@@ -59,6 +59,10 @@ export default function Jobs() {
         <h1>Encontre vagas que fazem sentido para você.</h1>
         <p>Pesquise oportunidades reais de uma fonte pública. Você escolhe o que analisar e para onde deseja se candidatar.</p>
       </header>
+      <div className="vacancies-agent-entry">
+        <div><strong>Já tem currículo no Alinha?</strong><p>Deixe o agente sugerir buscas a partir do seu perfil profissional.</p></div>
+        <Link href="/agente">Buscar com meu currículo <ArrowRight size={15}/></Link>
+      </div>
       <div className="vacancies-layout">
         <form className="vacancies-filters" onSubmit={submit}>
           <div className="vacancies-filter-title"><SlidersHorizontal size={18}/> Suas preferências</div>

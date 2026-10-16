@@ -58,3 +58,8 @@
 
 .vacancies-card-actions .vacancies-prepare{display:inline-flex;align-items:center;gap:6px;border-radius:8px;background:#eaf5e6;color:#2c7345;padding:9px 11px;border:1px solid #d1e6ca;font-size:11px;font-weight:780;min-height:36px}
 .vacancies-card-actions .vacancies-prepare:hover{background:#ddf0d8}
+
+.vacancies-agent-entry{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;border:1px solid #cfe2c8;background:linear-gradient(115deg,#edf7e7,#f9fcf7);border-radius:13px;padding:17px 20px;margin-bottom:22px}
+.vacancies-agent-entry strong{font-size:13px;color:#2c5a3a}
+.vacancies-agent-entry p{font-size:11px;color:#729079;margin:6px 0 0}
+.vacancies-agent-entry>a{display:inline-flex;align-items:center;gap:8px;background:#2d6541;color:#fff;border-radius:9px;padding:10px 12px;font-size:11px;font-weight:800}

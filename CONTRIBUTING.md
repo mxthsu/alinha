@@ -20,7 +20,7 @@ No Windows, você pode usar `py -3 scripts/dev.py`. Mais informações estão no
 
 ## Convenções
 
-- **Código e identificadores técnicos em inglês.** Interface, README e documentação pública em português brasileiro.
+- **Código e identificadores técnicos em inglês.** Interface, README e documentação pública em pt-BR.
 - Use branches com nomes objetivos: `feat/resume-parser`, `fix/evidence-check`, `docs/setup-guide`.
 - Prefira alterações pequenas e verificáveis; utilize Conventional Commits como `feat(api): improve evidence validation`.
 - Não introduza dependências, agentes, bancos ou serviços apenas para aumentar a complexidade.

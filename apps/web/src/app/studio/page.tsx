@@ -1,6 +1,9 @@
 "use client";
 
-import { useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from "react";
+import { useRouter } from "next/navigation";
+import { clearResumeDraft, hasResumeContent, loadResumeDraft, saveResumeDraft,
+  type ResumeProfile, type ResumeTemplate } from "@/lib/career-workspace";
 import Link from "next/link";
 import {
   ArrowRight, BriefcaseBusiness, Check, ChevronDown, ChevronLeft, ChevronRight,
@@ -9,13 +12,13 @@ import {
 } from "lucide-react";
 import "./studio.css";
 
-type Contact = { name: string; headline: string; email: string; phone: string; city: string; links: string[] };
+type Resume = ResumeProfile;
+type Template = ResumeTemplate;
+type Contact = Resume["contact"];
 type Experience = { role: string; organization: string; period: string; highlights: string[] };
 type Education = { course: string; institution: string; period: string };
 type Project = { title: string; description: string; link: string };
-type Resume = { schema_version: 1; contact: Contact; summary: string; experiences: Experience[]; education: Education[]; projects: Project[]; skills: string[]; languages: string[] };
 type Pane = "informacoes" | "experiencias" | "formacao" | "projetos" | "habilidades" | "estilo";
-type Template = "classico" | "compacto";
 type ImportedDraft = { profile: Resume; source_text: string; unassigned_lines: string[]; warnings: string[]; requires_confirmation: boolean };
 const blank: Resume = {
   schema_version: 1, contact: { name: "", headline: "", email: "", phone: "", city: "", links: [] },
@@ -69,6 +72,9 @@ function Preview({ profile, template }: { profile: Resume; template: Template })
   </div>;
 }
 export default function Studio() {
+  const router=useRouter();
+  const [hydrated,setHydrated]=useState(false);
+  const [draftStatus,setDraftStatus]=useState("Carregando rascunho...");
   const [profile, setProfile] = useState<Resume>(blank);
   const [pane, setPane] = useState<Pane>("informacoes");
   const [template, setTemplate] = useState<Template>("classico");
@@ -85,22 +91,75 @@ export default function Studio() {
   const previousProfile = useRef<Resume | null>(null);
   const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+  useEffect(()=>{
+    let active=true;
+    loadResumeDraft().then(draft=>{
+      if(!active)return;
+      if(draft){setProfile(draft.profile);setTemplate(draft.template);setDraftStatus("Rascunho recuperado");}
+      else setDraftStatus("Salvamento automático neste dispositivo");
+      setHydrated(true);
+    }).catch(()=>{
+      if(!active)return;
+      setDraftStatus("Armazenamento local indisponível. Faça um backup.");
+      setHydrated(true);
+    });
+    return ()=>{active=false;};
+  },[]);
+
+  useEffect(()=>{
+    if(!hydrated)return;
+    const timer=window.setTimeout(()=>{
+      const operation=hasResumeContent(profile)
+        ? saveResumeDraft(profile,template)
+        : clearResumeDraft();
+      void operation.then(()=>setDraftStatus(hasResumeContent(profile)
+        ?"Salvo automaticamente neste dispositivo":"Nenhum currículo salvo"))
+        .catch(()=>setDraftStatus("Não foi possível salvar. Exporte um backup."));
+    },600);
+    return ()=>window.clearTimeout(timer);
+  },[profile,template,hydrated]);
+
+  async function goPrepare(event:MouseEvent<HTMLAnchorElement>){
+    event.preventDefault();
+    try{
+      if(hasResumeContent(profile))await saveResumeDraft(profile,template);
+      else await clearResumeDraft();
+      router.push("/preparar");
+    }catch{setError("Não foi possível salvar seu currículo antes de continuar.");}
+  }
+
+  async function eraseLocalDraft(){
+    if(!window.confirm("Apagar o currículo salvo neste dispositivo e limpar o editor? Essa ação não pode ser desfeita."))return;
+    try {
+      await clearResumeDraft();
+      previousProfile.current=null;setCanUndoImport(false);
+      setProfile(blank);setTemplate("classico");setUnassignedImportLines([]);
+      setImportNotice(null);setPane("informacoes");setDraftStatus("Rascunho apagado");
+      setSuccess("Currículo apagado deste dispositivo.");
+    }catch{setError("Não foi possível apagar o rascunho local.");}
+  }
+
+
   function update<K extends keyof Resume>(key: K, value: Resume[K]) {
     previousProfile.current = null; setCanUndoImport(false);
+    setDraftStatus("Salvando alterações...");
     setProfile(prev => ({ ...prev, [key]: value }));
   }
   function contact(key: keyof Contact, value: string) {
     previousProfile.current = null; setCanUndoImport(false);
+    setDraftStatus("Salvando alterações...");
     setProfile(prev => ({ ...prev, contact: { ...prev.contact, [key]: key === "links" ? value.split("\n") : value } }));
   }
   function changeList<T extends Experience | Education | Project>(key: "experiences" | "education" | "projects", i: number, field: keyof T, value: string) {
     const list = profile[key] as T[];
     const changed = list.map((item,j) => j === i ? { ...item, [field]: field === "highlights" ? value.split("\n") : value } : item);
     previousProfile.current = null; setCanUndoImport(false);
+    setDraftStatus("Salvando alterações...");
     setProfile(prev => ({ ...prev, [key]: changed }));
   }
   function remove(key: "experiences" | "education" | "projects", i: number) {
     previousProfile.current = null; setCanUndoImport(false);
+    setDraftStatus("Salvando alterações...");
     setProfile(prev => ({ ...prev, [key]: (prev[key] as unknown[]).filter((_,j) => j !== i) }));
   }
   function messages() { setError(""); setSuccess(""); }
@@ -112,7 +171,7 @@ export default function Studio() {
   function saveJson() {
     messages();
     saveBlob(new Blob([JSON.stringify(profile,null,2)],{type:"application/json"}),"alinha-perfil.json");
-    setSuccess("Perfil salvo no seu computador. Você poderá importá-lo depois.");
+    setSuccess("Backup exportado. Seu currículo também é salvo automaticamente neste dispositivo.");
   }
   async function loadJson(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]; if (!file) return;
@@ -126,6 +185,7 @@ export default function Studio() {
       if (!response.ok) throw new Error("Arquivo incompatível com o perfil Alinha versão 1.");
       const normalized = await response.json() as { profile: Resume };
       previousProfile.current = profile; setCanUndoImport(true);
+      setDraftStatus("Salvando currículo importado...");
       setProfile(normalized.profile); setImportError(""); setUnassignedImportLines([]); setImportNotice("Perfil JSON carregado. Revise os campos antes de exportar."); setPane("informacoes");
     } catch (e) { setError(e instanceof Error ? e.message : "Falha na importação."); }
     finally { event.target.value=""; }
@@ -149,6 +209,7 @@ export default function Studio() {
         result.profile.skills.length + result.profile.languages.length;
       if (!identified) throw new Error("Não foi possível reconhecer informações deste currículo. Tente um PDF com texto selecionável, DOCX ou TXT.");
       previousProfile.current = profile; setCanUndoImport(true);
+      setDraftStatus("Salvando currículo importado...");
       setProfile(result.profile);
       setUnassignedImportLines(result.unassigned_lines);
       setPane("informacoes");
@@ -162,6 +223,7 @@ export default function Studio() {
   }
   function undoImport() {
     if (!previousProfile.current) return;
+    setDraftStatus("Salvando alterações...");
     setProfile(previousProfile.current);
     previousProfile.current = null; setCanUndoImport(false);
     setImportNotice(null);
@@ -197,7 +259,7 @@ export default function Studio() {
         </div>
         <nav className="studio-global-links" aria-label="Navegação">
           <Link href="/">Início</Link>
-          <Link href="/preparar">Preparar candidatura <ArrowRight size={15}/></Link>
+          <Link href="/preparar" onClick={event=>void goPrepare(event)}>Preparar candidatura <ArrowRight size={15}/></Link>
         </nav>
         <div className="studio-top-actions">
           <input type="file" hidden accept=".json,application/json" ref={upload} onChange={loadJson}/>
@@ -211,6 +273,7 @@ export default function Studio() {
               <button type="button" onClick={()=>upload.current?.click()}><FolderOpen size={16}/> Importar perfil JSON</button>
               <button type="button" onClick={saveJson}><Download size={16}/> Salvar perfil JSON</button>
             </div>
+              <button type="button" onClick={()=>void eraseLocalDraft()}><Trash2 size={16}/> Apagar rascunho local</button>
           </details>
           <button type="button" className="studio-primary" disabled={Boolean(busy)} onClick={exportDocx}>
             <Download size={17}/> {busy==="docx"?"Exportando…":"Exportar DOCX"}
@@ -228,7 +291,7 @@ export default function Studio() {
             <Icon size={18}/><span>{label}</span><small>{String(i+1).padStart(2,"0")}</small>
           </button>)}
         </div>
-        <div className="studio-side-note"><ShieldCheck size={18}/><span>Sem salvamento automático. Salve seu perfil para continuar depois.</span></div>
+        <div className="studio-side-note"><ShieldCheck size={18}/><span>Rascunho salvo neste navegador. Evite computadores compartilhados e apague os dados quando necessário.</span></div>
       </nav>
       <main className="studio-editor" id="studio-editor">
         <div className="studio-editor-heading">
@@ -240,6 +303,7 @@ export default function Studio() {
           <h1>{panes[paneIndex].label}</h1>
           <p>{paneDescriptions[pane]}</p>
         </div>
+        <p className="studio-draft-status" role="status">{draftStatus} <span>· Sem conta ou envio para a nuvem</span></p>
         {importError && <p className="studio-import-error" role="alert">{importError}</p>}
         {importNotice && <div className="studio-import-feedback" role="status">
           <Check size={16}/><span>{importNotice}</span>
@@ -298,7 +362,7 @@ export default function Studio() {
           <Field label="Idiomas e níveis (um por linha)" multiline value={profile.languages.join("\n")} onChange={v=>update("languages",v.split("\n"))}/>
         </>}
         {pane==="estilo"&&<><p className="studio-tip"><FileText size={17}/> Modelos simples, com texto selecionável e estrutura de uma coluna.</p>
-          <div className="studio-templates">{(["classico","compacto"] as Template[]).map(t=><button key={t} className={t===template?"selected":""} aria-pressed={t===template} type="button" onClick={()=>setTemplate(t)}>
+          <div className="studio-templates">{(["classico","compacto"] as Template[]).map(t=><button key={t} className={t===template?"selected":""} aria-pressed={t===template} type="button" onClick={()=>{setTemplate(t);setDraftStatus("Salvando alterações...");}}>
             <div className={"studio-model studio-model-"+t}><div/><span/><span/><span/></div>
             <strong>{t==="classico"?"Clássico":"Compacto"}</strong><small>{t==="classico"?"Mais respiro":"Espaçamento reduzido"}</small>
             {t===template&&<Check size={18}/>}</button>)}</div>
@@ -311,7 +375,7 @@ export default function Studio() {
           <span>{paneIndex+1} de {panes.length}</span>
           {paneIndex<panes.length-1 ?
             <button type="button" className="studio-next" onClick={()=>navigatePane(1)}>Próxima seção <ChevronRight size={17}/></button>
-            : <Link className="studio-next" href="/preparar">Preparar candidatura <ArrowRight size={17}/></Link>}
+            : <Link className="studio-next" href="/preparar" onClick={event=>void goPrepare(event)}>Preparar candidatura <ArrowRight size={17}/></Link>}
         </div>
       </main>
       <aside className={"studio-preview"+(previewOpen?" studio-preview-visible":"")} id="studio-document-preview">

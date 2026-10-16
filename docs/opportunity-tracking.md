@@ -1,6 +1,6 @@
 # Acompanhamento de oportunidades no Alinha Community
 
-Este quadro é uma ferramenta **manual de acompanhamento**, não um robô de candidatura. Para abrir, acesse /candidaturas. O usuário pode salvar uma vaga encontrada no Himalayas ou adicionar o link de uma vaga brasileira de qualquer portal, sem que o Alinha acesse ou extraia dados daquele site.
+Este quadro é uma ferramenta **manual de acompanhamento**, não um robô de candidatura. Para abrir, acesse /candidaturas. O usuário pode salvar uma vaga encontrada no Himalayas ou adicionar o link de uma vaga de qualquer portal de emprego, sem que o Alinha acesse ou extraia dados daquele site.
 
 ## Funcionalidades disponíveis
 
@@ -8,8 +8,10 @@ Este quadro é uma ferramenta **manual de acompanhamento**, não um robô de can
 - Evitar duplicidade por URL normalizada e parâmetros conhecidos de rastreamento.
 - Organizar as etapas: Salvas, Em preparação, Candidatura informada, Entrevistas, Propostas e Encerradas.
 - Mudar status pela interface; nenhum status representa confirmação técnica da plataforma de emprego.
-- Exportar e importar backup JSON versionado, com validação de limites e substituição explícita.
+- Salvamento automático no navegador e, opcionalmente, exportação/restauração de backup JSON pelo menu Backup e dados.
 - Limpar registros mediante confirmação.
+
+Os cartões permitem abrir Preparar candidatura mantendo título, empresa e URL da vaga na aba atual, sem inventar requisitos ausentes.
 
 ## Dados e privacidade
 

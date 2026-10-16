@@ -45,3 +45,9 @@ Não salvar currículos, CPF, e-mails de candidatos ou segredos no quadro; recom
 exportar backup e apagar os dados em computadores compartilhados. Para a versão
 Pro, usar autenticação, controle de acesso, criptografia apropriada e isolamento
 por usuário, com persistência consentida.
+
+## Rascunho integrado do Community
+
+O Studio salva automaticamente o perfil estruturado e o modelo em IndexedDB neste navegador, sem guardar o PDF/DOCX original ou enviá-lo à nuvem. Preparar candidatura lê esse perfil e utiliza a API local somente para gerar o texto usado no ATS; o envio a um provedor de IA continua sujeito a ação explícita.
+
+IndexedDB não é criptografado pelo Alinha nem isola pessoas que compartilham o mesmo perfil do navegador. O usuário pode apagar o rascunho; backups JSON também não são criptografados. O contexto da vaga é transferido na mesma aba via sessionStorage sem credenciais. Para o futuro Cloud, são necessários autenticação, consentimento, isolamento por conta, retenção e auditoria.

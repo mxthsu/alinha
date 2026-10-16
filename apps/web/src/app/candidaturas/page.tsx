@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import {PlatformNav} from "@/components/platform-nav";
 import {useOpportunityTracker} from "@/hooks/use-opportunity-tracker";
+import {selectOpportunity} from "@/lib/career-handoff";
 import {safeJobUrl,TRACKER_LABELS,TRACKER_STATUSES,type TrackerStatus} from "@/lib/opportunity-tracker";
 import "./candidaturas.css";
 
@@ -91,18 +92,24 @@ export default function Applications(){
             <input required type="url" maxLength={1800} value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://..."/>
           </label>
         </div>
-        <div className="tracker-form-footer"><p>Você pode guardar links de plataformas brasileiras sem usar scraping ou acessar contas de terceiros.</p>
+        <div className="tracker-form-footer"><p>Você pode guardar links de plataformas de vagas sem usar scraping ou acessar contas de terceiros.</p>
           <button type="submit"><Check size={16}/> Salvar vaga</button></div>
       </form>}
 
       <div className="tracker-toolbar">
         <div><strong>{loaded?items.length:"—"}</strong><span> oportunidades acompanhadas</span></div>
         <div className="tracker-toolbar-actions">
-          <button type="button" onClick={download} disabled={!loaded}><Download size={16}/> Exportar JSON</button>
-          <input ref={importInput} type="file" accept=".json,application/json" hidden
-            onChange={e=>{void importFile(e.target.files?.[0]);e.target.value="";}}/>
-          <button type="button" onClick={()=>importInput.current?.click()}><Upload size={16}/> Importar backup</button>
-          {items.length>0&&<button type="button" className="tracker-danger" onClick={deleteAll}><Trash2 size={16}/> Limpar</button>}
+          <span className="tracker-autosave">Salvo automaticamente neste navegador</span>
+          <details className="tracker-backup-menu">
+            <summary>Backup e dados</summary>
+            <div className="tracker-backup-actions">
+              <button type="button" onClick={download} disabled={!loaded}><Download size={16}/> Exportar backup JSON</button>
+              <input ref={importInput} type="file" accept=".json,application/json" hidden
+                onChange={e=>{void importFile(e.target.files?.[0]);e.target.value="";}}/>
+              <button type="button" onClick={()=>importInput.current?.click()}><Upload size={16}/> Restaurar backup</button>
+              {items.length>0&&<button type="button" className="tracker-danger" onClick={deleteAll}><Trash2 size={16}/> Apagar todos os dados</button>}
+            </div>
+          </details>
         </div>
       </div>
       {(message||storageError)&&<p role="status" className={"tracker-message"+(!messageOk||storageError?" tracker-message-error":"")}>{storageError||message}</p>}
@@ -130,6 +137,9 @@ export default function Applications(){
               <a href={job.url} target="_blank" rel="noopener noreferrer" className="tracker-source">
                 <ExternalLink size={14}/> Abrir vaga original
               </a>
+              <Link className="tracker-prepare-link" href="/preparar" onClick={()=>selectOpportunity({
+                title:job.title,company:job.company,url:job.url,source:job.source,excerpt:"",
+              })}>Preparar para esta vaga <ArrowRight size={14}/></Link>
               <label>Atualizar etapa
                 <select value={job.status} onChange={e=>{setStatus(job.id,e.target.value as TrackerStatus);}}>
                   {TRACKER_STATUSES.map(option=><option key={option} value={option}>{TRACKER_LABELS[option]}</option>)}

@@ -270,3 +270,7 @@
   .studio-top-actions .studio-primary {min-width:140px}
   .studio-file-options {right:0}
 }
+
+.studio-draft-status{display:flex;flex-wrap:wrap;align-items:center;gap:6px;color:#39714b;font-size:11px;margin:-9px 0 22px;padding:10px 12px;background:#eef7ec;border:1px solid #dae9d4;border-radius:9px;line-height:1.5}
+.studio-draft-status span{color:#75927c;font-size:10px}
+.studio-file-options button{width:100%;justify-content:flex-start;text-align:left}

@@ -55,3 +55,6 @@
 .vacancies-card-actions button:hover:not(:disabled){background:#e2f3dd}
 .vacancies-card-actions button:disabled{opacity:.7;cursor:default}
 .vacancies-save-feedback{padding:12px 13px;color:#43774e;background:#edf7e9;border:1px solid #d5e9d1;border-radius:9px;font-size:12px}
+
+.vacancies-card-actions .vacancies-prepare{display:inline-flex;align-items:center;gap:6px;border-radius:8px;background:#eaf5e6;color:#2c7345;padding:9px 11px;border:1px solid #d1e6ca;font-size:11px;font-weight:780;min-height:36px}
+.vacancies-card-actions .vacancies-prepare:hover{background:#ddf0d8}

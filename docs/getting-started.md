@@ -46,7 +46,7 @@ python scripts/dev.py --reinstall
 
 ## Experimente uma análise de demonstração
 
-1. Abra http://localhost:3000.
+1. Abra http://localhost:3000 e escolha login Google (se configurado) ou Community local. Depois acesse `/conexoes` para conectar a IA e `/inicio` para navegar pelo produto. Consulte [Autenticação Google](authentication.md).
 2. O Alinha inicia na aba **1. Conectar IA**. Configure a chave do seu provedor ou escolha uma conexão suportada. Para explorar o site sem provedor, utilize **Ver uma demonstração**.
 3. Após conectar, clique em **Continuar para análise** e vá para a aba **2. Analisar currículo**.
 4. Informe currículo e descrição de vaga e clique em **Analisar correspondência**.

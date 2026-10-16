@@ -51,7 +51,7 @@ npm ci
 npm run dev
 ```
 
-Acesse `http://localhost:3000`, selecione ChatGPT e clique **Continuar com ChatGPT**. Quando o navegador pedir autorização, leia e aprove os escopos. No primeiro teste, utilize **dados fictícios**, não seu currículo pessoal.
+Acesse `http://localhost:3000/conexoes`, selecione ChatGPT e clique **Continuar com ChatGPT**. Quando o navegador pedir autorização, leia e aprove os escopos. No primeiro teste, utilize **dados fictícios**, não seu currículo pessoal.
 
 Ao desativar o login, use `ALINHA_LOCAL_AUTH_ENABLED=0` ou não configure essa variável.
 

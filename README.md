@@ -55,7 +55,7 @@ cd alinha
 python scripts/dev.py
 ```
 
-O primeiro início instala as dependências necessárias. Abra **http://localhost:3000**: a primeira aba, **Conectar IA**, orienta a escolha e autorização de um provedor. Depois avance para **Analisar currículo**. Sem uma conta ou chave, clique em **Ver uma demonstração** para explorar um relatório fictício. Pressione **Ctrl+C** para parar os serviços.
+O primeiro início instala as dependências necessárias. Abra **http://localhost:3000**: a nova entrada oferece **Continuar com Google** (se OAuth configurado) ou **Continuar no Community local** (sem conta). Depois use **Início → Conexões de IA** para escolher seu modelo, ou acesse diretamente Studio, ATS e Analisar vaga. Recursos sem IA não exigem conexão. Confira o [guia de autenticação Google](docs/authentication.md). Pressione **Ctrl+C** para parar os serviços.
 
 No Windows, você também pode iniciar com `py -3 scripts/dev.py`. Para instruções manuais, configuração do provedor e solução de problemas, consulte o [guia de instalação](docs/getting-started.md).
 

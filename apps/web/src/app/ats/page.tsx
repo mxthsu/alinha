@@ -3,10 +3,11 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import {
-  AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, ChevronRight,
+  AlertCircle, ArrowRight, CheckCircle2, ChevronRight,
   FileCheck2, FilePenLine, FileText, Info, LoaderCircle, ShieldCheck, UploadCloud,
 } from "lucide-react";
 import "./ats.css";
+import { PlatformNav } from "@/components/platform-nav";
 import { AtsEditor } from "@/components/ats-editor";
 
 type Finding = {
@@ -87,15 +88,7 @@ export default function AtsCheck() {
 
   return (
     <div className="ats-shell">
-      <header className="ats-header">
-        <div className="ats-container">
-          <Link href="/" className="ats-brand" aria-label="Alinha, página inicial">
-            <span className="ats-mark"><ArrowRight size={19} aria-hidden="true" /></span>
-            alinha<span>.</span>
-          </Link>
-          <div style={{display:"flex",gap:16,alignItems:"center"}}><Link href="/studio" className="ats-back">Criar currículo <ArrowRight size={15}/></Link><Link href="/" className="ats-back"><ArrowLeft size={16} aria-hidden="true" /> Voltar ao Alinha</Link></div>
-        </div>
-      </header>
+      <PlatformNav />
 
       <main className="ats-main">
         <div className="ats-container">

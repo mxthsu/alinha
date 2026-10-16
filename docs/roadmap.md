@@ -36,6 +36,16 @@
 - [ ] Plano de preparação de entrevistas.
 - [ ] Histórico opcional e controles de exclusão.
 
+## Navegação e identidade
+
+- [x] Entrada orientada a conta Google quando OAuth está configurado, com modo Community local independente.
+- [x] Navegação por áreas: Início, Meus currículos, Verificar ATS, Analisar vaga e Conexões de IA.
+- [x] Autenticação Google separada da autorização do provedor de IA; segredos apenas no servidor Next.js.
+- [x] Retorno da autorização ChatGPT para a central `/conexoes`.
+- [ ] Configurar um cliente OAuth Google real e validar manualmente login/logout com consentimento.
+- [ ] Criar identidade, autorização e isolamento de dados no backend para futuro Cloud.
+- [ ] Testes automatizados de autenticação com provedor de identidade isolado em ambiente de integração.
+
 ## Alinha Community e Cloud
 
 - [x] Conexão BYOK/conta autorizada ou Ollama no Community e seleção no Studio.

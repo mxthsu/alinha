@@ -27,7 +27,7 @@ Severity = Literal["important", "attention", "suggestion"]
 EMAIL_RE = re.compile(r"(?<![\w.+-])[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}(?![\w.-])")
 PHONE_RE = re.compile(r"(?:\+?\d{1,3}[ .-]?)?(?:\(?\d{2,3}\)?[ .-]?)?\d{4,5}[ .-]?\d{4}")
 SECTION_PATTERNS: dict[str, re.Pattern[str]] = {
-    "experience": re.compile(r"(?im)^\s*(?:experiências? profissionais?|histórico profissional|professional experience|work experience|empregos|carreira)\s*:?\s*$"),
+    "experience": re.compile(r"(?im)^\s*(?:experiências? profiss(?:ional|ionais)|histórico profissional|professional experience|work experience|empregos|carreira)\s*:?\s*$"),
     "education": re.compile(r"(?im)^\s*(?:formação(?: acadêmica)?|educação|escolaridade|education|academic background)\s*:?\s*$"),
     "skills": re.compile(r"(?im)^\s*(?:competências|habilidades|conhecimentos(?: técnicos)?|skills|technical skills|tecnologias)\s*:?\s*$"),
 }

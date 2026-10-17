@@ -68,7 +68,7 @@ export default function CareerAgent(){
   const controller=new AbortController();abort.current=controller;
   setRun("searching");setError("");setNotice("");setJobs(null);
   try{
-   const search=new URLSearchParams({q:term,page:"1",remote_only:"true"});
+   const search=new URLSearchParams({q:term,page:"1",remote_only:"false",source:"all"});
    const response=await fetch(API+"/api/v1/jobs/search?"+search,{signal:controller.signal,cache:"no-store"});
    const data=await response.json();
    if(!response.ok)throw new Error(typeof data.detail==="string"?data.detail:"Falha na consulta à fonte de vagas.");

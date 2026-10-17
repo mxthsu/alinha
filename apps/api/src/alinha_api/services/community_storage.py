@@ -50,6 +50,7 @@ class ConnectorSettings(_StrictModel):
 
 class Connectors(_StrictModel):
     himalayas: ConnectorSettings = Field(default_factory=ConnectorSettings)
+    gupy: ConnectorSettings = Field(default_factory=ConnectorSettings)
 
 
 class AiOptions(_StrictModel):

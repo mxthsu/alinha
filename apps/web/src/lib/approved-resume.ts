@@ -1,3 +1,4 @@
+import {readCommunityRecord,saveCommunityRecord} from "./community-data.ts";
 /** Local-only approved CV versions keyed to original job URLs. Does not overwrite Studio. */
 import {isResumeProfile,type ResumeProfile,type ResumeTemplate} from "./career-workspace.ts";
 import type {SelectedOpportunity} from './career-handoff';
@@ -48,7 +49,7 @@ async function db():Promise<IDBDatabase>{
   req.onsuccess=()=>resolve(req.result);
  });
 }
-export async function loadApprovedResume(job:SelectedOpportunity):Promise<ApprovedResumeVersion|null>{
+async function loadLegacyApprovedResume(job:SelectedOpportunity):Promise<ApprovedResumeVersion|null>{
  const database=await db();
  try {
   return await new Promise((resolve,reject)=>{
@@ -58,20 +59,50 @@ export async function loadApprovedResume(job:SelectedOpportunity):Promise<Approv
   });
  }finally{database.close();}
 }
-export async function approveResumeVersion(job:SelectedOpportunity,profile:ResumeProfile,template:ResumeTemplate):Promise<ApprovedResumeVersion>{
+
+export async function loadApprovedResume(job:SelectedOpportunity):Promise<ApprovedResumeVersion|null>{
+ const normalized=normalizeSelectedOpportunity(job);
+ if(!normalized)throw new Error("Vaga inválida.");
+ const stored=await readCommunityRecord("resume_versions");
+ if(stored.revision>0&&stored.value!==null){
+  if(!Array.isArray(stored.value)||!stored.value.every(isApprovedResumeVersion))
+   throw new Error("As versões do SQLite estão inconsistentes. Restaure um backup.");
+  const found=(stored.value as ApprovedResumeVersion[]).find(
+   item=>item.job.url.replace(/\\/$/,"").toLowerCase()===normalized.url.replace(/\\/$/,"").toLowerCase()
+  );
+  if(found)return found;
+ }
+ // Legacy versions remain available until explicit import, never silently erased.
+ return loadLegacyApprovedResume(normalized);
+}
+
+export async function approveResumeVersion(
+ job:SelectedOpportunity,profile:ResumeProfile,template:ResumeTemplate
+):Promise<ApprovedResumeVersion>{
  const normalized=normalizeSelectedOpportunity(job);
  if(!normalized)throw new Error("Selecione uma vaga com link válido.");
- const version:ApprovedResumeVersion={version:1,job:normalized,profile,template,approvedAt:new Date().toISOString()};
+ const version:ApprovedResumeVersion={
+  version:1,job:normalized,profile,template,approvedAt:new Date().toISOString(),
+ };
  if(!isApprovedResumeVersion(version))throw new Error("Os dados da versão não são válidos.");
- const database=await db();
- try{
-  await new Promise<void>((resolve,reject)=>{
-   const txn=database.transaction(STORE,"readwrite");
-   txn.objectStore(STORE).put(version,key(normalized));
-   txn.oncomplete=()=>resolve();
-   txn.onabort=()=>reject(txn.error||new Error("Falha ao salvar."));
-   txn.onerror=()=>reject(txn.error||new Error("Falha ao salvar."));
-  });
-  return version;
- }finally{database.close();}
+ const saved=await readCommunityRecord("resume_versions");
+ if(saved.value!==null&&!Array.isArray(saved.value))
+  throw new Error("O histórico SQLite de versões está inválido.");
+ const existing=saved.value===null?[]:saved.value;
+ if(!existing.every(isApprovedResumeVersion))
+  throw new Error("Não é possível atualizar versões locais inconsistentes.");
+ const records=existing as ApprovedResumeVersion[];
+ const unique=records.filter(
+  item=>item.job.url.replace(/\\/$/,"").toLowerCase()!==normalized.url.replace(/\\/$/,"").toLowerCase()
+ );
+ unique.push(version);
+ if(unique.length>16)throw new Error("Limite de 16 versões salvas. Exporte um backup antes de reorganizá-las.");
+ const revision=await saveCommunityRecord("resume_versions",unique,saved.revision);
+ const verified=await readCommunityRecord("resume_versions");
+ if(verified.revision!==revision||!Array.isArray(verified.value)||
+   !(verified.value as unknown[]).some(item=>isApprovedResumeVersion(item)&&
+     item.job.url===normalized.url&&item.approvedAt===version.approvedAt)){
+  throw new Error("Não foi possível confirmar a versão aprovada no SQLite.");
+ }
+ return version;
 }

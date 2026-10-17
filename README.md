@@ -90,7 +90,7 @@ Veja [como o acompanhamento funciona](docs/opportunity-tracking.md). As vagas sa
 
 ## Encontre vagas remotas disponíveis para o Brasil
 
-A área **Encontrar vagas** (/vagas) consulta fontes públicas selecionáveis (Himalayas, Lever e Gupy experimental), mantém atribuição visível e abre o link da vaga na fonte original. É possível informar cargo, preferência de modalidade, vínculo CLT/PJ, cidade e salário pretendido. Como cada fonte possui cobertura e campos diferentes, informações contratuais ou salariais não publicadas permanecem **a confirmar**, nunca são inventadas. A busca não envia candidaturas nem envia currículos às fontes de vagas. Veja [como funciona a descoberta](docs/job-discovery.md) e [revisão de segurança](docs/security-review.md).
+A área **Encontrar vagas** (/vagas) consulta fontes públicas selecionáveis (comunidades brasileiras GitHub, Himalayas, Lever e Gupy experimental), mantém atribuição visível e abre o link da vaga na fonte original. É possível informar cargo, preferência de modalidade, vínculo CLT/PJ, cidade e salário pretendido. Como cada fonte possui cobertura e campos diferentes, informações contratuais ou salariais não publicadas permanecem **a confirmar**, nunca são inventadas. A busca não envia candidaturas nem envia currículos às fontes de vagas. Veja [como funciona a descoberta](docs/job-discovery.md) e [revisão de segurança](docs/security-review.md).
 
 ## Crie seu currículo no Studio
 

@@ -187,7 +187,7 @@ export default function PrepareApplication() {
     setSavingVersion(true);setVersionNotice("");
     try{
       const saved=await approveResumeVersion(selectedJob,proposal.profile,currentTemplate);
-      setApprovedVersion(saved);setVersionNotice("Versão aprovada e salva neste navegador.");
+      setApprovedVersion(saved);setVersionNotice("Versão aprovada e salva no SQLite local.");
       await downloadVersion(saved.profile,saved.template);
     }catch(cause){setVersionNotice(cause instanceof Error?cause.message:"Não foi possível concluir a exportação.");}
     finally{setSavingVersion(false);}
@@ -295,7 +295,7 @@ export default function PrepareApplication() {
         onDownload={()=>void redownload()}/>}
       {!proposal&&approvedVersion&&selectedJob&&<div className="journey-approved-existing">
         <div><CheckCircle2 size={19}/><span><strong>Você já tem uma versão aprovada para esta vaga.</strong>
-          <small>Salva neste navegador, sem alterar o currículo principal.</small></span></div>
+          <small>Versão aprovada localmente, sem alterar o currículo principal.</small></span></div>
         <button type="button" onClick={()=>void redownload()} disabled={savingVersion}>
           <FileCheck2 size={16}/> Baixar currículo da vaga
         </button>

@@ -10,7 +10,8 @@ Este documento controla o escopo da edição local e open source. O Community de
 - [x] Mostrar sinais literais da vaga sem inventar classificação ou percentual ATS.
 - [x] Salvar e acompanhar oportunidades manualmente no navegador.
 - [x] Verificar leitura ATS local e solicitar IA conectada para analisar requisitos.
-- [ ] Aprovar e baixar versões de currículo para cada vaga — implementação em homologação, sem criar experiências fictícias.
+- [x] Aprovar e baixar versões de currículo por vaga, gravando as novas aprovações no SQLite sem inventar experiências.
+- [ ] Homologar em instalação limpa, migração de todas as versões antigas e recuperação de múltiplas versões.
 - [x] Transferir descrições completas fornecidas por APIs de origem (Lever e demais quando disponíveis) diretamente para Preparar candidatura.
 - [ ] Expandir cobertura de descrições integrais em todas as fontes e tratar páginas sem essa informação.
 - [ ] Apresentar a jornada principal em uma única tela com interrupção, revisão e retomada.

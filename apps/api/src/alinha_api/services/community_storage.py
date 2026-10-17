@@ -23,6 +23,7 @@ SCHEMA_VERSION = 1
 MAX_CONFIG_BYTES = 32_768
 MAX_RECORD_BYTES = 350_000
 MAX_OPPORTUNITIES = 200
+MAX_RESUME_VERSIONS = 16
 
 
 def user_paths() -> tuple[Path, Path]:
@@ -228,6 +229,34 @@ class TrackedOpportunity(_StrictModel):
         return value
 
 
+class SavedJobReference(_StrictModel):
+    title: str = Field(min_length=2, max_length=180)
+    company: str = Field(min_length=2, max_length=180)
+    source: str = Field(min_length=1, max_length=100)
+    excerpt: str = Field(default="", max_length=350)
+    url: str = Field(max_length=1600)
+
+    @field_validator("url")
+    @classmethod
+    def validated_link(cls, value: str) -> str:
+        return TrackedOpportunity.public_https_url(value)
+
+
+class ApprovedResumeRecord(_StrictModel):
+    version: Literal[1] = 1
+    job: SavedJobReference
+    profile: ResumeProfile
+    template: TemplateName = "classico"
+    approvedAt: datetime
+
+    @field_validator("approvedAt")
+    @classmethod
+    def require_timezone(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("Data da aprovação deve conter fuso horário.")
+        return value
+
+
 def validate_record(kind: str, value: object) -> object:
     if kind == "resume":
         return SavedResume.model_validate(value).model_dump(mode="json")
@@ -239,6 +268,14 @@ def validate_record(kind: str, value: object) -> object:
         if len(ids) != len(set(ids)):
             raise ValueError("Oportunidades duplicadas.")
         return [v.model_dump(mode="json") for v in parsed]
+    if kind == "resume_versions":
+        if not isinstance(value, list) or len(value) > MAX_RESUME_VERSIONS:
+            raise ValueError("Quantidade de versões de currículo inválida.")
+        parsed = [ApprovedResumeRecord.model_validate(v) for v in value]
+        urls = [entry.job.url.casefold().rstrip("/") for entry in parsed]
+        if len(set(urls)) != len(urls):
+            raise ValueError("Versões duplicadas para a mesma vaga.")
+        return [entry.model_dump(mode="json") for entry in parsed]
     raise ValueError("Tipo de dado não permitido.")
 
 
@@ -263,7 +300,7 @@ def _connect(path: Path) -> sqlite3.Connection:
 
 
 def get_record(kind: str, path: Path | None = None) -> tuple[object | None, int]:
-    if kind not in ("resume", "opportunities"):
+    if kind not in ("resume", "opportunities", "resume_versions"):
         raise ValueError("Tipo de dado não permitido.")
     path = path or user_paths()[1]
     with _connect(path) as db:
@@ -300,7 +337,7 @@ def save_record(kind: str, value: object, expected_revision: int, path: Path | N
 
 def clear_record(kind: str, expected_revision: int, path: Path | None = None) -> int:
     """Keep a versioned tombstone so deleted records never fall back to stale browser data."""
-    if kind not in ("resume", "opportunities") or type(expected_revision) is not int or not 0 <= expected_revision <= 2**31:
+    if kind not in ("resume", "opportunities", "resume_versions") or type(expected_revision) is not int or not 0 <= expected_revision <= 2**31:
         raise ValueError("Tipo ou revisão inválidos.")
     path = path or user_paths()[1]
     with _connect(path) as db:

@@ -116,3 +116,39 @@ def test_migration_api_and_cors(tmp_path, monkeypatch):
     assert client.post("/api/v1/community/migration", headers={
         "origin": "https://malicioso.example"
     }, json={"resume": {"profile": profile()}, "expected_revisions": {"resume": 1}}).status_code == 403
+
+
+def test_backup_preserves_approved_versions_and_old_backups(tmp_path):
+    db = tmp_path / "community.sqlite3"
+    approved = {
+        "version": 1,
+        "job": {
+            "title": "Engenharia de IA", "company": "Empresa Fictícia",
+            "source": "lever", "excerpt": "Python",
+            "url": "https://jobs.lever.co/Flex/example",
+        },
+        "profile": profile(), "template": "classico",
+        "approvedAt": "2026-10-17T03:00:00Z",
+    }
+    assert migration.atomic_import(
+        {"resume_versions": [approved]}, {"resume_versions": 0}, path=db,
+    )["revisions"]["resume_versions"] == 1
+    assert migration.atomic_import(
+        {"resume": {"profile": profile()}}, {"resume": 0}, path=db,
+    )["revisions"]["resume"] == 1
+    backup = migration.export_records(db)
+    assert backup["records"]["resume_versions"]["value"][0]["job"]["title"] == "Engenharia de IA"
+    old = {
+        **backup,
+        "records": {k: v for k, v in backup["records"].items() if k != "resume_versions"},
+    }
+    # Version-one backup documents that predate this feature remain restorable.
+    restored = migration.restore_export(old, {"resume": 1, "opportunities": 0}, db)
+    assert restored["revisions"]["resume"] == 1
+    assert storage.get_record("resume_versions", db)[1] == 1
+    # New backups include versions and can restore them after a controlled deletion.
+    assert storage.clear_record("resume_versions", 1, db) == 2
+    result = migration.restore_export(
+        backup, {"resume_versions": 2, "resume": 1, "opportunities": 0}, db,
+    )
+    assert result["revisions"]["resume_versions"] == 3

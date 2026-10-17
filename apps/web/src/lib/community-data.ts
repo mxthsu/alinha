@@ -1,5 +1,5 @@
 /** Versioned local SQLite API, shared by Studio and opportunity tracking. */
-export type CommunityKind="resume"|"opportunities";
+export type CommunityKind="resume"|"opportunities"|"resume_versions";
 export type CommunityRecord={value:unknown;revision:number};
 const API=process.env.NEXT_PUBLIC_API_URL||"http://localhost:8000";
 

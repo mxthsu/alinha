@@ -208,3 +208,48 @@ def test_delete_data_endpoint_requires_local_origin_and_revision(client):
     assert deleted.json()["revision"] == 2
     assert client.get("/api/v1/community/data/resume").json() == {"value": None, "revision": 2}
     assert client.delete("/api/v1/community/data/resume?expected_revision=1", headers=headers).status_code == 409
+
+
+def test_approved_resume_versions_roundtrip_and_duplicate_protection(tmp_path):
+    db = tmp_path / "versions.sqlite3"
+    version = {
+        "version": 1,
+        "job": {
+            "title": "Engenheiro de IA", "company": "Empresa Exemplo",
+            "source": "lever", "excerpt": "Python, FastAPI",
+            "url": "https://jobs.lever.co/Flex/example",
+        },
+        "profile": profile(),
+        "template": "classico",
+        "approvedAt": "2026-10-17T03:00:00Z",
+    }
+    assert storage.save_record("resume_versions", [version], 0, db) == 1
+    value, revision = storage.get_record("resume_versions", db)
+    assert revision == 1
+    assert value[0]["job"]["company"] == "Empresa Exemplo"
+    assert value[0]["profile"]["contact"]["name"] == "Pessoa Exemplo"
+    with pytest.raises(storage.RevisionConflict):
+        storage.save_record("resume_versions", [version], 0, db)
+    with pytest.raises(ValueError):
+        storage.save_record("resume_versions", [version, version], 1, db)
+    assert storage.clear_record("resume_versions", 1, db) == 2
+    assert storage.get_record("resume_versions", db) == (None, 2)
+
+
+def test_approved_versions_reject_untrusted_vacancy_and_unproven_data(tmp_path):
+    version = {
+        "version": 1,
+        "job": {
+            "title": "Vaga Teste", "company": "Empresa Exemplo",
+            "source": "lever", "excerpt": "",
+            "url": "https://localhost/admin",
+        },
+        "profile": profile(),
+        "template": "classico",
+        "approvedAt": "2026-10-17T03:00:00Z",
+    }
+    with pytest.raises(ValidationError):
+        storage.save_record("resume_versions", [version], 0, tmp_path / "db.sqlite3")
+    with pytest.raises(ValueError):
+        storage.save_record("resume_versions", [dict(version, approvedAt="data-inválida")],
+                            0, tmp_path / "db.sqlite3")

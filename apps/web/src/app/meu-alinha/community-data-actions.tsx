@@ -2,16 +2,18 @@
 import {useRef,useState,type ChangeEvent} from "react";
 import {loadLegacyResumeDraft,hasResumeContent,type ResumeProfile,type ResumeTemplate} from "@/lib/career-workspace";
 import {parseTracker,TRACKER_KEY,type TrackedOpportunity} from "@/lib/opportunity-tracker";
+import {loadLegacyApprovedResumes,type ApprovedResumeVersion} from "@/lib/approved-resume";
 
 type Resume={profile:ResumeProfile;template:ResumeTemplate};
 type Snapshot={value:unknown;revision:number};
 type Preview={
  resume:Resume|null;opportunities:TrackedOpportunity[]|null;
+ resume_versions:ApprovedResumeVersion[]|null;
  expected_revisions:Record<string,number>;
 };
 const API=process.env.NEXT_PUBLIC_API_URL||"http://localhost:8000";
 
-async function localRecord(kind:"resume"|"opportunities"):Promise<Snapshot>{
+async function localRecord(kind:"resume"|"opportunities"|"resume_versions"):Promise<Snapshot>{
  const response=await fetch(API+"/api/v1/community/data/"+kind,{cache:"no-store"});
  if(!response.ok)throw new Error("Não foi possível consultar os dados locais no SQLite.");
  return await response.json() as Snapshot;
@@ -49,16 +51,22 @@ export function CommunityDataActions(){
    const resume=draft&&hasResumeContent(draft.profile)?
     {profile:draft.profile,template:draft.template}:null;
    const opportunities=currentBrowserOpportunities();
-   if(!resume && (!opportunities||opportunities.length===0)){
+   const resume_versions=await loadLegacyApprovedResumes();
+   if(!resume && (!opportunities||opportunities.length===0)&&resume_versions.length===0){
     throw new Error("Não existem currículos ou oportunidades antigos para migrar neste navegador.");
    }
-   const [savedResume,savedJobs]=await Promise.all([localRecord("resume"),localRecord("opportunities")]);
-   if((resume&&savedResume.value!==null)||(opportunities&&savedJobs.value!==null)){
+   const [savedResume,savedJobs,savedVersions]=await Promise.all([
+    localRecord("resume"),localRecord("opportunities"),localRecord("resume_versions"),
+   ]);
+   if((resume&&savedResume.value!==null)||(opportunities&&savedJobs.value!==null)||
+      (resume_versions.length>0&&savedVersions.value!==null)){
     throw new Error("Já existem registros no SQLite. Faça um backup antes de resolver o conflito; nada foi substituído.");
    }
-   setPreview({resume,opportunities,expected_revisions:{
-    resume:savedResume.revision,opportunities:savedJobs.revision,
-   }});
+   setPreview({resume,opportunities,resume_versions:resume_versions.length?resume_versions:null,
+    expected_revisions:{
+     resume:savedResume.revision,opportunities:savedJobs.revision,
+     resume_versions:savedVersions.revision,
+    }});
   }catch(cause){setError(cause instanceof Error?cause.message:"Não foi possível preparar a migração.");}
   finally{setBusy(false);}
  }
@@ -68,13 +76,19 @@ export function CommunityDataActions(){
   try{
    const result=await send<{revisions:Record<string,number>;backup_file:string}>(
     "/api/v1/community/migration",preview);
-   const [resume,jobs]=await Promise.all([localRecord("resume"),localRecord("opportunities")]);
+   const [resume,jobs,versions]=await Promise.all([
+    localRecord("resume"),localRecord("opportunities"),localRecord("resume_versions"),
+   ]);
    if(preview.resume&&(!resume.value||resume.revision!==result.revisions.resume)){
     throw new Error("A verificação do currículo no banco falhou. Os dados antigos permanecem preservados.");
    }
    if(preview.opportunities&&(jobs.revision!==result.revisions.opportunities||
       !Array.isArray(jobs.value)||jobs.value.length!==preview.opportunities.length)){
     throw new Error("A verificação das vagas falhou. Os dados antigos permanecem preservados.");
+   }
+   if(preview.resume_versions&&(versions.revision!==result.revisions.resume_versions||
+       !Array.isArray(versions.value)||versions.value.length!==preview.resume_versions.length)){
+    throw new Error("A verificação das versões aprovadas falhou; os originais permanecem no navegador.");
    }
    setPreview(null);
    setMessage("Migração conferida no SQLite. Os dados originais do navegador foram preservados como recuperação.");
@@ -107,11 +121,13 @@ export function CommunityDataActions(){
    const backup=raw as Record<string,unknown>;
    if(backup.format!=="alinha-community-backup"||backup.version!==1)
     throw new Error("Formato ou versão de backup incompatível.");
-   const [r,j]=await Promise.all([localRecord("resume"),localRecord("opportunities")]);
+   const [r,j,v]=await Promise.all([
+    localRecord("resume"),localRecord("opportunities"),localRecord("resume_versions"),
+   ]);
    if(!window.confirm("Restaurar os dados deste arquivo no SQLite? Uma cópia do banco atual será criada antes."))
     return;
    await send("/api/v1/community/restore",{
-    backup,expected_revisions:{resume:r.revision,opportunities:j.revision},
+    backup,expected_revisions:{resume:r.revision,opportunities:j.revision,resume_versions:v.revision},
    });
    setMessage("Backup restaurado no SQLite. Os dados anteriores foram preservados em cópia de recuperação.");
   }catch(cause){setError(cause instanceof Error?cause.message:"Não foi possível restaurar o backup.");}
@@ -129,7 +145,7 @@ export function CommunityDataActions(){
     aria-label="Selecionar backup JSON do Alinha" onChange={event=>void restore(event)}/>
    {preview&&<div className="personal-migration-preview">
     <strong>Prévia da migração</strong>
-    <p>Currículo: {preview.resume?"1 perfil estruturado":"nenhum"}. Oportunidades: {preview.opportunities?.length??0}.</p>
+    <p>Currículo: {preview.resume?"1 perfil estruturado":"nenhum"}. Oportunidades: {preview.opportunities?.length??0}. Versões de currículo aprovadas: {preview.resume_versions?.length??0}.</p>
     <p>Nada será apagado do navegador. O Alinha salvará uma cópia do SQLite antes da importação.</p>
     <button type="button" disabled={busy} onClick={()=>void migrate()}>Confirmar migração segura</button>
    </div>}

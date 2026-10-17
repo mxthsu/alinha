@@ -132,7 +132,7 @@ def community_put_settings(request: Request, body: CommunitySettings) -> Communi
 @app.get("/api/v1/community/data/{kind}")
 def community_get_data(request: Request, kind: str) -> dict:
     _community_api_only(request)
-    if kind not in ("resume", "opportunities"):
+    if kind not in ("resume", "opportunities", "resume_versions"):
         raise HTTPException(status_code=404, detail="Recurso não encontrado.")
     try:
         value, revision = get_record(kind)
@@ -144,7 +144,7 @@ def community_get_data(request: Request, kind: str) -> dict:
 @app.put("/api/v1/community/data/{kind}")
 def community_put_data(request: Request, kind: str, body: CommunityDataWrite) -> dict:
     _community_api_only(request, mutation=True)
-    if kind not in ("resume", "opportunities"):
+    if kind not in ("resume", "opportunities", "resume_versions"):
         raise HTTPException(status_code=404, detail="Recurso não encontrado.")
     try:
         revision = save_record(kind, body.value, body.expected_revision)
@@ -215,12 +215,13 @@ class CommunityImportRequest(BaseModel):
     expected_revisions: dict[str, int]
     resume: object | None = None
     opportunities: object | None = None
+    resume_versions: object | None = None
 
 
 @app.delete("/api/v1/community/data/{kind}")
 def community_clear_data(request: Request, kind: str, expected_revision: int = Query(ge=0)) -> dict:
     _community_api_only(request, mutation=True)
-    if kind not in ("resume", "opportunities"):
+    if kind not in ("resume", "opportunities", "resume_versions"):
         raise HTTPException(status_code=404, detail="Recurso não encontrado.")
     try:
         return {"revision": clear_record(kind, expected_revision)}
@@ -255,6 +256,8 @@ def community_import_browser_data(request: Request, body: CommunityImportRequest
         values["resume"] = body.resume
     if body.opportunities is not None:
         values["opportunities"] = body.opportunities
+    if body.resume_versions is not None:
+        values["resume_versions"] = body.resume_versions
     try:
         return atomic_import(values, body.expected_revisions)
     except RevisionConflict as exc:

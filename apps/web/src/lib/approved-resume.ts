@@ -73,7 +73,7 @@ export async function loadLegacyApprovedResumes():Promise<ApprovedResumeVersion[
     ) as ApprovedResumeVersion[];
     const unique=new Map<string,ApprovedResumeVersion>();
     for(const value of values){
-     const url=value.job.url.toLowerCase().replace(/\\/$/,"");
+     const url=value.job.url.toLowerCase().replace(/\/$/,"");
      unique.set(url,value);
     }
     resolve([...unique.values()]);
@@ -91,7 +91,7 @@ export async function loadApprovedResume(job:SelectedOpportunity):Promise<Approv
   if(!Array.isArray(stored.value)||!stored.value.every(isApprovedResumeVersion))
    throw new Error("As versões do SQLite estão inconsistentes. Restaure um backup.");
   const found=(stored.value as ApprovedResumeVersion[]).find(
-   item=>item.job.url.replace(/\\/$/,"").toLowerCase()===normalized.url.replace(/\\/$/,"").toLowerCase()
+   item=>item.job.url.replace(/\/$/,"").toLowerCase()===normalized.url.replace(/\/$/,"").toLowerCase()
   );
   if(found)return found;
  }
@@ -116,7 +116,7 @@ export async function approveResumeVersion(
   throw new Error("Não é possível atualizar versões locais inconsistentes.");
  const records=existing as ApprovedResumeVersion[];
  const unique=records.filter(
-  item=>item.job.url.replace(/\\/$/,"").toLowerCase()!==normalized.url.replace(/\\/$/,"").toLowerCase()
+  item=>item.job.url.replace(/\/$/,"").toLowerCase()!==normalized.url.replace(/\/$/,"").toLowerCase()
  );
  unique.push(version);
  if(unique.length>16)throw new Error("Limite de 16 versões salvas. Exporte um backup antes de reorganizá-las.");

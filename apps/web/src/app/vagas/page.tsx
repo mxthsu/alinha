@@ -9,7 +9,7 @@ import { opportunityFingerprint } from "@/lib/opportunity-tracker";
 import "./vagas.css";
 
 type Job = {
-  opportunity: {source:string; external_id:string; title:string; company:string;work_mode:string;contract_type:string;advertised_min_salary_brl:number|null;source_url:string|null};
+  opportunity: {source:string; external_id:string; title:string; company:string;city:string|null;work_mode:string;contract_type:string;advertised_min_salary_brl:number|null;source_url:string|null};
   excerpt:string; employment_label:string|null; salary_label:string|null; missing_information:string[];
 };
 type Result = {jobs:Job[];source_name:string;source_url:string;description:string;limitations:string[]};
@@ -20,6 +20,7 @@ export default function Jobs() {
   const [saveNotice,setSaveNotice]=useState("");
   const [keyword,setKeyword] = useState("");
   const [workMode,setWorkMode] = useState("remote");
+  const [source,setSource] = useState("gupy");
   const [contract,setContract] = useState("any");
   const [city,setCity] = useState("");
   const [salary,setSalary] = useState("");
@@ -32,7 +33,7 @@ export default function Jobs() {
   async function search(pageNumber:number){
     if(loading || keyword.trim().length<2) return;
     abort.current?.abort();setLoading(true);setError("");setResult(null);setPage(pageNumber);
-    if(workMode!=="remote"){
+    if(source==="himalayas" && workMode!=="remote"){
       setResult({jobs:[],source_name:"Himalayas",source_url:"https://himalayas.app",
         description:"Esta fonte inicial oferece apenas vagas remotas.",
         limitations:["Vagas híbridas e presenciais dependem de outras fontes autorizadas."]});
@@ -40,7 +41,7 @@ export default function Jobs() {
     }
     const controller=new AbortController();abort.current=controller;
     try{
-      const query=new URLSearchParams({q:keyword.trim(),page:String(pageNumber),remote_only:"true"});
+      const query=new URLSearchParams({q:keyword.trim(),page:String(pageNumber),remote_only:String(workMode==="remote"),source});
       const response=await fetch(api+"/api/v1/jobs/search?"+query.toString(),
         {signal:controller.signal,cache:"no-store"});
       const json=await response.json();
@@ -57,7 +58,7 @@ export default function Jobs() {
       <header className="vacancies-heading">
         <span><Search size={16}/> DESCOBERTA DE OPORTUNIDADES</span>
         <h1>Encontre vagas que fazem sentido para você.</h1>
-        <p>Pesquise oportunidades reais de uma fonte pública. Você escolhe o que analisar e para onde deseja se candidatar.</p>
+        <p>Pesquise oportunidades reais de fontes públicas. Você escolhe o que analisar e para onde deseja se candidatar.</p>
       </header>
       <div className="vacancies-agent-entry">
         <div><strong>Já tem currículo no Alinha?</strong><p>Deixe o agente sugerir buscas a partir do seu perfil profissional.</p></div>
@@ -69,6 +70,12 @@ export default function Jobs() {
           <label>Cargo ou palavra-chave
             <input type="search" value={keyword} minLength={2} maxLength={80} required
               onChange={event=>setKeyword(event.target.value)} placeholder="Ex.: Engenharia de IA"/>
+          </label>
+          <label>Fonte de vagas
+            <select value={source} onChange={event=>setSource(event.target.value)}>
+              <option value="gupy">Gupy · Brasil</option>
+              <option value="himalayas">Himalayas · remoto</option>
+            </select>
           </label>
           <label>Modalidade
             <select value={workMode} onChange={event=>setWorkMode(event.target.value)}>
@@ -93,7 +100,7 @@ export default function Jobs() {
             {loading?<LoaderCircle className="vacancies-loading-icon" size={17}/>:<Search size={17}/>}
             {loading?"Buscando…":"Buscar oportunidades"}
           </button>
-          <p className="vacancies-attribution">Fonte inicial: <a href="https://himalayas.app" target="_blank" rel="noopener noreferrer">Himalayas <ExternalLink size={12}/></a>. Vagas remotas abertas a candidatos no Brasil.</p>
+          <p className="vacancies-attribution">Fontes: Gupy (Brasil) e <a href="https://himalayas.app" target="_blank" rel="noopener noreferrer">Himalayas <ExternalLink size={12}/></a>. Confira os dados na vaga original.</p>
         </form>
         <section className="vacancies-results" aria-live="polite">
           <div className="vacancies-results-head">
@@ -110,9 +117,10 @@ export default function Jobs() {
               const job=item.opportunity;
               const contractPending=contract!=="any"&&job.contract_type!==contract;
               const salaryPending=salary!==""&&(job.advertised_min_salary_brl===null||job.advertised_min_salary_brl<Number(salary));
+              if(source==="gupy" && workMode!=="remote" && job.work_mode!==workMode) return null;
               return <article className="vacancies-card" key={job.source+":"+job.external_id}>
-                <div className="vacancies-card-top"><div><span>{job.company}</span><h3>{job.title}</h3></div><strong><Globe2 size={14}/> Remoto</strong></div>
-                <div className="vacancies-facts"><span><MapPin size={14}/> Disponível no Brasil</span>
+                <div className="vacancies-card-top"><div><span>{job.company}</span><h3>{job.title}</h3></div><strong><Globe2 size={14}/> {job.work_mode==="remote"?"Remoto":job.work_mode==="hybrid"?"Híbrido":job.work_mode==="onsite"?"Presencial":"A confirmar"}</strong></div>
+                <div className="vacancies-facts"><span><MapPin size={14}/> {job.city||"Brasil"}</span>
                   {item.employment_label&&<span><BriefcaseBusiness size={14}/> {item.employment_label}</span>}
                   {item.salary_label&&<span><Wallet size={14}/> {item.salary_label}</span>}</div>
                 {item.excerpt&&<p className="vacancies-excerpt">{item.excerpt}</p>}
@@ -120,7 +128,7 @@ export default function Jobs() {
                   <p className="vacancies-review">A confirmar: {contractPending?"vínculo pretendido; ":""}
                     {salaryPending?"salário mínimo mensal; ":""}{city.trim()?"localidade; ":""}
                     {item.missing_information.join("; ")}.</p>}
-                <div className="vacancies-card-footer"><span>Fonte: <a href="https://himalayas.app" target="_blank" rel="noopener noreferrer">Himalayas</a></span>
+                <div className="vacancies-card-footer"><span>Fonte: <a href={result.source_url} target="_blank" rel="noopener noreferrer">{result.source_name}</a></span>
                   <div className="vacancies-card-actions">
                     {job.source_url&&<Link href="/preparar" className="vacancies-prepare" onClick={()=>
                       selectOpportunity({title:job.title,company:job.company,url:job.source_url!,

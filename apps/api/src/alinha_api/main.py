@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, ValidationError
 from pypdf.errors import PdfReadError
 
 from alinha_api.agent.discovery import JobSearchResult, JobSearchUnavailable, search_jobs
+from alinha_api.agent.gupy import search_gupy
 from alinha_api.agent.models import CandidateCriteria
 from alinha_api.resume_schema import (
     ResumeProfile,
@@ -157,6 +158,7 @@ def discover_jobs(
     q: str = Query(min_length=2, max_length=80),
     page: int = Query(default=1, ge=1, le=5),
     remote_only: bool = Query(default=True),
+    source: str = Query(default="himalayas", pattern="^(himalayas|gupy)$"),
 ) -> JobSearchResult:
     """Community-only remote job search through a single vetted public source.
 
@@ -167,11 +169,13 @@ def discover_jobs(
     if request.headers.get("origin") not in (None, *FRONTEND_ORIGINS):
         raise HTTPException(status_code=403, detail="Origem não autorizada.")
     try:
-        if not read_settings().connectors.himalayas.enabled:
+        if not getattr(read_settings().connectors, source).enabled:
             raise HTTPException(status_code=409, detail="Esta fonte está desativada nas configurações.")
     except (ValueError, OSError, ValidationError) as exc:
         raise HTTPException(status_code=503, detail="Configuração local inválida.") from exc
     try:
+        if source == "gupy":
+            return search_gupy(q, page=page, remote_only=remote_only)
         return search_jobs(
             q,
             page=page,

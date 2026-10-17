@@ -42,3 +42,16 @@ gera um registro de exclusão no banco, evitando que o original antigo reapareç
 
 A migração ainda precisa de homologação com casos de corrupção, fechamento
 inesperado, atualização e restauração em uma instalação limpa Windows/macOS/Linux.
+
+## Versões de currículo aprovadas
+
+As versões aprovadas para vagas passam a ser gravadas no SQLite do dispositivo,
+sem alterar o currículo principal. Versões já existentes no IndexedDB continuam
+consultáveis, sem exclusão automática. A prévia de migração em **Meu Alinha** inclui
+a contagem de versões antigas válidas e permite copiá-las de forma transacional.
+O backup JSON do SQLite inclui o campo `resume_versions`; versões mais antigas
+do arquivo de backup (sem esse campo) permanecem restauráveis.
+
+As gravações têm revisão otimista para evitar sobrescritas por outra aba. O
+limite inicial é de 16 versões na lista local; o limite de bytes do registro
+pode ser atingido antes para currículos extensos, sem descartar itens existentes.

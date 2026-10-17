@@ -11,7 +11,8 @@ Este documento controla o escopo da edição local e open source. O Community de
 - [x] Salvar e acompanhar oportunidades manualmente no navegador.
 - [x] Verificar leitura ATS local e solicitar IA conectada para analisar requisitos.
 - [ ] Aprovar e baixar versões de currículo para cada vaga — implementação em homologação, sem criar experiências fictícias.
-- [ ] Receber a descrição completa da vaga por fonte autorizada, reduzindo a necessidade de copiar conteúdo.
+- [x] Transferir descrições completas fornecidas por APIs de origem (Lever e demais quando disponíveis) diretamente para Preparar candidatura.
+- [ ] Expandir cobertura de descrições integrais em todas as fontes e tratar páginas sem essa informação.
 - [ ] Apresentar a jornada principal em uma única tela com interrupção, revisão e retomada.
 
 ## Persistência, privacidade e instalação

@@ -40,3 +40,15 @@ tamanho, timeout e isolamento entre conectores fazem parte do pipeline.
 - Extrair e armazenar a descrição completa para a análise personalizada.
 - Melhorar cobertura de vagas brasileiras híbridas/presenciais, evitando fontes inexistentes.
 - Homologar ponta a ponta no navegador e em instalação limpa.
+
+## Descrição integral na preparação da candidatura
+
+Quando a API de origem fornece descrição integral (por exemplo `descriptionPlain`
+na Lever), o backend a conserva em campo separado do resumo. Ao abrir
+**Preparar candidatura** a partir de uma vaga, essa descrição é transferida
+para o formulário de análise sem ser interpretada como instrução do agente.
+O usuário pode conferir e corrigir antes de prosseguir.
+
+Se a fonte fornecer apenas resumo, o Alinha não o apresenta como descrição
+integral: solicita a leitura/colagem do anúncio original. Nenhuma análise
+conclusiva de aderência deve depender só do resumo.

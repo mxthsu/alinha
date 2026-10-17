@@ -1,8 +1,8 @@
-import { safeJobUrl } from "@/lib/opportunity-tracker";
+import { safeJobUrl } from "./opportunity-tracker.ts";
 
 const KEY="alinha:selected-opportunity:v1";
 export type SelectedOpportunity={
-  title:string;company:string;url:string;source:string;excerpt:string;
+  title:string;company:string;url:string;source:string;excerpt:string;description?:string;
 };
 
 export function normalizeSelectedOpportunity(input:unknown):SelectedOpportunity|null{
@@ -12,12 +12,13 @@ export function normalizeSelectedOpportunity(input:unknown):SelectedOpportunity|
      typeof obj.company!=="string"||obj.company.trim().length<2||obj.company.length>180||
      typeof obj.source!=="string"||obj.source.length>100||
      typeof obj.excerpt!=="string"||obj.excerpt.length>350||
-     typeof obj.url!=="string")return null;
+     typeof obj.url!=="string"||
+     (obj.description!==undefined&&(typeof obj.description!=="string"||obj.description.length>14000)))return null;
   const url=safeJobUrl(obj.url);
   if(!url)return null;
   return {
     title:obj.title.trim(),company:obj.company.trim(),source:obj.source.trim(),
-    url,excerpt:obj.excerpt.trim(),
+    url,excerpt:obj.excerpt.trim(),description:typeof obj.description==="string"?obj.description:undefined,
   };
 }
 export function selectOpportunity(input:SelectedOpportunity):boolean{
@@ -29,7 +30,7 @@ export function selectedOpportunity():SelectedOpportunity|null{
   if(typeof window==="undefined")return null;
   try{
     const raw=window.sessionStorage.getItem(KEY);
-    return raw&&raw.length<2500?normalizeSelectedOpportunity(JSON.parse(raw)):null;
+    return raw&&raw.length<18000?normalizeSelectedOpportunity(JSON.parse(raw)):null;
   }catch{return null;}
 }
 export function clearSelectedOpportunity():void{

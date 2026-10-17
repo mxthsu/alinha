@@ -76,3 +76,16 @@ test("agent cannot submit applications; search and draft preparation require app
  assert.equal(COMMUNITY_AGENT_PERMISSIONS.prepare_draft,"ask");
  assert.equal(COMMUNITY_AGENT_PERMISSIONS.submit_application,"deny");
 });
+
+
+test("full descriptions improve evidence matching without inventing unsupported skills",()=>{
+ const plan=planCareerSearch(profile);
+ const job={...base,
+  excerpt:"Resumo sem detalhes da vaga.",
+  description:"Buscamos uma pessoa Python com Docker, PostgreSQL e LangGraph. ".repeat(3)};
+ const match=assessAgentJob(job,plan,"Python Backend");
+ assert.equal(match.descriptionCoverage,"full");
+ assert.ok(match.matched.includes("LangGraph"));
+ assert.ok(match.matched.includes("Docker"));
+ assert.ok(!match.matched.includes("Power BI"));
+});

@@ -53,7 +53,7 @@ export default function PrepareApplication() {
   useEffect(()=>{
     const selected=selectedOpportunity();
     const selectionFrame=window.requestAnimationFrame(()=>{
-      if(selected)setSelectedJob(selected);
+      if(selected){setSelectedJob(selected);if(selected.description?.trim())setJob(selected.description);}
       if(selected)void loadApprovedResume(selected).then(version=>{if(active)setApprovedVersion(version);})
         .catch(()=>{if(active)setVersionNotice("Não foi possível consultar as versões salvas.");});
     });
@@ -260,7 +260,9 @@ export default function PrepareApplication() {
               {selectedJob&&<div className="journey-selected-job">
                 <div><strong>Vaga selecionada: {selectedJob.title}</strong><span>{selectedJob.company}</span></div>
                 <a href={selectedJob.url} target="_blank" rel="noopener noreferrer">Ver anúncio original <ArrowRight size={14}/></a>
-                <p>O Alinha manteve o contexto desta oportunidade. Cole a descrição completa da vaga abaixo para comparar os requisitos — não utilizamos apenas um resumo parcial.</p>
+                <p>{selectedJob.description?
+                  "Descrição da vaga carregada automaticamente da fonte. Revise o conteúdo antes de analisar.":
+                  "A fonte não informou a descrição integral. Cole o anúncio completo para analisar os requisitos, sem depender só do resumo."}</p>
                 <button type="button" onClick={clearJobSelection}>Remover seleção</button>
               </div>}
         {!ats?<div className="journey-step-locked"><Info size={20}/> Verifique a leitura do currículo na etapa 1 para continuar.</div>:

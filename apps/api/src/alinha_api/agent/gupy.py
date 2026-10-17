@@ -51,7 +51,7 @@ def _parse(item: dict) -> DiscoveredJob | None:
     if str(item.get("country", "Brasil")).casefold() not in ("brasil", "brazil", "br"):
         return None
     text = re.sub(r"<[^>]*>", " ", str(item.get("description") or ""))
-    text = _safe_str(html.unescape(text), 350)
+    text = _safe_str(html.unescape(text), 14000)
     workplace = str(item.get("workplaceType") or "").lower()
     mode = "remote" if workplace == "remote" or item.get("isRemoteWork") is True else (
         "hybrid" if workplace == "hybrid" else "onsite" if workplace in ("on-site", "onsite") else "unspecified"
@@ -64,7 +64,8 @@ def _parse(item: dict) -> DiscoveredJob | None:
             contract_type=CONTRACTS.get(str(item.get("type") or ""), "unspecified"),
             source_url=url,
         ),
-        excerpt=text,
+        excerpt=text[:350],
+        description=text if len(text) >= 60 else None,
         missing_information=["Salário não informado ou não confirmado"],
     )
 

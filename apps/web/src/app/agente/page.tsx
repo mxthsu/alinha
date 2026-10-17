@@ -250,6 +250,7 @@ export default function CareerAgent(){
         <div className="agent-job-actions">
          {job.source_url&&<Link href="/preparar" onClick={()=>selectOpportunity({
           title:job.title,company:job.company,url:job.source_url!,source:job.source,excerpt:item.excerpt,
+          description:item.description??undefined,
          })}>Preparar para esta vaga <ArrowRight size={15}/></Link>}
          {job.source_url&&<button type="button" disabled={alreadySaved}
           onClick={async()=>{const response=await saveOpportunity({title:job.title,company:job.company,

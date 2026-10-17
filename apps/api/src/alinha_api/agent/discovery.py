@@ -33,6 +33,7 @@ class JobSearchUnavailable(Exception):
 class DiscoveredJob(BaseModel):
     opportunity: JobOpportunity
     excerpt: str = Field(max_length=350)
+    description: str | None = Field(default=None, max_length=14000)
     employment_label: str | None = Field(default=None, max_length=80)
     salary_label: str | None = Field(default=None, max_length=100)
     missing_information: list[str] = Field(default_factory=list)
@@ -142,6 +143,7 @@ def _normalize(item: dict) -> DiscoveredJob | None:
             source_url=url,
         ),
         excerpt=_safe_str(item.get("excerpt"), 350),
+        description=_safe_str(item.get("description"), 14000) or None,
         employment_label=_safe_str(item.get("employmentType"), 80) or None,
         salary_label=salary_label,
         missing_information=[

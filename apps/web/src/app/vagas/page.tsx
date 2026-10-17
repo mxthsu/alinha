@@ -138,8 +138,8 @@ export default function Jobs() {
                     }>Preparar candidatura <ArrowRight size={14}/></Link>}
                     {job.source_url&&<button type="button"
                       disabled={tracked.some(saved=>opportunityFingerprint(saved.source,saved.sourceId,saved.url)===opportunityFingerprint(job.source,job.external_id,job.source_url!))}
-                      onClick={()=>{
-                        const response=saveOpportunity({title:job.title,company:job.company,url:job.source_url!,
+                      onClick={async()=>{
+                        const response=await saveOpportunity({title:job.title,company:job.company,url:job.source_url!,
                           source:job.source,sourceId:job.external_id});
                         setSaveNotice(response.message);
                       }}>

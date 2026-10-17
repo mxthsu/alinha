@@ -296,3 +296,23 @@ def save_record(kind: str, value: object, expected_revision: int, path: Path | N
             (kind, payload, next_rev),
         )
     return next_rev
+
+
+def clear_record(kind: str, expected_revision: int, path: Path | None = None) -> int:
+    """Keep a versioned tombstone so deleted records never fall back to stale browser data."""
+    if kind not in ("resume", "opportunities") or type(expected_revision) is not int or not 0 <= expected_revision <= 2**31:
+        raise ValueError("Tipo ou revisão inválidos.")
+    path = path or user_paths()[1]
+    with _connect(path) as db:
+        db.execute("BEGIN IMMEDIATE")
+        row = db.execute("SELECT revision FROM records WHERE kind=?", (kind,)).fetchone()
+        actual = row[0] if row else 0
+        if actual != expected_revision:
+            raise RevisionConflict("O registro foi atualizado em outra aba.")
+        revision = actual + 1
+        db.execute(
+            "INSERT INTO records(kind,payload,revision) VALUES(?,?,?) "
+            "ON CONFLICT(kind) DO UPDATE SET payload=excluded.payload, revision=excluded.revision",
+            (kind, "null", revision),
+        )
+    return revision

@@ -50,7 +50,7 @@ export default function CareerAgent(){
      setProfile(draft.profile);setPlan(next);setQuery(next.roleQueries[0]||"");
     }
    }).catch(()=>{
-    if(active)setProfileError("Não foi possível acessar o currículo salvo neste navegador.");
+    if(active)setProfileError("Não foi possível acessar o currículo salvo neste dispositivo.");
    }).finally(()=>{if(active)setLoadingProfile(false);});
   });
   return ()=>{active=false;cancelAnimationFrame(frame);abort.current?.abort();};
@@ -188,7 +188,7 @@ export default function CareerAgent(){
         <Link href="/studio">Prefiro criar ou editar meu currículo</Link>
        </div>:
        <div className="agent-profile-ready">
-        <div className="agent-profile-status"><CheckCircle2 size={17}/><strong>Currículo conectado</strong><span>Salvo no navegador</span></div>
+        <div className="agent-profile-status"><CheckCircle2 size={17}/><strong>Currículo conectado</strong><span>Salvo neste dispositivo</span></div>
         <p>{profile.contact.headline||"Perfil profissional cadastrado"}</p>
         <div className="agent-profile-facts">
          <span><BriefcaseBusiness size={14}/>{profile.experiences.length} experiências</span>
@@ -252,7 +252,7 @@ export default function CareerAgent(){
           title:job.title,company:job.company,url:job.source_url!,source:job.source,excerpt:item.excerpt,
          })}>Preparar para esta vaga <ArrowRight size={15}/></Link>}
          {job.source_url&&<button type="button" disabled={alreadySaved}
-          onClick={()=>{const response=saveOpportunity({title:job.title,company:job.company,
+          onClick={async()=>{const response=await saveOpportunity({title:job.title,company:job.company,
            url:job.source_url!,source:job.source,sourceId:job.external_id});setNotice(response.message);}}>
           <BookmarkPlus size={15}/>{alreadySaved?"Salva":"Salvar"}</button>}
          {job.source_url&&<a href={job.source_url} target="_blank" rel="noopener noreferrer">

@@ -1,8 +1,10 @@
 # Migração e recuperação de dados no Community
 
-Esta entrega implementa o procedimento **opt-in** de cópia do navegador para o
-SQLite local. Os dados originais continuam no IndexedDB/localStorage até que toda
-a jornada use o armazenamento unificado.
+O Community implementa migração **opt-in** do navegador para o SQLite local. Após
+a migração, o Studio, o Meu agente e o quadro de candidaturas passam a ler e salvar
+nessa base. Instalações novas começam no SQLite. Os dados anteriores continuam
+preservados no IndexedDB/localStorage como recuperação. Versões aprovadas por vaga
+ainda exigem consolidação específica.
 
 ## Como utilizar
 
@@ -21,10 +23,10 @@ Ao clicar em **Confirmar migração segura**, o backend:
 
 O processo não altera o currículo original nem realiza candidaturas externas.
 
-**Importante:** importar para SQLite **não muda ainda a fonte principal das
-telas**. A etapa subsequente conectará o Studio, o agente e o Kanban ao banco
-como armazenamento primário. Até lá, alterações feitas no navegador após
-a cópia não são sincronizadas automaticamente ao SQLite.
+**Importante:** sem migração, um perfil já salvo no navegador permanece no
+armazenamento antigo para não ser transferido sem consentimento. Após copiar,
+o SQLite passa a ser a fonte principal do perfil e do Kanban. Excluir um currículo
+gera um registro de exclusão no banco, evitando que o original antigo reapareça.
 
 ## Backup e restauração
 

@@ -14,7 +14,7 @@ import "./candidaturas.css";
 const formatter=new Intl.DateTimeFormat("pt-BR",{day:"2-digit",month:"short",year:"numeric"});
 
 export default function Applications(){
-  const {items,loaded,storageError,save,setStatus,remove,clear,restore,backup}=useOpportunityTracker();
+  const {items,loaded,storageError,save,setStatus,remove,clear,restore,backup,storageBackend}=useOpportunityTracker();
   const [title,setTitle]=useState("");
   const [company,setCompany]=useState("");
   const [url,setUrl]=useState("");
@@ -27,14 +27,14 @@ export default function Applications(){
     status,items.filter(item=>item.status===status),
   ])) as Record<TrackerStatus,typeof items>,[items]);
 
-  function add(event:FormEvent<HTMLFormElement>){
+  async function add(event:FormEvent<HTMLFormElement>){
     event.preventDefault();
     const normalized=safeJobUrl(url);
     if(!normalized){
       setMessageOk(false);setMessage("Use um link público HTTPS, sem senha ou token de acesso.");return;
     }
     const host=new URL(normalized).hostname;
-    const result=save({title,company,url:normalized,source:host,sourceId:null});
+    const result=await save({title,company,url:normalized,source:host,sourceId:null});
     setMessage(result.message);setMessageOk(result.ok);
     if(result.ok){setTitle("");setCompany("");setUrl("");setAdding(false);}
   }
@@ -51,13 +51,13 @@ export default function Applications(){
     if(!file)return;
     if(file.size>320_000){setMessageOk(false);setMessage("Arquivo excede 320 KB.");return;}
     if(!window.confirm("Importar este arquivo substituirá a lista atual de oportunidades. Continuar?"))return;
-    const result=restore(await file.text());
+    const result=await restore(await file.text());
     setMessage(result.message);setMessageOk(result.ok);
   }
 
-  function deleteAll(){
-    if(window.confirm("Apagar todas as vagas salvas neste navegador? Essa ação não pode ser desfeita.")){
-      const ok=clear();setMessageOk(ok);
+  async function deleteAll(){
+    if(window.confirm("Apagar todas as vagas salvas neste dispositivo? Essa ação não pode ser desfeita.")){
+      const ok=await clear();setMessageOk(ok);
       setMessage(ok?"Lista local apagada.":"Não foi possível apagar a lista local.");
     }
   }
@@ -76,7 +76,7 @@ export default function Applications(){
         </button>
       </header>
       <div className="tracker-privacy"><LockKeyhole size={18}/>
-        <span><strong>Somente neste navegador.</strong> O Community guarda cargo, empresa, link, data e status no armazenamento local, sem conta ou envio ao servidor. Exporte um backup antes de limpar dados do navegador.</span>
+        <span><strong>Armazenamento local.</strong> O Community guarda as vagas no {storageBackend==="browser"?"navegador antigo":"SQLite do seu computador"}, sem conta Cloud. Exporte um backup antes de apagar seus dados.</span>
       </div>
 
       {adding&&<form className="tracker-form" onSubmit={add}>
@@ -99,7 +99,7 @@ export default function Applications(){
       <div className="tracker-toolbar">
         <div><strong>{loaded?items.length:"—"}</strong><span> oportunidades acompanhadas</span></div>
         <div className="tracker-toolbar-actions">
-          <span className="tracker-autosave">Salvo automaticamente neste navegador</span>
+          <span className="tracker-autosave">Salvo automaticamente neste dispositivo</span>
           <details className="tracker-backup-menu">
             <summary>Backup e dados</summary>
             <div className="tracker-backup-actions">
@@ -107,7 +107,7 @@ export default function Applications(){
               <input ref={importInput} type="file" accept=".json,application/json" hidden
                 onChange={e=>{void importFile(e.target.files?.[0]);e.target.value="";}}/>
               <button type="button" onClick={()=>importInput.current?.click()}><Upload size={16}/> Restaurar backup</button>
-              {items.length>0&&<button type="button" className="tracker-danger" onClick={deleteAll}><Trash2 size={16}/> Apagar todos os dados</button>}
+              {items.length>0&&<button type="button" className="tracker-danger" onClick={()=>void deleteAll()}><Trash2 size={16}/> Apagar todos os dados</button>}
             </div>
           </details>
         </div>
@@ -129,7 +129,7 @@ export default function Applications(){
             {grouped[status].length===0&&<p className="tracker-column-empty">Nenhuma oportunidade aqui.</p>}
             {grouped[status].map(job=><article className="tracker-card" key={job.id}>
               <div className="tracker-card-head"><span>{job.company}</span><button type="button"
-                onClick={()=>{if(window.confirm("Remover esta vaga do acompanhamento?"))remove(job.id);}}
+                onClick={()=>{if(window.confirm("Remover esta vaga do acompanhamento?"))void remove(job.id);}}
                 aria-label={"Remover "+job.title}><Trash2 size={15}/></button></div>
               <h3>{job.title}</h3>
               <p className="tracker-card-date">Salva em {formatter.format(new Date(job.addedAt))}</p>
@@ -141,7 +141,7 @@ export default function Applications(){
                 title:job.title,company:job.company,url:job.url,source:job.source,excerpt:"",
               })}>Preparar para esta vaga <ArrowRight size={14}/></Link>
               <label>Atualizar etapa
-                <select value={job.status} onChange={e=>{setStatus(job.id,e.target.value as TrackerStatus);}}>
+                <select value={job.status} onChange={e=>{void setStatus(job.id,e.target.value as TrackerStatus);}}>
                   {TRACKER_STATUSES.map(option=><option key={option} value={option}>{TRACKER_LABELS[option]}</option>)}
                 </select>
               </label>

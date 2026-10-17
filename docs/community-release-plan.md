@@ -21,7 +21,8 @@ Este documento controla o escopo da edição local e open source. O Community de
 - [x] Primeira interface Meu Alinha para conexões de IA, permissões informativas e fonte Himalayas, sem editar JSONC manualmente.
 - [ ] Conectar todas as futuras fontes e preferências reais à mesma configuração.
 - [x] Criar interface opt-in para copiar rascunhos IndexedDB e oportunidades localStorage para SQLite, com prévia, validação, proteção a conflitos, snapshot e confirmação pós-gravação.
-- [ ] Migrar definitivamente a fonte de dados de todas as telas para SQLite após a cópia, com continuidade e fallback recuperável.
+- [x] Utilizar SQLite como fonte principal do currículo (Studio, agente, preparação) e Kanban após migração, mantendo os dados legados intactos.
+- [ ] Migrar versões aprovadas por vaga e demais dados auxiliares para persistência unificada.
 - [ ] Aplicar a persistência SQLite em todas as telas, com autosave, versões por vaga e revisões concorrentes.
 - [x] Adicionar exportação JSON e restauração revisada do SQLite, com snapshot antes da operação e testes sintéticos.
 - [ ] Testar recuperação de falha de disco, processo interrompido e restauração em instalação limpa.

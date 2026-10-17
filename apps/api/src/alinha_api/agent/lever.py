@@ -58,6 +58,7 @@ def _parse(item: dict, board: str, term: str, remote_only: bool) -> DiscoveredJo
             work_mode=mapped_mode, contract_type="unspecified", source_url=url,
         ),
         excerpt=re.sub(r"\s+", " ", description)[:350],
+        description=description if len(description) >= 60 else None,
         employment_label=commitment or None,
         missing_information=["Vínculo CLT/PJ não confirmado", "Salário mensal em reais não confirmado"],
     )

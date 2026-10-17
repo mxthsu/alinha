@@ -39,3 +39,14 @@ def test_lever_endpoint_returns_tested_job(monkeypatch):
     monkeypatch.setattr(lever.httpx, "Client", fake_client)
     found=search_lever("Python", remote_only=True)
     assert len(found.jobs)==1
+
+
+def test_lever_preserves_complete_description_for_resume_review():
+    long_description = ("Experiência comprovada com Python e FastAPI, arquitetura, "
+                        "testes e comunicação com equipes. " * 30)
+    result = _parse({**sample(), "descriptionPlain": long_description},
+                    "Flex", "Python", True)
+    assert result is not None
+    assert result.description == long_description[:9000].strip()
+    assert result.excerpt != result.description
+    assert len(result.excerpt) <= 350

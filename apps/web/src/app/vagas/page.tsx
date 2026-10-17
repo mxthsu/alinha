@@ -20,7 +20,7 @@ export default function Jobs() {
   const [saveNotice,setSaveNotice]=useState("");
   const [keyword,setKeyword] = useState("");
   const [workMode,setWorkMode] = useState("remote");
-  const [source,setSource] = useState("gupy");
+  const [source,setSource] = useState("all");
   const [contract,setContract] = useState("any");
   const [city,setCity] = useState("");
   const [salary,setSalary] = useState("");
@@ -73,7 +73,9 @@ export default function Jobs() {
           </label>
           <label>Fonte de vagas
             <select value={source} onChange={event=>setSource(event.target.value)}>
+              <option value="all">Todas as fontes</option>
               <option value="gupy">Gupy · Brasil</option>
+              <option value="lever">Lever · empresas no Brasil</option>
               <option value="himalayas">Himalayas · remoto</option>
             </select>
           </label>
@@ -100,7 +102,7 @@ export default function Jobs() {
             {loading?<LoaderCircle className="vacancies-loading-icon" size={17}/>:<Search size={17}/>}
             {loading?"Buscando…":"Buscar oportunidades"}
           </button>
-          <p className="vacancies-attribution">Fontes: Gupy (Brasil) e <a href="https://himalayas.app" target="_blank" rel="noopener noreferrer">Himalayas <ExternalLink size={12}/></a>. Confira os dados na vaga original.</p>
+          <p className="vacancies-attribution">Fontes: Gupy (experimental), Lever (Brasil) e <a href="https://himalayas.app" target="_blank" rel="noopener noreferrer">Himalayas <ExternalLink size={12}/></a>. Confira os dados na vaga original.</p>
         </form>
         <section className="vacancies-results" aria-live="polite">
           <div className="vacancies-results-head">
@@ -117,7 +119,7 @@ export default function Jobs() {
               const job=item.opportunity;
               const contractPending=contract!=="any"&&job.contract_type!==contract;
               const salaryPending=salary!==""&&(job.advertised_min_salary_brl===null||job.advertised_min_salary_brl<Number(salary));
-              if(source==="gupy" && workMode!=="remote" && job.work_mode!==workMode) return null;
+              if(workMode!=="remote" && job.work_mode!==workMode) return null;
               return <article className="vacancies-card" key={job.source+":"+job.external_id}>
                 <div className="vacancies-card-top"><div><span>{job.company}</span><h3>{job.title}</h3></div><strong><Globe2 size={14}/> {job.work_mode==="remote"?"Remoto":job.work_mode==="hybrid"?"Híbrido":job.work_mode==="onsite"?"Presencial":"A confirmar"}</strong></div>
                 <div className="vacancies-facts"><span><MapPin size={14}/> {job.city||"Brasil"}</span>
@@ -128,7 +130,7 @@ export default function Jobs() {
                   <p className="vacancies-review">A confirmar: {contractPending?"vínculo pretendido; ":""}
                     {salaryPending?"salário mínimo mensal; ":""}{city.trim()?"localidade; ":""}
                     {item.missing_information.join("; ")}.</p>}
-                <div className="vacancies-card-footer"><span>Fonte: <a href={result.source_url} target="_blank" rel="noopener noreferrer">{result.source_name}</a></span>
+                <div className="vacancies-card-footer"><span>Fonte: <a href={job.source==="gupy"?"https://portal.gupy.io/":job.source==="lever"?"https://jobs.lever.co/Flex":"https://himalayas.app"} target="_blank" rel="noopener noreferrer">{job.source==="gupy"?"Gupy":job.source==="lever"?"Lever":"Himalayas"}</a></span>
                   <div className="vacancies-card-actions">
                     {job.source_url&&<Link href="/preparar" className="vacancies-prepare" onClick={()=>
                       selectOpportunity({title:job.title,company:job.company,url:job.source_url!,

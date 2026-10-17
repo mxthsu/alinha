@@ -42,3 +42,10 @@ A busca deve seguir funcional com os demais conectores.
 3. Ampliar com Greenhouse, Lever e Ashby (catálogos de organizações).
 4. Validar vagas reais brasileiras (remotas, híbridas, presenciais, CLT/PJ/estágio).
 5. Somente depois, avaliar coleta estruturada de páginas com `JobPosting` e feeds.
+
+## Validação de conectores — 17/10/2026
+
+- Gupy: HTTP 404 no endpoint do portal usado por código comunitário; desativada por padrão, aguardando rota estável.
+- Lever Flex: HTTP 200, 32 vagas publicadas; consulta por **Software** encontrou duas vagas em Remote / Brazil no ensaio local.
+- Himalayas: permanece integrada como fonte remota.
+- Próxima ampliação: catálogo de empresas/ATS, descrições completas e armazenamento persistente.

@@ -10,7 +10,7 @@ type Settings={
  version:1;
  ai:{preferred_provider:"gemini"|"anthropic"|"openai_api"|"ollama"|"chatgpt"|null};
  agent:{search:"assisted";applications:"review_only"};
- connectors:{himalayas:{enabled:boolean}};
+ connectors:{himalayas:{enabled:boolean};gupy:{enabled:boolean};lever:{enabled:boolean}};
 };
 const API=process.env.NEXT_PUBLIC_API_URL||"http://localhost:8000";
 
@@ -32,10 +32,11 @@ export default function MyAlinha(){
    .finally(()=>{if(active)setLoading(false);});
   return ()=>{active=false;};
  },[]);
- async function toggleHimalayas(){
+ async function toggleSource(source:"himalayas"|"gupy"|"lever"){
   if(!settings||saving)return;
   setSaving(true);setNotice("");setError("");
-  const next={...settings,connectors:{himalayas:{enabled:!settings.connectors.himalayas.enabled}}};
+  const next={...settings,connectors:{...settings.connectors,
+   [source]:{enabled:!settings.connectors[source].enabled}}};
   try{
    const response=await fetch(API+"/api/v1/community/settings",{
     method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(next),
@@ -71,12 +72,28 @@ export default function MyAlinha(){
       <div><strong>Himalayas</strong><p>Vagas remotas disponíveis na fonte pública.</p></div>
       <button type="button" role="switch" aria-label="Habilitar pesquisa Himalayas"
        aria-checked={settings?.connectors.himalayas.enabled??false}
-       disabled={loading||saving||!settings} onClick={()=>void toggleHimalayas()}
+       disabled={loading||saving||!settings} onClick={()=>void toggleSource("himalayas")}
        className={"personal-switch"+(settings?.connectors.himalayas.enabled?" selected":"")}>
        <span/>
       </button>
      </div>
-     <p className="personal-footnote">Desativar esta fonte impede novas pesquisas nela; as vagas já salvas continuam disponíveis.</p>
+     <div className="personal-toggle-row">
+      <div><strong>Gupy</strong><p>Portal brasileiro (consulta experimental, atualmente indisponível).</p></div>
+      <button type="button" role="switch" aria-label="Habilitar pesquisa Gupy"
+       aria-checked={settings?.connectors.gupy.enabled??false}
+       disabled={loading||saving||!settings} onClick={()=>void toggleSource("gupy")}
+       className={"personal-switch"+(settings?.connectors.gupy.enabled?" selected":"")}>
+       <span/>
+      </button>
+     </div>
+     <div className="personal-toggle-row">
+      <div><strong>Lever</strong><p>Vagas brasileiras de empresas acompanhadas pelo Alinha.</p></div>
+      <button type="button" role="switch" aria-label="Habilitar pesquisa Lever"
+       aria-checked={settings?.connectors.lever.enabled??false}
+       disabled={loading||saving||!settings} onClick={()=>void toggleSource("lever")}
+       className={"personal-switch"+(settings?.connectors.lever.enabled?" selected":"")}><span/></button>
+     </div>
+     <p className="personal-footnote">Desativar uma fonte impede novas consultas nela; as vagas salvas continuam disponíveis.</p>
     </section>
     <section className="personal-card">
      <div className="personal-card-heading"><div className="personal-card-icon"><HardDrive size={20}/></div>

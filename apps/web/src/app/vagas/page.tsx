@@ -10,7 +10,7 @@ import "./vagas.css";
 
 type Job = {
   opportunity: {source:string; external_id:string; title:string; company:string;city:string|null;work_mode:string;contract_type:string;advertised_min_salary_brl:number|null;source_url:string|null};
-  excerpt:string; employment_label:string|null; salary_label:string|null; missing_information:string[];
+  excerpt:string; description:string|null; employment_label:string|null; salary_label:string|null; missing_information:string[];
 };
 type Result = {jobs:Job[];source_name:string;source_url:string;description:string;limitations:string[]};
 const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -134,7 +134,7 @@ export default function Jobs() {
                   <div className="vacancies-card-actions">
                     {job.source_url&&<Link href="/preparar" className="vacancies-prepare" onClick={()=>
                       selectOpportunity({title:job.title,company:job.company,url:job.source_url!,
-                        source:job.source,excerpt:item.excerpt})
+                        source:job.source,excerpt:item.excerpt,description:item.description??undefined})
                     }>Preparar candidatura <ArrowRight size={14}/></Link>}
                     {job.source_url&&<button type="button"
                       disabled={tracked.some(saved=>opportunityFingerprint(saved.source,saved.sourceId,saved.url)===opportunityFingerprint(job.source,job.external_id,job.source_url!))}

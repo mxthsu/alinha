@@ -18,7 +18,7 @@ from alinha_api.services.community_storage import (
     validate_record,
 )
 
-KINDS = ("resume", "opportunities")
+KINDS = ("resume", "opportunities", "resume_versions")
 BACKUP_FORMAT = "alinha-community-backup"
 BACKUP_VERSION = 1
 
@@ -113,10 +113,10 @@ def restore_export(
     if not isinstance(document, dict) or document.get("format") != BACKUP_FORMAT or document.get("version") != BACKUP_VERSION:
         raise ValueError("Backup incompatível.")
     records = document.get("records")
-    if not isinstance(records, dict) or set(records) != set(KINDS):
+    if not isinstance(records, dict) or not {"resume", "opportunities"} <= set(records) or not set(records) <= set(KINDS):
         raise ValueError("Backup incompleto.")
     values = {}
-    for kind in KINDS:
+    for kind in records:
         record = records.get(kind)
         if not isinstance(record, dict) or "value" not in record:
             raise ValueError("Backup malformado.")

@@ -11,7 +11,7 @@ type Settings={
  version:1;
  ai:{preferred_provider:"gemini"|"anthropic"|"openai_api"|"ollama"|"chatgpt"|null};
  agent:{search:"assisted";applications:"review_only"};
- connectors:{himalayas:{enabled:boolean};gupy:{enabled:boolean};lever:{enabled:boolean}};
+ connectors:{himalayas:{enabled:boolean};gupy:{enabled:boolean};lever:{enabled:boolean};github:{enabled:boolean}};
 };
 const API=process.env.NEXT_PUBLIC_API_URL||"http://localhost:8000";
 
@@ -33,7 +33,7 @@ export default function MyAlinha(){
    .finally(()=>{if(active)setLoading(false);});
   return ()=>{active=false;};
  },[]);
- async function toggleSource(source:"himalayas"|"gupy"|"lever"){
+ async function toggleSource(source:"himalayas"|"gupy"|"lever"|"github"){
   if(!settings||saving)return;
   setSaving(true);setNotice("");setError("");
   const next={...settings,connectors:{...settings.connectors,
@@ -93,6 +93,13 @@ export default function MyAlinha(){
        aria-checked={settings?.connectors.lever.enabled??false}
        disabled={loading||saving||!settings} onClick={()=>void toggleSource("lever")}
        className={"personal-switch"+(settings?.connectors.lever.enabled?" selected":"")}><span/></button>
+     </div>
+     <div className="personal-toggle-row">
+      <div><strong>Comunidades GitHub</strong><p>Oportunidades publicadas por comunidades brasileiras de tecnologia.</p></div>
+      <button type="button" role="switch" aria-label="Habilitar pesquisa em comunidades GitHub"
+       aria-checked={settings?.connectors.github.enabled??false}
+       disabled={loading||saving||!settings} onClick={()=>void toggleSource("github")}
+       className={"personal-switch"+(settings?.connectors.github.enabled?" selected":"")}><span/></button>
      </div>
      <p className="personal-footnote">Desativar uma fonte impede novas consultas nela; as vagas salvas continuam disponíveis.</p>
     </section>

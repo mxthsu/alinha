@@ -133,15 +133,15 @@ def test_backup_preserves_approved_versions_and_old_backups(tmp_path):
     assert migration.atomic_import(
         {"resume_versions": [approved]}, {"resume_versions": 0}, path=db,
     )["revisions"]["resume_versions"] == 1
+    assert migration.atomic_import(
+        {"resume": {"profile": profile()}}, {"resume": 0}, path=db,
+    )["revisions"]["resume"] == 1
     backup = migration.export_records(db)
     assert backup["records"]["resume_versions"]["value"][0]["job"]["title"] == "Engenharia de IA"
     old = {
         **backup,
         "records": {k: v for k, v in backup["records"].items() if k != "resume_versions"},
     }
-    assert migration.atomic_import(
-        {"resume": {"profile": profile()}}, {"resume": 0}, path=db,
-    )["revisions"]["resume"] == 1
     # Version-one backup documents that predate this feature remain restorable.
     restored = migration.restore_export(old, {"resume": 1, "opportunities": 0}, db)
     assert restored["revisions"]["resume"] == 1

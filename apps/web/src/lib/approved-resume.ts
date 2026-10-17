@@ -1,7 +1,7 @@
 import {readCommunityRecord,saveCommunityRecord} from "./community-data.ts";
 /** Local-only approved CV versions keyed to original job URLs. Does not overwrite Studio. */
 import {isResumeProfile,type ResumeProfile,type ResumeTemplate} from "./career-workspace.ts";
-import type {SelectedOpportunity} from './career-handoff';
+import type {SelectedOpportunity} from './career-handoff.ts';
 import {safeJobUrl} from './opportunity-tracker.ts';
 
 export type ApprovedResumeVersion={
@@ -56,6 +56,29 @@ async function loadLegacyApprovedResume(job:SelectedOpportunity):Promise<Approve
    const req=database.transaction(STORE,"readonly").objectStore(STORE).get(key(job));
    req.onsuccess=()=>resolve(isApprovedResumeVersion(req.result)?req.result:null);
    req.onerror=()=>reject(req.error||new Error("Falha ao recuperar versão."));
+  });
+ }finally{database.close();}
+}
+
+
+/** Reads only versioned, previously approved legacy objects; never deletes the originals. */
+export async function loadLegacyApprovedResumes():Promise<ApprovedResumeVersion[]>{
+ const database=await db();
+ try{
+  return await new Promise((resolve,reject)=>{
+   const req=database.transaction(STORE,"readonly").objectStore(STORE).getAll();
+   req.onsuccess=()=>{
+    const values=(req.result as unknown[]).filter(
+     candidate=>isApprovedResumeVersion(candidate)
+    ) as ApprovedResumeVersion[];
+    const unique=new Map<string,ApprovedResumeVersion>();
+    for(const value of values){
+     const url=value.job.url.toLowerCase().replace(/\\/$/,"");
+     unique.set(url,value);
+    }
+    resolve([...unique.values()]);
+   };
+   req.onerror=()=>reject(req.error||new Error("Falha ao recuperar versões antigas."));
   });
  }finally{database.close();}
 }

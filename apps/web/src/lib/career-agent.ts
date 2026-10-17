@@ -8,11 +8,11 @@ export type AgentSearchPlan={roleQueries:string[];evidence:AgentSignal[];warning
 export type AgentJob={
   opportunity:{source:string;external_id:string;title:string;company:string;
     work_mode:string;contract_type:string;source_url:string|null};
-  excerpt:string;missing_information:string[];
+  excerpt:string;description?:string|null;missing_information:string[];
 };
 export type AgentAssessment={
   kind:"signals"|"some_signals"|"insufficient";label:string;matched:string[];
-  roleRelated:boolean;descriptionCoverage:"excerpt_only";note:string;
+  roleRelated:boolean;descriptionCoverage:"excerpt_only"|"full";note:string;
 };
 const NOISE=new Set(["de","da","do","das","dos","em","para","com","e","the","of","for","and","a","an"]);
 function clean(text:string):string{
@@ -66,7 +66,8 @@ export function planCareerSearch(profile:ResumeProfile):AgentSearchPlan{
   return {roleQueries,evidence:evidence.slice(0,14),warnings};
 }
 export function assessAgentJob(job:AgentJob,plan:AgentSearchPlan,query:string):AgentAssessment{
-  const text=clean(job.opportunity.title+" "+job.excerpt);
+  const full=typeof job.description==="string"&&job.description.trim().length>=60;
+  const text=clean(job.opportunity.title+" "+(full?job.description:job.excerpt));
   const matched=plan.evidence.filter(signal=>boundedTerm(clean(signal.term)).test(text))
     .map(s=>s.term).slice(0,8);
   const titleWords=words(job.opportunity.title);
@@ -76,10 +77,12 @@ export function assessAgentJob(job:AgentJob,plan:AgentSearchPlan,query:string):A
   return {
     kind,
     label:kind==="signals"?"Sinais relevantes":kind==="some_signals"?"Alguns sinais":"Precisa de revisão",
-    matched,roleRelated,descriptionCoverage:"excerpt_only",
+    matched,roleRelated,descriptionCoverage:full?"full":"excerpt_only",
     note:kind==="insufficient"
-      ?"O resumo disponível não permite avaliar a aderência. Abra a descrição completa."
-      :"Indícios identificados no título ou resumo. Confirme os requisitos completos antes de adaptar o currículo.",
+      ?full?"Não há evidências explícitas suficientes nos requisitos publicados. Revise a vaga.":
+        "O resumo disponível não permite avaliar a aderência. Abra a descrição completa."
+      :full?"Indícios identificados na descrição da vaga. Verifique cada requisito antes de adaptar o currículo.":
+        "Indícios identificados no título ou resumo. Confirme os requisitos completos antes de adaptar o currículo.",
   };
 }
 export function orderAgentJobs(jobs:AgentJob[],plan:AgentSearchPlan,query:string):AgentJob[]{

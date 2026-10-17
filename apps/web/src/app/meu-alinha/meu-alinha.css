@@ -35,3 +35,14 @@
 .personal-next a{display:inline-flex;align-items:center;gap:8px;border-radius:9px;background:#285e3c;color:#fff;padding:12px 15px;font-size:11px;font-weight:780;white-space:nowrap}
 @media(max-width:850px){.personal-grid{grid-template-columns:1fr}.personal-header{flex-wrap:wrap}}
 @media(max-width:560px){.personal-settings{padding-block:28px 50px}.personal-card{padding:18px}.personal-header{margin-bottom:24px}.personal-next{flex-direction:column;align-items:flex-start}.personal-next a{width:100%;justify-content:center}}
+
+.personal-storage-actions{margin-top:15px;display:grid;gap:12px}
+.personal-storage-buttons{display:flex;flex-wrap:wrap;gap:8px}
+.personal-storage-buttons button,.personal-migration-preview button{border:1px solid #cee3ce;border-radius:9px;background:#f4faf2;color:#346847;padding:10px 12px;font-size:11px;font-weight:760;cursor:pointer}
+.personal-storage-buttons button:hover,.personal-migration-preview button:hover{background:#eaf5e5}
+.personal-storage-buttons button:disabled,.personal-migration-preview button:disabled{opacity:.6;cursor:wait}
+.personal-migration-preview{border:1px solid #d3e5d1;border-radius:11px;padding:14px;background:#f8fbf6}
+.personal-migration-preview strong{color:#335b3d;font-size:12px}
+.personal-migration-preview p,.personal-storage-ok,.personal-storage-error{font-size:11px;line-height:1.6;color:#63846a}
+.personal-migration-preview button{margin-top:8px;background:#306d40;color:#fff;border-color:#306d40}
+.personal-storage-ok{color:#34804f}.personal-storage-error{color:#b24b42}

@@ -19,6 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from alinha_api.resume_schema import ResumeProfile, TemplateName
 
+SCHEMA_VERSION = 1
 MAX_CONFIG_BYTES = 32_768
 MAX_RECORD_BYTES = 350_000
 MAX_OPPORTUNITIES = 200
@@ -250,6 +251,12 @@ def _connect(path: Path) -> sqlite3.Connection:
         "CREATE TABLE IF NOT EXISTS records ("
         "kind TEXT PRIMARY KEY, payload TEXT NOT NULL, revision INTEGER NOT NULL)"
     )
+    version = connection.execute("PRAGMA user_version").fetchone()[0]
+    if version > SCHEMA_VERSION:
+        connection.close()
+        raise ValueError("Banco local criado por uma versão mais recente do Alinha.")
+    if version == 0:
+        connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     if os.name != "nt":
         path.chmod(0o600)
     return connection

@@ -5,6 +5,7 @@ import {ArrowRight,CheckCircle2,Database,HardDrive,KeyRound,LockKeyhole,
   RefreshCw,Settings2,ShieldCheck} from "lucide-react";
 import {PlatformNav} from "@/components/platform-nav";
 import "./meu-alinha.css";
+import {CommunityDataActions} from "./community-data-actions";
 
 type Settings={
  version:1;
@@ -99,9 +100,10 @@ export default function MyAlinha(){
      <div className="personal-card-heading"><div className="personal-card-icon"><HardDrive size={20}/></div>
       <div><h2>Currículo e dados</h2><p>Continue de onde parou sem depender de arquivos JSON.</p></div></div>
      <div className="personal-card-body"><Database size={18}/><div>
-      <strong>Armazenamento local em implantação.</strong>
-      <p>O Community já possui a base SQLite. Seus rascunhos atuais continuam no navegador até uma migração confirmada, sem perda de dados.</p>
+      <strong>Armazenamento local e recuperação.</strong>
+      <p>Você pode transferir cópias dos dados do navegador para o SQLite, com prévia, confirmação e backup antes da escrita.</p>
      </div></div>
+     <CommunityDataActions/>
      <Link className="personal-link" href="/studio">Ver meu currículo <ArrowRight size={16}/></Link>
     </section>
     <section className="personal-card">

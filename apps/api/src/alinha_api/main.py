@@ -1,5 +1,6 @@
 """HTTP interface with local-only provider OAuth and evidence-checked analysis."""
 import os
+import sqlite3
 from typing import Annotated
 
 from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
@@ -40,6 +41,7 @@ from alinha_api.services.community_storage import (
 )
 from alinha_api.services.deployment import get_mode, hosted_analysis_ready, local_ollama_allowed
 from alinha_api.services.document_reader import MAX_UPLOAD_BYTES, extract_resume
+from alinha_api.services.migration import atomic_import, export_records, restore_export
 from alinha_api.services.model_output import ModelOutputError
 from alinha_api.services.provider import (
     AnthropicProvider,
@@ -69,7 +71,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=FRONTEND_ORIGINS,
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PUT"],
     allow_headers=["Content-Type"],
 )
 
@@ -206,6 +208,58 @@ def discover_jobs(
             status_code=503,
             detail="A fonte de vagas está temporariamente indisponível. Tente novamente mais tarde.",
         ) from exc
+
+
+class CommunityImportRequest(BaseModel):
+    expected_revisions: dict[str, int]
+    resume: object | None = None
+    opportunities: object | None = None
+
+
+class CommunityRestoreRequest(BaseModel):
+    expected_revisions: dict[str, int]
+    backup: object
+
+
+@app.get("/api/v1/community/backup")
+def community_export_backup(request: Request, response: Response) -> dict:
+    _community_api_only(request)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return export_records()
+    except (ValueError, OSError, sqlite3.DatabaseError) as exc:
+        raise HTTPException(status_code=500, detail="Não foi possível exportar os dados locais.") from exc
+
+
+@app.post("/api/v1/community/migration")
+def community_import_browser_data(request: Request, body: CommunityImportRequest) -> dict:
+    _community_api_only(request, mutation=True)
+    values = {}
+    if body.resume is not None:
+        values["resume"] = body.resume
+    if body.opportunities is not None:
+        values["opportunities"] = body.opportunities
+    try:
+        return atomic_import(values, body.expected_revisions)
+    except RevisionConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except (ValueError, ValidationError) as exc:
+        raise HTTPException(status_code=422, detail="Dados da migração inválidos.") from exc
+    except (OSError, sqlite3.DatabaseError) as exc:
+        raise HTTPException(status_code=500, detail="Não foi possível migrar os dados locais.") from exc
+
+
+@app.post("/api/v1/community/restore")
+def community_restore_backup(request: Request, body: CommunityRestoreRequest) -> dict:
+    _community_api_only(request, mutation=True)
+    try:
+        return restore_export(body.backup, body.expected_revisions)
+    except RevisionConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except (ValueError, ValidationError) as exc:
+        raise HTTPException(status_code=422, detail="Backup inválido.") from exc
+    except (OSError, sqlite3.DatabaseError) as exc:
+        raise HTTPException(status_code=500, detail="Não foi possível restaurar os dados locais.") from exc
 
 
 @app.get("/api/v1/providers/status")

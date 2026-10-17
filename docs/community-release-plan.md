@@ -20,9 +20,11 @@ Este documento controla o escopo da edição local e open source. O Community de
 - [x] Base local em SQLite e configuração tipada JSONC fora do repositório — primeira camada de infraestrutura, ainda sem migração do frontend.
 - [x] Primeira interface Meu Alinha para conexões de IA, permissões informativas e fonte Himalayas, sem editar JSONC manualmente.
 - [ ] Conectar todas as futuras fontes e preferências reais à mesma configuração.
-- [ ] Migrar rascunhos IndexedDB e oportunidades localStorage de forma opt-in com prévia, validação, conflitos e recuperação — nunca apagar o original antes de verificar a gravação.
+- [x] Criar interface opt-in para copiar rascunhos IndexedDB e oportunidades localStorage para SQLite, com prévia, validação, proteção a conflitos, snapshot e confirmação pós-gravação.
+- [ ] Migrar definitivamente a fonte de dados de todas as telas para SQLite após a cópia, com continuidade e fallback recuperável.
 - [ ] Aplicar a persistência SQLite em todas as telas, com autosave, versões por vaga e revisões concorrentes.
-- [ ] Exportação e recuperação de backup local testadas, incluindo falha de disco e restauração.
+- [x] Adicionar exportação JSON e restauração revisada do SQLite, com snapshot antes da operação e testes sintéticos.
+- [ ] Testar recuperação de falha de disco, processo interrompido e restauração em instalação limpa.
 - [ ] Revisar caminhos e permissões em Windows, macOS e Linux; instalador/launcher simplificado.
 - [ ] Revisão de segurança de histórico Git, dependências e fluxo de dados; documentação de retenção.
 - [ ] Validação ponta a ponta com arquivos sintéticos em desktop e celular; UAT com usuário.

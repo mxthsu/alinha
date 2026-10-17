@@ -35,9 +35,9 @@ operacional, não nos arquivos de configuração.
 
 O backend agora oferece uma primeira camada de SQLite local e preferências
 versionadas em JSONC, fora da pasta do repositório. **Os currículos e as vagas
-existentes ainda permanecem no navegador:** a transferência para o banco local
-será feita em uma etapa posterior, com consentimento e sem apagar o original
-antes da validação. Veja [plano de conclusão do Community](docs/community-release-plan.md).
+existentes ainda permanecem no navegador:** agora é possível copiar os registros
+com prévia e confirmação em Meu Alinha, com backup SQLite e sem apagar os
+originais. A sincronização definitiva das telas com o banco permanece pendente. Veja [plano de conclusão do Community](docs/community-release-plan.md).
 
 ## Meu agente: do currículo à oportunidade
 

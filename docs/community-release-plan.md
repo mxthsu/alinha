@@ -35,7 +35,7 @@ Este documento controla o escopo da edição local e open source. O Community de
 ## Fontes de vagas
 
 - [x] Primeira fonte remota autorizada com atribuição e links de origem.
-- [ ] Estudar feeds oficiais de ATS, APIs públicas de empregadores e dados JobPosting de páginas com crawling expressamente permitido, respeitando termos, robots, limites, atribuição, privacidade e deduplicação.
+- [x] Integrar issues de comunidades brasileiras de desenvolvimento por API GitHub pública e catálogos fixos, além de APIs públicas de ATS já integradas.\n- [ ] Estudar feeds oficiais de ATS adicionais e dados JobPosting públicos de páginas com crawling permitido, mantendo atribuição, privacidade e deduplicação.
 - [ ] Adicionar conectores compatíveis com Community e um eventual produto pago.
 - [ ] Conservar URL, fonte, data de coleta e regras de confiança para evitar vagas inventadas.
 

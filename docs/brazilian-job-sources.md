@@ -43,7 +43,7 @@ A busca deve seguir funcional com os demais conectores.
 4. Validar vagas reais brasileiras (remotas, híbridas, presenciais, CLT/PJ/estágio).
 5. Somente depois, avaliar coleta estruturada de páginas com `JobPosting` e feeds.
 
-## Validação de conectores — 17/10/2026
+## Nova fonte — comunidades de desenvolvedores no GitHub\n\nImplementado conector para issues abertas em [backend-br/vagas](https://github.com/backend-br/vagas) e [frontendbr/vagas](https://github.com/frontendbr/vagas), usando a API pública REST GitHub com catálogos fixos. Os rótulos de trabalho remoto, híbrido/presencial, CLT/PJ/estágio são utilizados somente quando explícitos. O agente pesquisa essa fonte automaticamente. Quando empresa ou local não constam no anúncio, a interface registra a incerteza. Não há envio de candidatura.\n\n## Validação de conectores — 17/10/2026
 
 - Gupy: HTTP 404 no endpoint do portal usado por código comunitário; desativada por padrão, aguardando rota estável.
 - Lever Flex: HTTP 200, 32 vagas publicadas; consulta por **Software** encontrou duas vagas em Remote / Brazil no ensaio local.

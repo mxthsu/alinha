@@ -34,6 +34,7 @@ from alinha_api.services.chatgpt_auth import AuthError, chatgpt_auth, enabled
 from alinha_api.services.community_storage import (
     CommunitySettings,
     RevisionConflict,
+    clear_record,
     get_record,
     read_settings,
     save_record,
@@ -71,7 +72,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=FRONTEND_ORIGINS,
     allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Content-Type"],
 )
 
@@ -214,6 +215,21 @@ class CommunityImportRequest(BaseModel):
     expected_revisions: dict[str, int]
     resume: object | None = None
     opportunities: object | None = None
+
+
+@app.delete("/api/v1/community/data/{kind}")
+def community_clear_data(request: Request, kind: str, expected_revision: int = Query(ge=0)) -> dict:
+    _community_api_only(request, mutation=True)
+    if kind not in ("resume", "opportunities"):
+        raise HTTPException(status_code=404, detail="Recurso não encontrado.")
+    try:
+        return {"revision": clear_record(kind, expected_revision)}
+    except RevisionConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except (ValueError, ValidationError) as exc:
+        raise HTTPException(status_code=422, detail="Revisão inválida.") from exc
+    except (OSError, sqlite3.DatabaseError) as exc:
+        raise HTTPException(status_code=500, detail="Falha ao apagar dados locais.") from exc
 
 
 class CommunityRestoreRequest(BaseModel):

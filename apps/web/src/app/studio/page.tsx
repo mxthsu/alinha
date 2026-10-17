@@ -291,7 +291,7 @@ export default function Studio() {
             <Icon size={18}/><span>{label}</span><small>{String(i+1).padStart(2,"0")}</small>
           </button>)}
         </div>
-        <div className="studio-side-note"><ShieldCheck size={18}/><span>Rascunho salvo neste navegador. Evite computadores compartilhados e apague os dados quando necessário.</span></div>
+        <div className="studio-side-note"><ShieldCheck size={18}/><span>Rascunho salvo neste dispositivo. Evite computadores compartilhados e mantenha um backup seguro.</span></div>
       </nav>
       <main className="studio-editor" id="studio-editor">
         <div className="studio-editor-heading">

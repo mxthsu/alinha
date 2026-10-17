@@ -37,7 +37,7 @@ O backend agora oferece uma primeira camada de SQLite local e preferências
 versionadas em JSONC, fora da pasta do repositório. **Os currículos e as vagas
 existentes ainda permanecem no navegador:** agora é possível copiar os registros
 com prévia e confirmação em Meu Alinha, com backup SQLite e sem apagar os
-originais. A sincronização definitiva das telas com o banco permanece pendente. Veja [plano de conclusão do Community](docs/community-release-plan.md).
+originais. O Studio, o agente e o Kanban passam a utilizar o SQLite após essa migração; versões por vaga ainda dependem de uma etapa posterior. Veja [plano de conclusão do Community](docs/community-release-plan.md).
 
 ## Meu agente: do currículo à oportunidade
 

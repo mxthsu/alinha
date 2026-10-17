@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
- isResumeProfile,isResumeDraft,hasResumeContent,loadResumeDraft,
+ isResumeProfile,isResumeDraft,hasResumeContent,loadResumeDraft,loadLegacyResumeDraft,
 } from "../src/lib/career-workspace.ts";
 
 function profile(){
@@ -31,5 +31,17 @@ test("refuses non-profile data, unexpected formats and oversized arrays",()=>{
   assert.equal(isResumeDraft({version:1,profile:p,template:"classico",updatedAt:"bad-date"}),false);
 });
 test("the local draft reader does not silently fall back to a server when IndexedDB is absent",async()=>{
-  await assert.rejects(loadResumeDraft(),/navegador não disponibilizou/);
+  await assert.rejects(loadLegacyResumeDraft(),/navegador não disponibilizou/);
+});
+
+test("SQLite resumes take precedence after a successful migration",async()=>{
+ const previous=globalThis.fetch;
+ globalThis.fetch=async()=>new Response(JSON.stringify({
+  value:{profile:profile(),template:"classico"},revision:1,
+ }),{status:200,headers:{"content-type":"application/json"}});
+ try{
+  const draft=await loadResumeDraft();
+  assert.equal(draft?.profile.contact.name,"Pessoa Fictícia");
+  assert.equal(draft?.template,"classico");
+ }finally{globalThis.fetch=previous;}
 });

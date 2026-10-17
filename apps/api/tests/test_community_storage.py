@@ -180,3 +180,31 @@ def test_disabled_connector_blocks_new_job_queries(client, monkeypatch):
     )
     response = client.get("/api/v1/jobs/search", params={"q": "python"})
     assert response.status_code == 409
+
+
+def test_tombstone_prevents_deleted_resume_from_reappearing(tmp_path):
+    path = tmp_path / "community.sqlite3"
+    assert storage.save_record("resume", {"profile": profile()}, 0, path) == 1
+    assert storage.clear_record("resume", 1, path) == 2
+    assert storage.get_record("resume", path) == (None, 2)
+    with pytest.raises(storage.RevisionConflict):
+        storage.clear_record("resume", 1, path)
+    assert storage.save_record("resume", {"profile": profile()}, 2, path) == 3
+
+
+def test_delete_data_endpoint_requires_local_origin_and_revision(client):
+    headers = {"origin": "http://localhost:3000"}
+    result = client.put("/api/v1/community/data/resume", headers=headers,
+                        json={"expected_revision": 0, "value": {"profile": profile()}})
+    assert result.status_code == 200
+    preflight = client.options("/api/v1/community/data/resume", headers={
+        **headers, "access-control-request-method": "DELETE",
+    })
+    assert preflight.status_code == 200
+    assert "DELETE" in preflight.headers["access-control-allow-methods"]
+    assert client.delete("/api/v1/community/data/resume?expected_revision=1").status_code == 403
+    deleted = client.delete("/api/v1/community/data/resume?expected_revision=1", headers=headers)
+    assert deleted.status_code == 200, deleted.text
+    assert deleted.json()["revision"] == 2
+    assert client.get("/api/v1/community/data/resume").json() == {"value": None, "revision": 2}
+    assert client.delete("/api/v1/community/data/resume?expected_revision=1", headers=headers).status_code == 409

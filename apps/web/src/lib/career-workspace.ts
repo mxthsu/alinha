@@ -1,3 +1,4 @@
+import {readCommunityRecord,saveCommunityRecord,clearCommunityRecord} from "./community-data.ts";
 /* Client-only Community resume draft. Never store provider credentials or PDFs here. */
 export type ResumeProfile = {
   schema_version: 1;
@@ -70,14 +71,14 @@ async function db():Promise<IDBDatabase>{
     request.onblocked=()=>reject(new Error("Feche outras abas do Alinha e tente novamente."));
   });
 }
-export async function loadResumeDraft():Promise<ResumeDraft|null>{
+export async function loadLegacyResumeDraft():Promise<ResumeDraft|null>{
   const database=await db();
   try {
     const value=await requestResult(database.transaction(STORE_NAME,"readonly").objectStore(STORE_NAME).get(KEY));
     return isResumeDraft(value)?value:null;
   }finally{database.close();}
 }
-export async function saveResumeDraft(profile:ResumeProfile,template:ResumeTemplate):Promise<string>{
+async function saveLegacyResumeDraft(profile:ResumeProfile,template:ResumeTemplate):Promise<string>{
   const draft:ResumeDraft={version:1,profile,template,updatedAt:new Date().toISOString()};
   if(!isResumeDraft(draft))throw new Error("O rascunho excede os limites de armazenamento seguro.");
   const database=await db();
@@ -93,7 +94,7 @@ export async function saveResumeDraft(profile:ResumeProfile,template:ResumeTempl
     return draft.updatedAt;
   }finally{database.close();}
 }
-export async function clearResumeDraft():Promise<void>{
+async function clearLegacyResumeDraft():Promise<void>{
   const database=await db();
   try{
     const transaction=database.transaction(STORE_NAME,"readwrite");
@@ -105,4 +106,44 @@ export async function clearResumeDraft():Promise<void>{
     transaction.objectStore(STORE_NAME).delete(KEY);
     await cleared;
   }finally{database.close();}
+}
+
+
+function fromSQLite(value:unknown):ResumeDraft|null{
+ if(value===null)return null;
+ if(!isRecord(value)||!isResumeProfile(value.profile)||
+    (value.template!==undefined&&value.template!=="classico"&&value.template!=="compacto"))
+  throw new Error("O currículo salvo no SQLite está inválido. Restaure um backup.");
+ const draft:ResumeDraft={version:1,profile:value.profile,
+   template:(value.template as ResumeTemplate|undefined)??"classico",
+   updatedAt:new Date().toISOString()};
+ if(!isResumeDraft(draft))throw new Error("O currículo SQLite excede os limites.");
+ return draft;
+}
+
+/** SQLite becomes canonical after explicit migration or for a fresh installation. */
+export async function loadResumeDraft():Promise<ResumeDraft|null>{
+ const record=await readCommunityRecord("resume");
+ if(record.revision>0)return fromSQLite(record.value);
+ return loadLegacyResumeDraft();
+}
+
+export async function saveResumeDraft(profile:ResumeProfile,template:ResumeTemplate):Promise<string>{
+ const draft:ResumeDraft={version:1,profile,template,updatedAt:new Date().toISOString()};
+ if(!isResumeDraft(draft))throw new Error("Dados de currículo inválidos.");
+ const record=await readCommunityRecord("resume");
+ // Existing browser drafts are never moved to SQLite without user consent.
+ if(record.revision===0&&await loadLegacyResumeDraft())
+  return saveLegacyResumeDraft(profile,template);
+ await saveCommunityRecord("resume",{profile,template},record.revision);
+ return draft.updatedAt;
+}
+
+export async function clearResumeDraft():Promise<void>{
+ const record=await readCommunityRecord("resume");
+ if(record.revision>0){
+  await clearCommunityRecord("resume",record.revision);
+ }else{
+  await clearLegacyResumeDraft();
+ }
 }

@@ -1,6 +1,6 @@
 "use client";
 import {useRef,useState,type ChangeEvent} from "react";
-import {loadResumeDraft,hasResumeContent,type ResumeProfile,type ResumeTemplate} from "@/lib/career-workspace";
+import {loadLegacyResumeDraft,hasResumeContent,type ResumeProfile,type ResumeTemplate} from "@/lib/career-workspace";
 import {parseTracker,TRACKER_KEY,type TrackedOpportunity} from "@/lib/opportunity-tracker";
 
 type Resume={profile:ResumeProfile;template:ResumeTemplate};
@@ -45,7 +45,7 @@ export function CommunityDataActions(){
  async function inspect(){
   setBusy(true);setError("");setMessage("");setPreview(null);
   try{
-   const draft=await loadResumeDraft();
+   const draft=await loadLegacyResumeDraft();
    const resume=draft&&hasResumeContent(draft.profile)?
     {profile:draft.profile,template:draft.template}:null;
    const opportunities=currentBrowserOpportunities();
@@ -118,8 +118,8 @@ export function CommunityDataActions(){
   finally{setBusy(false);}
  }
  return <div className="personal-storage-actions">
-   <p className="personal-footnote">O banco local já está disponível. Enquanto a migração dos módulos continua,
-    os registros antigos do navegador permanecem intactos.</p>
+   <p className="personal-footnote">O banco local já está disponível. Após confirmar a migração, Studio, agente e candidaturas usam SQLite.
+    Os registros antigos do navegador permanecem intactos.</p>
    <div className="personal-storage-buttons">
     <button type="button" onClick={()=>void inspect()} disabled={busy}>Ver dados antigos</button>
     <button type="button" onClick={()=>void exportBackup()} disabled={busy}>Exportar backup SQLite</button>

@@ -372,6 +372,36 @@ def _parse_contact(lines: list[str], profile: ResumeProfile, remaining: list[str
             _add_unassigned(remaining, line)
 
 
+_SUMMARY_ROLE = re.compile(
+    r"^(?:(?:sou|atuo como|trabalho como)\s+)?"
+    r"(desenvolvedor(?:\(a\)|a)?|engenheir(?:o(?:\(a\))?|a)|analista|"
+    r"cientista de dados|designer|pesquisador(?:a)?|especialista|"
+    r"consultor(?:a)?|arquiteto(?:a)?|programador(?:a)?)"
+    r"(?=\s|[,:.;]|$)", re.IGNORECASE,
+)
+_SUMMARY_NARRATIVE = re.compile(
+    r"\s+(?=com\b|experi[eê]ncia\b|especializad[oa]\b|atuando\b|"
+    r"respons[aá]vel\b|que\b|trabalhando\b|focado\b)", re.IGNORECASE,
+)
+
+
+def _explicit_summary_headline(summary: str) -> str:
+    """Extract a literal opening job title; never infer one from technologies."""
+    first = re.split(r"[.!?](?:\s|$)", summary.strip(), maxsplit=1)[0][:160]
+    match = _SUMMARY_ROLE.match(first)
+    if not match:
+        return ""
+    tail = _SUMMARY_NARRATIVE.split(first[match.end():], maxsplit=1)[0]
+    tail = re.split(r"[,:;]", tail, maxsplit=1)[0].strip()
+    words = tail.split()
+    if len(words) > 4 or any(re.search(r"[0-9@]", word) for word in words):
+        return ""
+    role = re.sub(r"\(a\)", "", match.group(1) + (" " + " ".join(words) if words else ""),
+                  flags=re.IGNORECASE)
+    role = re.sub(r"\s+", " ", role).strip()
+    return role if len(role) <= 80 else ""
+
+
 def draft_profile(text: str) -> ProfileImportPreview:
     """Generate a reviewed, editable draft using only literal content."""
     profile = ResumeProfile()
@@ -396,6 +426,8 @@ def draft_profile(text: str) -> ProfileImportPreview:
     summary = " ".join(sections.get("summary", []))
     if len(summary) <= 1600:
         profile.summary = summary
+        if not profile.contact.headline:
+            profile.contact.headline = _explicit_summary_headline(summary)
     else:
         remaining.extend(sections.get("summary", []))
     _parse_experiences(sections.get("experiences", []), profile, remaining)

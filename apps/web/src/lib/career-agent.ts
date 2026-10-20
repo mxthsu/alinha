@@ -3,7 +3,7 @@
  */
 import type {ResumeProfile} from "./career-workspace";
 
-export type AgentSignal={term:string;source:"competencia"|"experiencia"|"projeto"};
+export type AgentSignal={term:string;source:"competencia"|"experiencia"|"projeto"|"resumo"};
 export type AgentSearchPlan={roleQueries:string[];evidence:AgentSignal[];warnings:string[]};
 export type AgentJob={
   opportunity:{source:string;external_id:string;title:string;company:string;
@@ -22,7 +22,7 @@ function words(text:string):string[]{
   return clean(text).replace(/[^a-z0-9+#.]/g," ").split(/\s+/).filter(t=>t.length>=2&&!NOISE.has(t));
 }
 function normalizeRole(text:string):string{
-  return text.split(/\s*[|•·]\s*/)[0].trim().replace(/\s+\b(?:at|na|no|@)\s+.{3,}$/i,"").replace(/\s+/g," ").slice(0,80);
+  return text.split(/\s*[|•·]\s*/)[0].trim().replace(/\(a\)/gi,"").replace(/\s+\b(?:at|na|no|@)\s+.{3,}$/i,"").replace(/\s+/g," ").slice(0,80);
 }
 function validRole(role:string):boolean{
   return role.length>=3&&role.length<=80&&words(role).length>=1&&!role.includes("@")&&!/^https?:/i.test(role);
@@ -31,9 +31,28 @@ function boundedTerm(term:string):RegExp{
   const escaped=term.replace(/[.*+?^$()|[\]{}\\]/g,"\\$&");
   return new RegExp("(^|[^a-z0-9])"+escaped+"($|[^a-z0-9])");
 }
+/** Only explicit job titles at the beginning of a CV summary; not guessed from skills. */
+function roleFromSummary(summary:string):string|null{
+  const first=summary.trim().split(/[.!?](?:\s|$)/)[0].slice(0,160);
+  const match=first.match(/^(?:(?:sou|atuo como|trabalho como)\s+)?(desenvolvedor(?:\(a\)|a)?|engenheir(?:o(?:\(a\))?|a)|analista|cientista de dados|designer|pesquisador(?:a)?|especialista|consultor(?:a)?|arquiteto(?:a)?|programador(?:a)?)(?=\s|[,:.;]|$)/i);
+  if(!match)return null;
+  // Keep only a short, explicitly written specialization before narrative phrases.
+  const tail=first.slice(match[0].length)
+    .split(/\s+(?=com\b|experi[eê]ncia\b|especializad[oa]\b|atuando\b|respons[aá]vel\b|que\b|trabalhando\b|focado\b)/i)[0]
+    .split(/[,:;]/)[0].trim();
+  const rest=tail.split(/\s+/).filter(Boolean);
+  if(rest.length>4||rest.some(word=>/[0-9@]/.test(word)))return null;
+  const role=normalizeRole(match[1]+(rest.length?" "+rest.join(" "):""));
+  return validRole(role)?role:null;
+}
+
 export function planCareerSearch(profile:ResumeProfile):AgentSearchPlan{
   const roles=[profile.contact.headline,...profile.experiences.map(e=>e.role)]
     .map(normalizeRole).filter(validRole);
+  if(!roles.length){
+    const explicitlyStated=roleFromSummary(profile.summary);
+    if(explicitlyStated)roles.push(explicitlyStated);
+  }
   const seen=new Set<string>();
   const roleQueries=roles.filter(role=>{
     const key=clean(role);if(seen.has(key))return false;seen.add(key);return true;
@@ -44,6 +63,7 @@ export function planCareerSearch(profile:ResumeProfile):AgentSearchPlan{
     ["competencia",profile.skills],
     ["experiencia",profile.experiences.flatMap(e=>e.highlights)],
     ["projeto",profile.projects.map(p=>p.description)],
+    ["resumo",[profile.summary]],
   ];
   const tech=[
     "Python","FastAPI","Java","JavaScript","TypeScript","React","Node.js",
@@ -62,7 +82,7 @@ export function planCareerSearch(profile:ResumeProfile):AgentSearchPlan{
   const warnings:string[]=[];
   if(!roleQueries.length)warnings.push("Informe o cargo desejado para iniciar a busca.");
   if(!evidence.length)warnings.push("Poucas competências técnicas explícitas: os resultados exigirão revisão.");
-  warnings.push("A fonte atual reúne vagas remotas e pode oferecer apenas resumos.");
+  warnings.push("A cobertura das fontes é parcial; confirme localização e requisitos no anúncio original.");
   return {roleQueries,evidence:evidence.slice(0,14),warnings};
 }
 export function assessAgentJob(job:AgentJob,plan:AgentSearchPlan,query:string):AgentAssessment{

@@ -1,7 +1,6 @@
 # Descoberta multifuente de vagas — Alinha Community
 
-As fontes atuais são **GitHub Vagas** (comunidades brasileiras), **Himalayas** (vagas remotas elegíveis a brasileiros), **Lever**
-(catálogo inicial de empresas com vagas brasileiras) e **Gupy** (experimental).
+As fontes atuais são **GitHub Vagas** (comunidades brasileiras), **Himalayas** (vagas remotas elegíveis a brasileiros), **Lever** (catálogo inicial de empresas com vagas brasileiras), **Greenhouse** e **Ashby** (boards públicos verificados para o Brasil), e **Gupy** (experimental).
 A fonte Gupy foi desativada por padrão porque o endpoint comunitário atualmente
 responde HTTP 404, verificado em 17/10/2026. A API oficial Gupy documentada em
 https://developers.gupy.io/reference/findjobs é autenticada e diferente.
@@ -10,7 +9,7 @@ https://developers.gupy.io/reference/findjobs é autenticada e diferente.
 
 - **Meu agente** consulta as fontes locais habilitadas automaticamente, sem exigir
   que o usuário configure cada busca individualmente.
-- **Encontrar vagas** permite pesquisar em Todas, GitHub (comunidades brasileiras), Himalayas, Lever ou Gupy.
+- **Encontrar vagas** permite pesquisar em Todas, GitHub (comunidades brasileiras), Himalayas, Lever, Greenhouse, Ashby ou Gupy.
 - **Meu Alinha** permite desativar qualquer fonte; essa escolha não altera vagas já salvas.
 - Cada fonte é consultada isoladamente. Uma indisponibilidade individual não elimina
   os resultados das demais; falhas aparecem explicitamente nas limitações.
@@ -57,3 +56,18 @@ O usuário pode conferir e corrigir antes de prosseguir.
 Se a fonte fornecer apenas resumo, o Alinha não o apresenta como descrição
 integral: solicita a leitura/colagem do anúncio original. Nenhuma análise
 conclusiva de aderência deve depender só do resumo.
+
+## Novas integrações ATS somente leitura
+
+Greenhouse utiliza a [API pública de Job Board](https://docs.greenhouse.io/job-board)
+em uma lista fixa de empresas brasileiras verificadas: Teachable, AE Studio e DoorDash.
+Ashby usa sua [API pública de anúncios](https://developers.ashbyhq.com/docs/public-job-posting-api)
+para Sardine e Clutch. Estes catálogos foram conferidos em 20/10/2026 e podem mudar.
+
+O backend consulta apenas os boards previamente autorizados, com validação de links e host,
+sem redirects, chave de API ou envio de candidaturas. Cada resposta tem limite de bytes,
+timeout e cache local de dez minutos. Anúncios só são mostrados como compatíveis com o Brasil
+quando a localização original confirma isso; somente "Remote" não é suficiente.
+Descrições recebidas como HTML são convertidas para texto, sem renderizar HTML de terceiros.
+A consulta "Todas as fontes" intercala resultados de vários provedores para não deixar
+os catálogos menores invisíveis. A cobertura continua parcial, não é uma busca universal.

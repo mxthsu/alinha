@@ -154,6 +154,8 @@ export default function Jobs() {
               <option value="gupy">Gupy · Brasil</option>
               <option value="lever">Lever · empresas no Brasil</option>
               <option value="github">Comunidades GitHub · Brasil</option>
+              <option value="greenhouse">Greenhouse — empresas no Brasil</option>
+              <option value="ashby">Ashby — empresas no Brasil</option>
               <option value="himalayas">Himalayas · remoto</option>
             </select>
           </label>

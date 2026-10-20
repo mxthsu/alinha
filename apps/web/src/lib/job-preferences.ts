@@ -26,6 +26,8 @@ const SOURCE_PAGES:Record<string,{label:string;url:string}> = {
   lever:{label:"Lever",url:"https://jobs.lever.co"},
   gupy:{label:"Gupy",url:"https://portal.gupy.io"},
   "github-vagas":{label:"Comunidades GitHub",url:"https://github.com/backend-br/vagas"},
+  greenhouse:{label:"Greenhouse",url:"https://www.greenhouse.com/"},
+  ashby:{label:"Ashby",url:"https://www.ashbyhq.com/"},
 };
 export function jobSource(source:string):{label:string;url:string|null}{
   const known=SOURCE_PAGES[source];
@@ -88,11 +90,11 @@ export function titleRelevance(title:string,query:string):number{
 
 /** Only known, bounded values are sent to local JSONC after consent. */
 export type SavedJobPreferences=VacancyPreferences&{
- source:"all"|"gupy"|"lever"|"github"|"himalayas";
+ source:"all"|"gupy"|"lever"|"github"|"himalayas"|"greenhouse"|"ashby";
  workMode:"remote"|"hybrid"|"onsite";
  contract:"any"|"clt"|"pj"|"internship"|"trainee";
 };
-const sources=new Set(["all","gupy","lever","github","himalayas"]);
+const sources=new Set(["all","gupy","lever","github","himalayas","greenhouse","ashby"]);
 const modes=new Set(["remote","hybrid","onsite"]);
 const contracts=new Set(["any","clt","pj","internship","trainee"]);
 export function parseSavedJobPreferences(value:unknown):SavedJobPreferences|null{

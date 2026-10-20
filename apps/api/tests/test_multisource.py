@@ -59,6 +59,10 @@ def test_endpoint_all_respects_enabled_sources(tmp_path, monkeypatch):
     main.write_settings(storage.CommunitySettings(connectors=storage.Connectors(
         gupy=storage.ConnectorSettings(enabled=True),
         himalayas=storage.ConnectorSettings(enabled=False),
+        lever=storage.ConnectorSettings(enabled=False),
+        github=storage.ConnectorSettings(enabled=False),
+        greenhouse=storage.ConnectorSettings(enabled=False),
+        ashby=storage.ConnectorSettings(enabled=False),
     )))
     monkeypatch.setattr(main, "search_jobs", lambda *a, **kw: (_ for _ in ()).throw(
         AssertionError("Himalayas disabled")))
@@ -70,3 +74,16 @@ def test_endpoint_all_respects_enabled_sources(tmp_path, monkeypatch):
                           params={"q": "Python", "source": "all", "remote_only": "false"})
     assert response.status_code == 200, response.text
     assert response.json()["jobs"][0]["opportunity"]["source"] == "gupy"
+
+
+def test_fair_merge_keeps_small_new_provider_visible():
+    large = JobSearchResult(source_name="GitHub", jobs=[
+        fixture_job("github-vagas", f"https://github.com/backend-br/vagas/issues/{i}")
+        for i in range(50)
+    ])
+    other = JobSearchResult(source_name="Ashby", jobs=[
+        fixture_job("ashby", "https://jobs.ashbyhq.com/sardine/00000000-0000-0000-0000-000000000001")
+    ])
+    merged = merge_sources([large, other])
+    assert len(merged.jobs) == 40
+    assert any(job.opportunity.source == "ashby" for job in merged.jobs)

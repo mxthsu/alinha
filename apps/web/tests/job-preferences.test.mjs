@@ -46,6 +46,8 @@ test("source attribution is not hardcoded to Himalayas",()=>{
     label:"Comunidades GitHub",url:"https://github.com/backend-br/vagas",
   });
   assert.deepEqual(jobSource("unknown"),{label:"Fonte externa",url:null});
+  assert.equal(jobSource("greenhouse").label,"Greenhouse");
+  assert.equal(jobSource("ashby").label,"Ashby");
 });
 
 test("job titles matching a search outrank generic multi-role listings",()=>{

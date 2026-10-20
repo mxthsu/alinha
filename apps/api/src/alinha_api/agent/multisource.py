@@ -23,12 +23,22 @@ def merge_sources(results: list[JobSearchResult], failed: list[str] | None = Non
     names = []
     for result in results:
         names.append(result.source_name)
-        for job in result.jobs:
+    # Fair mixing: a prolific source cannot hide all other verified boards.
+    max_size = max((len(result.jobs) for result in results), default=0)
+    for offset in range(max_size):
+        for result in results:
+            if offset >= len(result.jobs):
+                continue
+            job = result.jobs[offset]
             key = _job_key(job)
             if key in seen:
                 continue
             seen.add(key)
             jobs.append(job)
+            if len(jobs) >= 40:
+                break
+        if len(jobs) >= 40:
+            break
     errors = failed or []
     return JobSearchResult(
         jobs=jobs[:40],
@@ -49,7 +59,7 @@ def search_multi_source(
         raise JobSearchUnavailable("Nenhuma fonte de vagas está habilitada.")
     successes: list[tuple[str, JobSearchResult]] = []
     failures: list[str] = []
-    with ThreadPoolExecutor(max_workers=min(2, len(sources))) as pool:
+    with ThreadPoolExecutor(max_workers=min(4, len(sources))) as pool:
         futures = {pool.submit(callback): name for name, callback in sources.items()}
         for future in as_completed(futures):
             name = futures[future]

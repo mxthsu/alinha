@@ -63,3 +63,23 @@
 .vacancies-agent-entry strong{font-size:13px;color:#2c5a3a}
 .vacancies-agent-entry p{font-size:11px;color:#729079;margin:6px 0 0}
 .vacancies-agent-entry>a{display:inline-flex;align-items:center;gap:8px;background:#2d6541;color:#fff;border-radius:9px;padding:10px 12px;font-size:11px;font-weight:800}
+
+/* Legibility, keyboard access and clear unknown-data states. */
+.vacancies-page-summary{margin:8px 0 0;color:#607d67;font-size:12px;line-height:1.6}
+.vacancies-card:focus-within{border-color:#9cc9a0;box-shadow:0 0 0 2px #bce2b353}
+.vacancies-filters input:focus-visible,.vacancies-filters select:focus-visible,
+.vacancies-search:focus-visible,.vacancies-card a:focus-visible,
+.vacancies-card button:focus-visible,.vacancies-more:focus-visible,
+.vacancies-agent-entry a:focus-visible{outline:3px solid #2e8650;outline-offset:3px}
+.vacancies-card-top h3{overflow-wrap:anywhere}
+.vacancies-review{font-size:12px;line-height:1.65}
+.vacancies-review strong{color:#705323}
+.vacancies-card-actions button,.vacancies-card-actions a{min-height:44px}
+.vacancies-save-feedback{font-size:13px}
+.vacancies{overflow-wrap:break-word}
+@media(max-width:620px){
+ .vacancies-filters label,.vacancies-filters input,.vacancies-filters select{font-size:14px}
+ .vacancies-card-top h3{font-size:17px}
+ .vacancies-facts span,.vacancies-card-footer,.vacancies-excerpt{font-size:13px}
+ .vacancies-card-actions{justify-content:flex-start}
+}

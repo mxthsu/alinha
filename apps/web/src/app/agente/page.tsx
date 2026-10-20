@@ -1,4 +1,5 @@
 "use client";
+import {resolveApiOrigin} from "@/lib/api-origin";
 import {useEffect,useMemo,useRef,useState,type ChangeEvent,type DragEvent} from "react";
 import Link from "next/link";
 import {
@@ -18,7 +19,7 @@ import "./agente.css";
 type RemoteResult={jobs:(AgentJob&{employment_label:string|null;salary_label:string|null})[];
  source_name:string;limitations:string[]};
 type RunState="ready"|"searching"|"completed"|"failed";
-const API=process.env.NEXT_PUBLIC_API_URL||"http://localhost:8000";
+const API=resolveApiOrigin();
 const emptyPlan:AgentSearchPlan={roleQueries:[],evidence:[],warnings:[]};
 
 export default function CareerAgent(){
@@ -60,10 +61,10 @@ export default function CareerAgent(){
  const firstName=profile?.contact.name.trim().split(/\s+/)[0]||"";
  const canRun=query.trim().length>=2&&query.trim().length<=80&&run!=="searching"&&!importing;
 
- async function execute(roleOverride?:string){
+ async function execute(roleOverride?:string):Promise<boolean>{
   const term=(roleOverride??query).trim();
   if(term.length<2||term.length>80||run==="searching"||
-    COMMUNITY_AGENT_PERMISSIONS.search_public_jobs!=="ask")return;
+    COMMUNITY_AGENT_PERMISSIONS.search_public_jobs!=="ask")return false;
   abort.current?.abort();
   const controller=new AbortController();abort.current=controller;
   setRun("searching");setError("");setNotice("");setJobs(null);
@@ -72,12 +73,14 @@ export default function CareerAgent(){
    const response=await fetch(API+"/api/v1/jobs/search?"+search,{signal:controller.signal,cache:"no-store"});
    const data=await response.json();
    if(!response.ok)throw new Error(typeof data.detail==="string"?data.detail:"Falha na consulta à fonte de vagas.");
-   if(!controller.signal.aborted){setSearchedQuery(term);setJobs(data as RemoteResult);setRun("completed");}
+   if(!controller.signal.aborted){setSearchedQuery(term);setJobs(data as RemoteResult);setRun("completed");return true;}
+   return false;
   }catch(cause){
    if(!controller.signal.aborted){
     setError(cause instanceof Error?cause.message:"Não foi possível concluir a pesquisa.");
     setRun("failed");
    }
+   return false;
   }
  }
  async function uploadResume(file:File){
@@ -109,8 +112,9 @@ export default function CareerAgent(){
       :"");
     if(nextPlan.roleQueries[0]){
       setImportNotice("Currículo organizado. Procurando oportunidades para seu perfil…");
-      await execute(nextPlan.roleQueries[0]);
-      setImportNotice('Currículo importado e salvo automaticamente.');
+      const found=await execute(nextPlan.roleQueries[0]);
+      setImportNotice(found?"Currículo salvo. Confira as oportunidades encontradas.":
+        "Currículo salvo. A busca não foi concluída; você pode tentar novamente.");
     }else{
       setImportNotice("Currículo organizado. Informe o cargo desejado para encontrar vagas.");
     }
@@ -207,12 +211,13 @@ export default function CareerAgent(){
       <div className="agent-card-heading"><span className="agent-number">02</span><div>
        <h3>O que você quer encontrar?</h3><p>Revise a sugestão baseada no seu perfil antes de pesquisar.</p></div></div>
       <label className="agent-query-label" htmlFor="agent-role">Cargo desejado</label>
-      <div className="agent-query-row"><Search size={18}/>
-       <input id="agent-role" type="search" maxLength={80} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Ex.: Engenharia de IA"/>
-       <button type="button" disabled={run!=="searching"&&!canRun}
-        onClick={()=>{if(run==="searching"){abort.current?.abort();setRun("ready");}
-          else void execute();}}>
-        {run==="searching"?"Parar busca":"Encontrar vagas"} <ArrowRight size={17}/></button></div>
+      <form className="agent-query-row" onSubmit={event=>{
+        event.preventDefault();if(run!=="searching")void execute();
+       }}><Search size={18} aria-hidden="true"/>
+       <input id="agent-role" name="role" autoComplete="off" type="search" maxLength={80} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Ex.: Engenharia de IA"/>
+       <button type={run==="searching"?"button":"submit"} disabled={run!=="searching"&&!canRun}
+        onClick={run==="searching"?()=>{abort.current?.abort();setRun("ready");}:undefined}>
+        {run==="searching"?"Parar busca":"Encontrar vagas"} <ArrowRight size={17} aria-hidden="true"/></button></form>
       {profile&&plan.roleQueries.length>0&&<div className="agent-role-suggestions">
        <span>SUGESTÕES DO SEU CURRÍCULO</span>
        <div>{plan.roleQueries.map(role=><button key={role} type="button"
@@ -272,7 +277,7 @@ export default function CareerAgent(){
       <ol>{progress.map((step,i)=><li key={step.name} className={step.done?"done":""}>
        <div className="agent-step-dot">{step.done?<Check size={13}/>:String(i+1).padStart(2,"0")}</div>
        <div><strong>{step.name}</strong><small>{step.detail}</small></div></li>)}</ol>
-      <div className="agent-execution-status"><Clock3 size={15}/>
+      <div className="agent-execution-status" role="status" aria-live="polite"><Clock3 size={15} aria-hidden="true"/>
        {run==="searching"?"Executando uma consulta…":run==="completed"?"Busca concluída":"Aguardando sua decisão para pesquisar"}</div>
      </div>
      <div className="agent-safety-card"><ShieldCheck size={22}/><strong>Você mantém o controle.</strong>

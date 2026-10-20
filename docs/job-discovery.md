@@ -10,7 +10,7 @@ https://developers.gupy.io/reference/findjobs é autenticada e diferente.
 
 - **Meu agente** consulta as fontes locais habilitadas automaticamente, sem exigir
   que o usuário configure cada busca individualmente.
-- **Oportunidades** permite pesquisar em Todas, Himalayas, Lever ou Gupy.
+- **Encontrar vagas** permite pesquisar em Todas, GitHub (comunidades brasileiras), Himalayas, Lever ou Gupy.
 - **Meu Alinha** permite desativar qualquer fonte; essa escolha não altera vagas já salvas.
 - Cada fonte é consultada isoladamente. Uma indisponibilidade individual não elimina
   os resultados das demais; falhas aparecem explicitamente nas limitações.
@@ -35,9 +35,9 @@ tamanho, timeout e isolamento entre conectores fazem parte do pipeline.
 
 ## Pendências
 
-- Persistir histórico de buscas/vagas no SQLite local.
+- Consolidar persistência local de preferências de busca e histórico de pesquisas, mantendo as vagas salvas no SQLite.
 - Expandir catálogo de empresas Lever, Greenhouse e Ashby e validar dados brasileiros.
-- Extrair e armazenar a descrição completa para a análise personalizada.
+- Expandir descrições completas entre as fontes que ainda fornecem apenas resumos.
 - Melhorar cobertura de vagas brasileiras híbridas/presenciais, evitando fontes inexistentes.
 - Homologar ponta a ponta no navegador e em instalação limpa.
 

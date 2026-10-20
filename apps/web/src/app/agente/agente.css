@@ -147,3 +147,19 @@
 .agent-profile-actions button{border:1px solid #d0e4c9;color:#367549;background:white}
 .agent-profile-actions button:disabled{opacity:.5}
 .agent-profile-actions a{color:#3e7d4d}
+
+/* Clear keyboard and touch affordances in the career-search journey. */
+.agent-query-row:focus-within{border-color:#64a979;box-shadow:0 0 0 3px #80c88d35}
+.agent-query-row:focus-within input{outline:none}
+.agent-page a:focus-visible,.agent-page button:focus-visible,
+.agent-query-row input:focus-visible{outline:3px solid #57a974;outline-offset:3px}
+.agent-query-row input:focus-visible{outline-offset:1px}
+.agent-job-card:focus-within{border-color:#8fb999}
+.agent-notice,.agent-import-notice,.agent-error{font-size:13px;line-height:1.65}
+@media(max-width:540px){
+ .agent-hero p,.agent-onboarding p,.agent-profile-ready>p{font-size:14px}
+ .agent-query-row input,.agent-query-row button{font-size:14px}
+ .agent-query-label,.agent-card-heading p{font-size:12px}
+ .agent-job-excerpt,.agent-job-actions>a,.agent-job-actions>button{font-size:13px}
+ .agent-job-actions>a,.agent-job-actions>button{min-height:44px}
+}

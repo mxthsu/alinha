@@ -1,4 +1,5 @@
 "use client";
+import {resolveApiOrigin} from "@/lib/api-origin";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -22,7 +23,7 @@ type Finding = { code:string;severity:"important"|"attention"|"suggestion";title
 type AtsReport = { document_type:string;assessment:"review_needed"|"basic_readability_confirmed";readable_characters:number;findings:Finding[];limitations:string[] };
 
 const severity: Record<Finding["severity"], string> = {important:"Importante",attention:"Atenção",suggestion:"Sugestão"};
-const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const api=resolveApiOrigin();
 
 export default function PrepareApplication() {
   const [mode, setMode] = useState<"file"|"text">("file");

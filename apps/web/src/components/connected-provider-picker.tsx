@@ -1,4 +1,5 @@
 "use client";
+import {resolveApiOrigin} from "@/lib/api-origin";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, KeyRound } from "lucide-react";
@@ -18,7 +19,7 @@ export function ConnectedProviderPicker({ provider, onProviderChange, model, onM
   provider: Provider; onProviderChange: (p: Provider) => void;
   model: string; onModelChange: (m: string) => void; onReadyChange: (ready: boolean) => void;
 }) {
-  const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const api=resolveApiOrigin();
   const [available, setAvailable] = useState<Provider[]>([]);
   const [models, setModels] = useState<{ id: string; name: string }[]>([]);
   const [error, setError] = useState("");

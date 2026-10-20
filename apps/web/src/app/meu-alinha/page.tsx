@@ -1,4 +1,5 @@
 "use client";
+import {resolveApiOrigin} from "@/lib/api-origin";
 import {useEffect,useState} from "react";
 import Link from "next/link";
 import {ArrowRight,CheckCircle2,Database,HardDrive,KeyRound,LockKeyhole,
@@ -13,7 +14,7 @@ type Settings={
  agent:{search:"assisted";applications:"review_only"};
  connectors:{himalayas:{enabled:boolean};gupy:{enabled:boolean};lever:{enabled:boolean};github:{enabled:boolean}};
 };
-const API=process.env.NEXT_PUBLIC_API_URL||"http://localhost:8000";
+const API=resolveApiOrigin();
 
 export default function MyAlinha(){
  const [settings,setSettings]=useState<Settings|null>(null);

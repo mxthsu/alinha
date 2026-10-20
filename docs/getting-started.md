@@ -22,11 +22,11 @@ cd alinha
 python scripts/dev.py
 ```
 
-No Windows, se `python` não estiver disponível no PATH, use `py -3 scripts/dev.py`.
+No Windows, se `python` não estiver disponível no PATH, use `py -3 scripts/dev.py`. O iniciador também detecta o executável `uv` instalado com `pip --user` na pasta de scripts do Python, mesmo quando essa pasta ainda não está no PATH.
 
 Na primeira execução, o script instala as dependências da API com **uv** e da interface com **npm ci**. Depois inicia os dois serviços apenas em `127.0.0.1`:
 
-- **Site:** http://localhost:3000
+- **Site:** http://localhost:3000 (ou http://127.0.0.1:3000; o site usa o mesmo hostname local para chamar a API)
 - **API:** http://127.0.0.1:8000/health
 - **Documentação da API:** http://127.0.0.1:8000/docs
 

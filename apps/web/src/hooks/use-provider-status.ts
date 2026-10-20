@@ -1,4 +1,5 @@
 "use client";
+import {resolveApiOrigin} from "@/lib/api-origin";
 
 import { useSyncExternalStore } from "react";
 
@@ -27,7 +28,7 @@ let inFlight = false;
 let interval: number | null = null;
 const CACHE_MS = 15_000;
 
-const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const api=resolveApiOrigin();
 
 function publish(next: ConnectionSnapshot) {
   snapshot = next;

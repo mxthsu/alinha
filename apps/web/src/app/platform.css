@@ -77,3 +77,35 @@
 @media(max-width:900px){.platform-navigation{gap:15px;flex-wrap:wrap}.platform-links{order:3;width:100%;justify-content:space-between}.connections-layout,.analysis-layout{grid-template-columns:1fr}}
 @media(max-width:560px){.platform-container{padding-top:35px}.platform-cards{grid-template-columns:1fr}.entry-main{padding-top:30px}.entry-access{padding:20px}.entry-highlights{flex-direction:column;align-items:center;gap:10px}.connections-card,.connections-next,.analysis-form,.analysis-result{padding:20px}}
 @media(prefers-reduced-motion:reduce){.platform-card{transition:none}.platform-card:hover{transform:none}}
+
+/* Navigation: desktop keeps the links; narrow widths get a keyboard-accessible menu. */
+.platform-nav-tools{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-shrink:0}
+.platform-menu-toggle,.platform-mobile-connection{display:none}
+.platform-menu-toggle{align-items:center;justify-content:center;gap:7px;border:1px solid #cfe3d0;
+ background:#f3f9f0;color:#265c3a;min-height:44px;border-radius:10px;padding:10px 12px;
+ font-size:13px;font-weight:760;cursor:pointer}
+.platform-navigation a:focus-visible,.platform-menu-toggle:focus-visible{
+ outline:3px solid #459359;outline-offset:3px;border-radius:6px
+}
+@media(max-width:1100px){
+ .platform-navigation{display:grid;grid-template-columns:auto minmax(0,1fr);
+  grid-template-areas:"brand tools" "links links";gap:0 12px;min-height:68px;
+  padding:12px clamp(18px,4vw,36px)}
+ .platform-brand{grid-area:brand}
+ .platform-nav-tools{grid-area:tools;min-width:0}
+ .platform-menu-toggle{display:flex}
+ .platform-links{grid-area:links;display:none;order:initial;width:100%;
+  flex-direction:column;align-items:stretch;justify-content:flex-start;gap:0;
+  border-top:1px solid #e0ebdf;margin-top:12px;padding:8px 0 2px}
+ .platform-links.is-open{display:flex}
+ .platform-links a{min-height:45px;display:flex;align-items:center;padding:9px 12px;
+  border-radius:8px;font-size:14px;color:#31563c}
+ .platform-links a:hover{background:#edf7eb}
+ .platform-links .platform-mobile-connection{display:flex;border-top:1px solid #e5eee1;
+  margin-top:5px;border-radius:0}
+}
+@media(max-width:420px){
+ .platform-connection{display:none}
+ .platform-brand{font-size:26px}
+ .platform-navigation{min-width:0}
+}

@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import uuid
+from contextlib import closing
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -67,8 +68,8 @@ def atomic_import(
     _private_directory(path.parent / "backups")
     backup = path.parent / "backups" / f"before-import-{uuid.uuid4().hex}.sqlite3"
     revisions: dict[str, int] = {}
-    with _connect(path) as db:
-        with sqlite3.connect(backup) as backup_db:
+    with closing(_connect(path)) as db, db:
+        with closing(sqlite3.connect(backup)) as backup_db, backup_db:
             db.backup(backup_db)
         try:
             db.execute("BEGIN IMMEDIATE")

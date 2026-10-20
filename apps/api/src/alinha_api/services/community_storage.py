@@ -10,6 +10,7 @@ import os
 import sqlite3
 import sys
 import tempfile
+from contextlib import closing
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
@@ -66,7 +67,7 @@ class AiOptions(_StrictModel):
 class JobPreferences(_StrictModel):
     """Saved only after an explicit user action. Never a profile or credential."""
 
-    source: Literal["all", "gupy", "lever", "github", "himalayas"] = "all"
+    source: Literal["all", "gupy", "lever", "github", "himalayas", "greenhouse", "ashby"] = "all"
     workMode: Literal["remote", "hybrid", "onsite"] = "remote"
     contract: Literal["any", "clt", "pj", "internship", "trainee"] = "any"
     city: str = Field(default="", max_length=100)
@@ -311,28 +312,31 @@ def validate_record(kind: str, value: object) -> object:
 def _connect(path: Path) -> sqlite3.Connection:
     _private_directory(path.parent)
     connection = sqlite3.connect(path, timeout=8.0)
-    connection.execute("PRAGMA busy_timeout=8000")
-    connection.execute("PRAGMA journal_mode=WAL")
-    connection.execute(
-        "CREATE TABLE IF NOT EXISTS records ("
-        "kind TEXT PRIMARY KEY, payload TEXT NOT NULL, revision INTEGER NOT NULL)"
-    )
-    version = connection.execute("PRAGMA user_version").fetchone()[0]
-    if version > SCHEMA_VERSION:
+    try:
+        connection.execute("PRAGMA busy_timeout=8000")
+        connection.execute("PRAGMA journal_mode=WAL")
+        connection.execute(
+            "CREATE TABLE IF NOT EXISTS records ("
+            "kind TEXT PRIMARY KEY, payload TEXT NOT NULL, revision INTEGER NOT NULL)"
+        )
+        version = connection.execute("PRAGMA user_version").fetchone()[0]
+        if version > SCHEMA_VERSION:
+            raise ValueError("Banco local criado por uma versão mais recente do Alinha.")
+        if version == 0:
+            connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+        if os.name != "nt":
+            path.chmod(0o600)
+        return connection
+    except BaseException:
         connection.close()
-        raise ValueError("Banco local criado por uma versão mais recente do Alinha.")
-    if version == 0:
-        connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
-    if os.name != "nt":
-        path.chmod(0o600)
-    return connection
+        raise
 
 
 def get_record(kind: str, path: Path | None = None) -> tuple[object | None, int]:
     if kind not in ("resume", "opportunities", "resume_versions"):
         raise ValueError("Tipo de dado não permitido.")
     path = path or user_paths()[1]
-    with _connect(path) as db:
+    with closing(_connect(path)) as db, db:
         row = db.execute("SELECT payload, revision FROM records WHERE kind = ?", (kind,)).fetchone()
     return (json.loads(row[0]), row[1]) if row else (None, 0)
 
@@ -349,7 +353,7 @@ def save_record(kind: str, value: object, expected_revision: int, path: Path | N
     if len(payload.encode("utf-8")) > MAX_RECORD_BYTES:
         raise ValueError("Registro excede o tamanho permitido.")
     path = path or user_paths()[1]
-    with _connect(path) as db:
+    with closing(_connect(path)) as db, db:
         db.execute("BEGIN IMMEDIATE")
         row = db.execute("SELECT revision FROM records WHERE kind=?", (kind,)).fetchone()
         actual = row[0] if row else 0
@@ -369,7 +373,7 @@ def clear_record(kind: str, expected_revision: int, path: Path | None = None) ->
     if kind not in ("resume", "opportunities", "resume_versions") or type(expected_revision) is not int or not 0 <= expected_revision <= 2**31:
         raise ValueError("Tipo ou revisão inválidos.")
     path = path or user_paths()[1]
-    with _connect(path) as db:
+    with closing(_connect(path)) as db, db:
         db.execute("BEGIN IMMEDIATE")
         row = db.execute("SELECT revision FROM records WHERE kind=?", (kind,)).fetchone()
         actual = row[0] if row else 0

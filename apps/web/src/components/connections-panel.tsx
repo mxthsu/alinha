@@ -1,4 +1,5 @@
 "use client";
+import {resolveApiOrigin} from "@/lib/api-origin";
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ShieldCheck } from "lucide-react";
@@ -8,7 +9,7 @@ export function ConnectionsPanel() {
   const [provider, setProvider] = useState<Provider>("gemini");
   const [model, setModel] = useState("");
   const [ready, setReady] = useState(false);
-  const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const api=resolveApiOrigin();
   return <div className="connections-layout">
     <div className="connections-card"><ProviderSelector apiUrl={api} provider={provider}
       onProviderChange={setProvider} model={model} onModelChange={setModel}

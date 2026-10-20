@@ -1,11 +1,13 @@
 "use client";
-import { useRef, useState, type FormEvent } from "react";
+import {resolveApiOrigin} from "@/lib/api-origin";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowRight, BriefcaseBusiness, ExternalLink, Globe2, LoaderCircle, MapPin, Search, ShieldCheck, SlidersHorizontal, Wallet } from "lucide-react";
 import { PlatformNav } from "@/components/platform-nav";
 import { useOpportunityTracker } from "@/hooks/use-opportunity-tracker";
 import { selectOpportunity } from "@/lib/career-handoff";
 import { opportunityFingerprint } from "@/lib/opportunity-tracker";
+import {evaluateVacancy,jobSource,titleRelevance} from "@/lib/job-preferences";
 import "./vagas.css";
 
 type Job = {
@@ -13,7 +15,7 @@ type Job = {
   excerpt:string; description:string|null; employment_label:string|null; salary_label:string|null; missing_information:string[];
 };
 type Result = {jobs:Job[];source_name:string;source_url:string;description:string;limitations:string[]};
-const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const api=resolveApiOrigin();
 
 export default function Jobs() {
   const {items:tracked,save:saveOpportunity,storageError}=useOpportunityTracker();
@@ -29,6 +31,23 @@ export default function Jobs() {
   const [loading,setLoading] = useState(false);
   const [page,setPage] = useState(1);
   const abort=useRef<AbortController|null>(null);
+  const resultsRef=useRef<HTMLElement|null>(null);
+  function revealMobileResults(){
+    if(typeof window==="undefined"||!window.matchMedia("(max-width: 900px)").matches)return;
+    const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    requestAnimationFrame(()=>resultsRef.current?.scrollIntoView({
+      block:"start",behavior:reduced?"instant":"smooth",
+    }));
+  }
+  const [searchedTerm,setSearchedTerm]=useState("");
+  useEffect(()=>()=>abort.current?.abort(),[]);
+  // Missing facts need confirmation; only proven incompatibilities are excluded.
+  const filteredJobs=result?result.jobs.map(item=>({
+    item,decision:evaluateVacancy(item,{workMode,contract,city,salary}),
+  })).filter(({decision})=>decision.status!=="exclude")
+    .sort((a,b)=>titleRelevance(b.item.opportunity.title,searchedTerm)-
+                 titleRelevance(a.item.opportunity.title,searchedTerm)):[];
+  const reviewCount=filteredJobs.filter(({decision})=>decision.status==="review").length;
 
   async function search(pageNumber:number){
     if(loading || keyword.trim().length<2) return;
@@ -46,9 +65,9 @@ export default function Jobs() {
         {signal:controller.signal,cache:"no-store"});
       const json=await response.json();
       if(!response.ok)throw new Error(typeof json.detail==="string"?json.detail:"Não foi possível consultar vagas.");
-      setResult(json as Result);
+      setResult(json as Result);setSearchedTerm(keyword.trim());revealMobileResults();
     }catch(cause){
-      if(!controller.signal.aborted)setError(cause instanceof Error?cause.message:"Falha de conexão.");
+      if(!controller.signal.aborted){setError(cause instanceof Error?cause.message:"Falha de conexão.");revealMobileResults();}
     }finally{if(!controller.signal.aborted)setLoading(false);}
   }
   function submit(event:FormEvent<HTMLFormElement>){event.preventDefault();void search(1);}
@@ -68,11 +87,11 @@ export default function Jobs() {
         <form className="vacancies-filters" onSubmit={submit}>
           <div className="vacancies-filter-title"><SlidersHorizontal size={18}/> Suas preferências</div>
           <label>Cargo ou palavra-chave
-            <input type="search" value={keyword} minLength={2} maxLength={80} required
+            <input type="search" name="q" autoComplete="off" value={keyword} minLength={2} maxLength={80} required
               onChange={event=>setKeyword(event.target.value)} placeholder="Ex.: Engenharia de IA"/>
           </label>
           <label>Fonte de vagas
-            <select value={source} onChange={event=>setSource(event.target.value)}>
+            <select name="source" value={source} onChange={event=>setSource(event.target.value)}>
               <option value="all">Todas as fontes</option>
               <option value="gupy">Gupy · Brasil</option>
               <option value="lever">Lever · empresas no Brasil</option>
@@ -81,21 +100,21 @@ export default function Jobs() {
             </select>
           </label>
           <label>Modalidade
-            <select value={workMode} onChange={event=>setWorkMode(event.target.value)}>
+            <select name="workMode" value={workMode} onChange={event=>setWorkMode(event.target.value)}>
               <option value="remote">Remoto</option><option value="hybrid">Híbrido</option><option value="onsite">Presencial</option>
             </select>
           </label>
           <label>Contrato desejado
-            <select value={contract} onChange={event=>setContract(event.target.value)}>
+            <select name="contract" value={contract} onChange={event=>setContract(event.target.value)}>
               <option value="any">Não filtrar</option><option value="clt">CLT</option><option value="pj">PJ</option>
               <option value="internship">Estágio</option><option value="trainee">Trainee</option>
             </select>
           </label>
           <label>Cidade de preferência
-            <input value={city} maxLength={120} onChange={event=>setCity(event.target.value)} placeholder="Ex.: Florianópolis, SC"/>
+            <input name="city" autoComplete="address-level2" value={city} maxLength={120} onChange={event=>setCity(event.target.value)} placeholder="Ex.: Florianópolis, SC"/>
           </label>
           <label>Salário mínimo mensal pretendido (R$)
-            <input type="number" value={salary} min={0} max={1000000} step={100}
+            <input type="number" name="salary" inputMode="numeric" value={salary} min={0} max={1000000} step={100}
               onChange={event=>setSalary(event.target.value)} placeholder="Opcional"/>
           </label>
           <p className="vacancies-privacy"><ShieldCheck size={17}/> Preferências temporárias. Dados que a vaga não informa ficam pendentes de confirmação.</p>
@@ -103,11 +122,13 @@ export default function Jobs() {
             {loading?<LoaderCircle className="vacancies-loading-icon" size={17}/>:<Search size={17}/>}
             {loading?"Buscando…":"Buscar oportunidades"}
           </button>
-          <p className="vacancies-attribution">Fontes: GitHub (comunidades brasileiras), Gupy (experimental), Lever (Brasil) e <a href="https://himalayas.app" target="_blank" rel="noopener noreferrer">Himalayas <ExternalLink size={12}/></a>. Confira os dados na vaga original.</p>
+          <p className="vacancies-attribution">A pesquisa reúne fontes públicas selecionadas, incluindo comunidades brasileiras de vagas. Confira sempre o anúncio original, o vínculo e a localização.</p>
         </form>
-        <section className="vacancies-results" aria-live="polite">
+        <section ref={resultsRef} className="vacancies-results" aria-live="polite" tabIndex={-1}>
           <div className="vacancies-results-head">
-            <div><span>OPORTUNIDADES</span><h2>{result?String(result.jobs.length)+" vagas nesta página":"Explore oportunidades"}</h2></div>
+            <div><span>OPORTUNIDADES</span><h2>{result?String(filteredJobs.length)+" vagas para conferir":"Explore oportunidades"}</h2>
+            {result&&<p className="vacancies-page-summary">Busca: {searchedTerm} · {filteredJobs.length} de {result.jobs.length} vagas nesta página
+             {reviewCount>0?" · "+reviewCount+" com dados para confirmar":""}</p>}</div>
             <span className="vacancies-beta">Pesquisa experimental</span>
           </div>
           {error&&<div className="vacancies-error" role="alert">{error}</div>}
@@ -115,23 +136,22 @@ export default function Jobs() {
           {loading&&<div className="vacancies-empty"><LoaderCircle size={32} className="vacancies-loading-icon"/><h3>Consultando vagas…</h3></div>}
           {!loading&&!result&&!error&&<div className="vacancies-empty"><BriefcaseBusiness size={34}/><h3>Encontre o próximo passo.</h3><p>Informe um cargo para pesquisar vagas reais, sem demonstrações fictícias.</p></div>}
           {!loading&&result&&<>
-            {result.jobs.length===0&&<div className="vacancies-empty"><Search size={30}/><h3>Nenhuma vaga nesta consulta</h3><p>{result.description} Tente outro cargo ou modalidade.</p></div>}
-            {result.jobs.map(item=>{
+            {filteredJobs.length===0&&<div className="vacancies-empty"><Search size={30}/><h3>Nenhuma vaga atende à busca e aos filtros</h3><p>Tente outro cargo ou ajuste modalidade, contrato e cidade. Dados ausentes não são tratados como incompatíveis.</p></div>}
+            {filteredJobs.map(({item,decision})=>{
               const job=item.opportunity;
-              const contractPending=contract!=="any"&&job.contract_type!==contract;
-              const salaryPending=salary!==""&&(job.advertised_min_salary_brl===null||job.advertised_min_salary_brl<Number(salary));
-              if(workMode!=="remote" && job.work_mode!==workMode) return null;
+              const sourceInfo=jobSource(job.source);
               return <article className="vacancies-card" key={job.source+":"+job.external_id}>
                 <div className="vacancies-card-top"><div><span>{job.company}</span><h3>{job.title}</h3></div><strong><Globe2 size={14}/> {job.work_mode==="remote"?"Remoto":job.work_mode==="hybrid"?"Híbrido":job.work_mode==="onsite"?"Presencial":"A confirmar"}</strong></div>
-                <div className="vacancies-facts"><span><MapPin size={14}/> {job.city||"Brasil"}</span>
+                <div className="vacancies-facts"><span><MapPin size={14}/> {job.city||"Localidade a confirmar"}</span>
                   {item.employment_label&&<span><BriefcaseBusiness size={14}/> {item.employment_label}</span>}
                   {item.salary_label&&<span><Wallet size={14}/> {item.salary_label}</span>}</div>
                 {item.excerpt&&<p className="vacancies-excerpt">{item.excerpt}</p>}
-                {(contractPending||salaryPending||city.trim()!==""||item.missing_information.length>0)&&
-                  <p className="vacancies-review">A confirmar: {contractPending?"vínculo pretendido; ":""}
-                    {salaryPending?"salário mínimo mensal; ":""}{city.trim()?"localidade; ":""}
-                    {item.missing_information.join("; ")}.</p>}
-                <div className="vacancies-card-footer"><span>Fonte: <a href={job.source==="gupy"?"https://portal.gupy.io/":job.source==="lever"?"https://jobs.lever.co/Flex":job.source==="github-vagas"?"https://github.com/backend-br/vagas":"https://himalayas.app"} target="_blank" rel="noopener noreferrer">{job.source==="gupy"?"Gupy":job.source==="lever"?"Lever":job.source==="github-vagas"?"Comunidades GitHub":"Himalayas"}</a></span>
+                {(decision.pending.length>0||item.missing_information.length>0)&&
+                  <p className="vacancies-review"><strong>Verifique antes de se candidatar:</strong>{" "}
+                    {[...new Set([...decision.pending,...item.missing_information])].join("; ")}.</p>}
+                <div className="vacancies-card-footer"><span>Fonte: {sourceInfo.url?
+                     <a href={sourceInfo.url} target="_blank" rel="noopener noreferrer">{sourceInfo.label}</a>:
+                     sourceInfo.label}</span>
                   <div className="vacancies-card-actions">
                     {job.source_url&&<Link href="/preparar" className="vacancies-prepare" onClick={()=>
                       selectOpportunity({title:job.title,company:job.company,url:job.source_url!,

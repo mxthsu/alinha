@@ -1,4 +1,5 @@
 "use client";
+import {resolveApiOrigin} from "@/lib/api-origin";
 
 import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -89,7 +90,7 @@ export default function Studio() {
   const [canUndoImport, setCanUndoImport] = useState(false);
   const [unassignedImportLines, setUnassignedImportLines] = useState<string[]>([]);
   const previousProfile = useRef<Resume | null>(null);
-  const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const api=resolveApiOrigin();
 
   useEffect(()=>{
     let active=true;

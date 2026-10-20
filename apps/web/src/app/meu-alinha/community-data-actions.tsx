@@ -1,4 +1,5 @@
 "use client";
+import {resolveApiOrigin} from "@/lib/api-origin";
 import {useRef,useState,type ChangeEvent} from "react";
 import {loadLegacyResumeDraft,hasResumeContent,type ResumeProfile,type ResumeTemplate} from "@/lib/career-workspace";
 import {parseTracker,TRACKER_KEY,type TrackedOpportunity} from "@/lib/opportunity-tracker";
@@ -11,7 +12,7 @@ type Preview={
  resume_versions:ApprovedResumeVersion[]|null;
  expected_revisions:Record<string,number>;
 };
-const API=process.env.NEXT_PUBLIC_API_URL||"http://localhost:8000";
+const API=resolveApiOrigin();
 
 async function localRecord(kind:"resume"|"opportunities"|"resume_versions"):Promise<Snapshot>{
  const response=await fetch(API+"/api/v1/community/data/"+kind,{cache:"no-store"});

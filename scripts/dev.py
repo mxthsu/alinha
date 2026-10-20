@@ -9,6 +9,7 @@ import argparse
 import os
 from pathlib import Path
 import shutil
+import site
 import signal
 import subprocess
 import sys
@@ -23,6 +24,16 @@ def preflight() -> tuple[str, str]:
     if sys.version_info < (3, 11):
         raise RuntimeError("Python 3.11 ou superior é necessário.")
     uv = shutil.which("uv")
+    if not uv:
+        # pip --user installs uv here on Windows without always updating PATH.
+        user_scripts = (
+            Path(site.USER_BASE)
+            / f"Python{sys.version_info.major}{sys.version_info.minor}"
+            / ("Scripts" if os.name == "nt" else "bin")
+            / ("uv.exe" if os.name == "nt" else "uv")
+        )
+        if user_scripts.is_file():
+            uv = str(user_scripts)
     npm = shutil.which("npm")
     if not uv or not npm:
         missing = ", ".join(name for name, value in (("uv", uv), ("npm", npm)) if not value)

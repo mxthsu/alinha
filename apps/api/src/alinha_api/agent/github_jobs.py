@@ -103,9 +103,10 @@ def _normalize(item: dict, board: str, query: str, remote_only: bool) -> Discove
     terms = [x.casefold() for x in re.findall(r"[^\W_]{3,}", query)]
     body = item.get("body") if isinstance(item.get("body"), str) else ""
     # A title match takes priority: don't surface unrelated postings solely on boilerplate.
-    if terms and not any(term in title.casefold() for term in terms):
-        if not all(term in body.casefold() for term in terms):
-            return None
+    if terms and not any(term in title.casefold() for term in terms) and not all(
+        term in body.casefold() for term in terms
+    ):
+        return None
     labels = _labels(item)
     work_mode = _mode(title, labels)
     if remote_only and work_mode != "remote":

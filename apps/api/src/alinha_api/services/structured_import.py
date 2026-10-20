@@ -18,6 +18,11 @@ _PERIOD = re.compile(r"\b(?:19|20)\d{2}\b|\b(?:atual|presente|current|present)\b
 _PERIOD_LINE = re.compile(r"^(?:[a-zà-ú]{3,12}[ /])?(?:19|20)\d{2}\s*[—–-]\s*(?:(?:[a-zà-ú]{3,12}[ /])?(?:19|20)\d{2}|atual|presente|current|present)", re.IGNORECASE)
 _CITY = re.compile(r"^[^|]{2,70},\s*[A-Z]{2}$")
 _SPLIT_ITEMS = re.compile(r"\s*[,;|•·]\s*")
+_DOCUMENT_TITLE = re.compile(
+    r"^(?:curriculo|curriculum vitae|resume)"
+    r"(?:\s+(?:demonstrativo|ficticio|modelo|exemplo|sample|template))?"
+    r"(?:\s*\((?:ficticio|exemplo|sample)\))?$"
+ )
 _HEADINGS = {
     "resumo": "summary", "resumo profissional": "summary", "perfil profissional": "summary",
     "perfil": "summary", "sobre mim": "summary", "objetivo profissional": "summary",
@@ -44,6 +49,7 @@ _HEADINGS = {
 }
 _OTHER_HEADINGS = {
     "certificacoes", "certificados", "premios", "publicacoes", "atividades",
+    "projetos e responsabilidades", "projects and responsibilities",
     "informacoes adicionais", "referencias", "voluntariado", "cursos complementares",
     "certifications", "awards", "references", "additional information",
 }
@@ -301,9 +307,12 @@ def _parse_contact(lines: list[str], profile: ResumeProfile, remaining: list[str
     if not lines:
         return
     lines = list(lines)
-    while lines and normalized(lines[0]) in {
-        "curriculo", "curriculum vitae", "resume", "dados pessoais", "contato", "contact"
-    }:
+    while lines and (
+        normalized(lines[0]) in {
+            "curriculo", "curriculum vitae", "resume", "dados pessoais", "contato", "contact"
+        }
+        or _DOCUMENT_TITLE.fullmatch(normalized(lines[0])) is not None
+    ):
         lines.pop(0)
     if not lines:
         return

@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field, ValidationError
 from pypdf.errors import PdfReadError
 
 from alinha_api.agent.discovery import JobSearchResult, JobSearchUnavailable, search_jobs
-from alinha_api.agent.gupy import search_gupy
 from alinha_api.agent.github_jobs import search_github_jobs
+from alinha_api.agent.gupy import search_gupy
 from alinha_api.agent.lever import search_lever
 from alinha_api.agent.models import CandidateCriteria
 from alinha_api.agent.multisource import search_multi_source

@@ -1,0 +1,5 @@
+# Resultados brutos do painel e insumos financeiros/segmentação ficam locais até revisão.
+panel/
+customer.json
+numbers.json
+*.csv

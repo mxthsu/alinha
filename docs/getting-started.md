@@ -103,6 +103,7 @@ npm run dev -- --hostname 127.0.0.1 --port 3000
 ```sh
 cd apps/api
 uv run pytest -q
+uv run python ../../scripts/smoke_community.py
 uv run ruff check .
 ```
 

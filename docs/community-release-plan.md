@@ -27,6 +27,7 @@ Este documento controla o escopo da edição local e open source. O Community de
 - [ ] Migrar versões aprovadas por vaga e demais dados auxiliares para persistência unificada.
 - [ ] Aplicar a persistência SQLite em todas as telas, com autosave, versões por vaga e revisões concorrentes.
 - [x] Adicionar exportação JSON e restauração revisada do SQLite, com snapshot antes da operação e testes sintéticos.
+- [x] Criar verificação de fumaça isolada, repetível no CI e localmente, com importação fictícia, 2 versões por vaga, backup, exclusão e restauração, sem tocar nos dados do usuário.
 - [ ] Testar recuperação de falha de disco, processo interrompido e restauração em instalação limpa.
 - [ ] Revisar caminhos e permissões em Windows, macOS e Linux; instalador/launcher simplificado.
 - [ ] Revisão de segurança de histórico Git, dependências e fluxo de dados; documentação de retenção.

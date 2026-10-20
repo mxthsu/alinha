@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {evaluateVacancy,jobSource,titleRelevance} from "../src/lib/job-preferences.ts";
+import {evaluateVacancy,jobSource,titleRelevance,parseSavedJobPreferences} from "../src/lib/job-preferences.ts";
 
 const vacancy={
   opportunity:{
@@ -56,4 +56,14 @@ test("job titles matching a search outrank generic multi-role listings",()=>{
 test("relevance ignores accents and common connector words",()=>{
   assert.equal(titleRelevance("Engenharia de Inteligência Artificial","inteligencia artificial"),1);
   assert.equal(titleRelevance("Desenvolvedor de Software","de software"),1);
+});
+
+test("preferences are optional, bounded and never interpreted as a profile",()=>{
+  assert.equal(parseSavedJobPreferences(null),null);
+  const valid={source:"github",workMode:"hybrid",contract:"clt",city:"São José",salary:"7000"};
+  assert.deepEqual(parseSavedJobPreferences(valid),valid);
+  assert.equal(parseSavedJobPreferences({...valid,salary:"-150"}),null);
+  assert.equal(parseSavedJobPreferences({...valid,salary:"1000001"}),null);
+  assert.equal(parseSavedJobPreferences({...valid,city:"email@example.com"}),null);
+  assert.equal(parseSavedJobPreferences({...valid,secret:"not-allowed"}),null);
 });

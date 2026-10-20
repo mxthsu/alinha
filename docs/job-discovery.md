@@ -17,6 +17,11 @@ https://developers.gupy.io/reference/findjobs é autenticada e diferente.
 - Deduplicação por URL canônica normalizada; vagas com URLs diferentes não são descartadas
   apenas por terem cargo e empresa iguais.
 - CLT/PJ, modalidades e salários só são confirmados quando a fonte os informa.
+- Em **Encontrar vagas**, filtros permanecem temporários por padrão. Apenas após clicar
+  em **Salvar preferências neste computador** modalidade, contrato, fonte, cidade e
+  salário pretendido são gravados no arquivo local JSONC. O termo pesquisado não é
+  salvo. O botão **Apagar preferências salvas** remove apenas esses filtros,
+  preservando provedores de IA, conectores e vagas.
 - Não há envio automático de candidaturas.
 
 ## Fontes e abrangência

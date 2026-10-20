@@ -83,3 +83,14 @@
  .vacancies-facts span,.vacancies-card-footer,.vacancies-excerpt{font-size:13px}
  .vacancies-card-actions{justify-content:flex-start}
 }
+
+.vacancies-preferences-store{border-top:1px solid #e1ebdd;padding-top:14px;display:grid;gap:10px}
+.vacancies-preferences-store>p{font-size:12px;color:#667b69;line-height:1.65;margin:0}
+.vacancies-preferences-store>div{display:flex;flex-wrap:wrap;gap:7px}
+.vacancies-preferences-store button{border:1px solid #c5dfc6;border-radius:9px;background:#eef7ea;color:#2c6d42;min-height:44px;padding:9px 11px;font-weight:760;font-size:12px}
+.vacancies-preferences-store button:hover:not(:disabled){background:#deefda}
+.vacancies-preferences-store button:focus-visible{outline:3px solid #2e8650;outline-offset:3px}
+.vacancies-preferences-store button:disabled{opacity:.6;cursor:wait}
+.vacancies-preferences-store .vacancies-preferences-clear{background:#fff;color:#536e5c}
+.vacancies-preferences-store .vacancies-prefs-notice{color:#326d44;font-size:12px}
+.vacancies-preferences-store .vacancies-prefs-error{color:#a3493b;font-size:12px}

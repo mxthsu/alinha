@@ -7,7 +7,7 @@ import { PlatformNav } from "@/components/platform-nav";
 import { useOpportunityTracker } from "@/hooks/use-opportunity-tracker";
 import { selectOpportunity } from "@/lib/career-handoff";
 import { opportunityFingerprint } from "@/lib/opportunity-tracker";
-import {evaluateVacancy,jobSource,titleRelevance} from "@/lib/job-preferences";
+import {evaluateVacancy,jobSource,titleRelevance,parseSavedJobPreferences,type SavedJobPreferences} from "@/lib/job-preferences";
 import "./vagas.css";
 
 type Job = {
@@ -26,6 +26,64 @@ export default function Jobs() {
   const [contract,setContract] = useState("any");
   const [city,setCity] = useState("");
   const [salary,setSalary] = useState("");
+  const [storedPrefs,setStoredPrefs]=useState(false);
+  const [prefsBusy,setPrefsBusy]=useState(false);
+  const [prefsStatus,setPrefsStatus]=useState("");
+  const [prefsError,setPrefsError]=useState("");
+  const changedPrefs=useRef(false);
+  // Read-only hydration: unapproved preferences remain temporary and never persist implicitly.
+  useEffect(()=>{
+    let active=true;
+    void fetch(api+"/api/v1/community/settings",{cache:"no-store"})
+      .then(async response=>{
+        if(!response.ok)throw new Error("Configuração local indisponível.");
+        return await response.json() as {job_preferences?:unknown};
+      })
+      .then(data=>{
+        if(!active)return;
+        const previous=parseSavedJobPreferences(data.job_preferences);
+        if(!previous)return;
+        setStoredPrefs(true);
+        if(changedPrefs.current)return;
+        setSource(previous.source);
+        setWorkMode(previous.workMode);
+        setContract(previous.contract);
+        setCity(previous.city);
+        setSalary(previous.salary);
+      })
+      .catch(()=>{ /* Searching without saved preferences must still work offline. */ });
+    return ()=>{active=false;};
+  },[]);
+  async function updateSavedPreferences(clear:boolean){
+    if(prefsBusy)return;
+    setPrefsBusy(true);setPrefsError("");setPrefsStatus("");
+    try{
+      const choice:SavedJobPreferences|null=clear?null:parseSavedJobPreferences({
+        source,workMode,contract,city:city.trim(),salary,
+      });
+      if(!clear&&!choice)throw new Error("Revise a cidade e o salário antes de salvar.");
+      // Read the latest settings so toggles and provider options are not replaced by stale UI state.
+      const response=await fetch(api+"/api/v1/community/settings",{cache:"no-store"});
+      if(!response.ok)throw new Error("Não foi possível acessar a configuração local.");
+      const current=await response.json() as Record<string,unknown>;
+      const written=await fetch(api+"/api/v1/community/settings",{
+        method:"PUT",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({...current,job_preferences:choice}),cache:"no-store",
+      });
+      if(!written.ok)throw new Error("Não foi possível atualizar as preferências locais.");
+      const verified=await written.json() as {job_preferences?:unknown};
+      if(clear?verified.job_preferences!==null:
+        JSON.stringify(parseSavedJobPreferences(verified.job_preferences))!==JSON.stringify(choice)){
+          throw new Error("A confirmação do salvamento não corresponde ao solicitado.");
+      }
+      setStoredPrefs(!clear);
+      setPrefsStatus(clear?
+        "Preferências salvas apagadas deste computador. Os filtros atuais continuam temporários.":
+        "Preferências salvas apenas neste computador. Você pode apagá-las a qualquer momento.");
+    }catch(cause){
+      setPrefsError(cause instanceof Error?cause.message:"Não foi possível salvar suas escolhas.");
+    }finally{setPrefsBusy(false);}
+  }
   const [result,setResult] = useState<Result|null>(null);
   const [error,setError] = useState("");
   const [loading,setLoading] = useState(false);
@@ -91,7 +149,7 @@ export default function Jobs() {
               onChange={event=>setKeyword(event.target.value)} placeholder="Ex.: Engenharia de IA"/>
           </label>
           <label>Fonte de vagas
-            <select name="source" value={source} onChange={event=>setSource(event.target.value)}>
+            <select name="source" value={source} onChange={event=>{changedPrefs.current=true;setSource(event.target.value);}}>
               <option value="all">Todas as fontes</option>
               <option value="gupy">Gupy · Brasil</option>
               <option value="lever">Lever · empresas no Brasil</option>
@@ -100,28 +158,40 @@ export default function Jobs() {
             </select>
           </label>
           <label>Modalidade
-            <select name="workMode" value={workMode} onChange={event=>setWorkMode(event.target.value)}>
+            <select name="workMode" value={workMode} onChange={event=>{changedPrefs.current=true;setWorkMode(event.target.value);}}>
               <option value="remote">Remoto</option><option value="hybrid">Híbrido</option><option value="onsite">Presencial</option>
             </select>
           </label>
           <label>Contrato desejado
-            <select name="contract" value={contract} onChange={event=>setContract(event.target.value)}>
+            <select name="contract" value={contract} onChange={event=>{changedPrefs.current=true;setContract(event.target.value);}}>
               <option value="any">Não filtrar</option><option value="clt">CLT</option><option value="pj">PJ</option>
               <option value="internship">Estágio</option><option value="trainee">Trainee</option>
             </select>
           </label>
           <label>Cidade de preferência
-            <input name="city" autoComplete="address-level2" value={city} maxLength={120} onChange={event=>setCity(event.target.value)} placeholder="Ex.: Florianópolis, SC"/>
+            <input name="city" autoComplete="address-level2" value={city} maxLength={120} onChange={event=>{changedPrefs.current=true;setCity(event.target.value);}} placeholder="Ex.: Florianópolis, SC"/>
           </label>
           <label>Salário mínimo mensal pretendido (R$)
             <input type="number" name="salary" inputMode="numeric" value={salary} min={0} max={1000000} step={100}
-              onChange={event=>setSalary(event.target.value)} placeholder="Opcional"/>
+              onChange={event=>{changedPrefs.current=true;setSalary(event.target.value);}} placeholder="Opcional"/>
           </label>
-          <p className="vacancies-privacy"><ShieldCheck size={17}/> Preferências temporárias. Dados que a vaga não informa ficam pendentes de confirmação.</p>
+          <p className="vacancies-privacy"><ShieldCheck size={17}/> {storedPrefs?"Suas últimas preferências salvas foram recuperadas. Mudanças na tela só serão salvas ao confirmar.":"Suas preferências são temporárias até você escolher salvá-las."} Dados que a vaga não informa ficam pendentes de confirmação.</p>
           <button className="vacancies-search" disabled={loading||keyword.trim().length<2} type="submit">
             {loading?<LoaderCircle className="vacancies-loading-icon" size={17}/>:<Search size={17}/>}
             {loading?"Buscando…":"Buscar oportunidades"}
           </button>
+          <div className="vacancies-preferences-store">
+            <p>Salve modalidade, contrato, cidade, salário e fonte apenas se quiser reutilizá-los.
+              A palavra-chave pesquisada não é salva.</p>
+            <div>
+              <button type="button" disabled={prefsBusy}
+                onClick={()=>void updateSavedPreferences(false)}>Salvar preferências neste computador</button>
+              {storedPrefs&&<button type="button" className="vacancies-preferences-clear" disabled={prefsBusy}
+                onClick={()=>void updateSavedPreferences(true)}>Apagar preferências salvas</button>}
+            </div>
+            {prefsStatus&&<p role="status" className="vacancies-prefs-notice">{prefsStatus}</p>}
+            {prefsError&&<p role="alert" className="vacancies-prefs-error">{prefsError}</p>}
+          </div>
           <p className="vacancies-attribution">A pesquisa reúne fontes públicas selecionadas, incluindo comunidades brasileiras de vagas. Confira sempre o anúncio original, o vínculo e a localização.</p>
         </form>
         <section ref={resultsRef} className="vacancies-results" aria-live="polite" tabIndex={-1}>

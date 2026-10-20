@@ -85,3 +85,25 @@ export function titleRelevance(title:string,query:string):number{
   const haystack=normalized(title);
   return words.filter(word=>haystack.includes(word)).length/words.length;
 }
+
+/** Only known, bounded values are sent to local JSONC after consent. */
+export type SavedJobPreferences=VacancyPreferences&{
+ source:"all"|"gupy"|"lever"|"github"|"himalayas";
+ workMode:"remote"|"hybrid"|"onsite";
+ contract:"any"|"clt"|"pj"|"internship"|"trainee";
+};
+const sources=new Set(["all","gupy","lever","github","himalayas"]);
+const modes=new Set(["remote","hybrid","onsite"]);
+const contracts=new Set(["any","clt","pj","internship","trainee"]);
+export function parseSavedJobPreferences(value:unknown):SavedJobPreferences|null{
+ if(!value||typeof value!=="object"||Array.isArray(value))return null;
+ const v=value as Record<string,unknown>;
+ if(Object.keys(v).some(key=>!["source","workMode","contract","city","salary"].includes(key)))return null;
+ if(typeof v.source!=="string"||!sources.has(v.source)||
+    typeof v.workMode!=="string"||!modes.has(v.workMode)||
+    typeof v.contract!=="string"||!contracts.has(v.contract))return null;
+ if(typeof v.city!=="string"||v.city.length>100||/[\x00-\x1f@]/.test(v.city))return null;
+ if(typeof v.salary!=="string"||!/^\d{0,7}$/.test(v.salary)||
+    (v.salary!==""&&Number(v.salary)>1_000_000))return null;
+ return v as SavedJobPreferences;
+}

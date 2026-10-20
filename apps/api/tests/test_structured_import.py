@@ -129,7 +129,7 @@ def test_demonstration_document_title_is_not_candidate_name():
     sample_path = Path(__file__).resolve().parents[3] / "examples" / "resume.txt"
     preview = draft_profile(sample_path.read_text(encoding="utf-8"))
     assert preview.profile.contact.name == ""
-    assert preview.profile.contact.headline == ""
+    assert preview.profile.contact.headline == "Desenvolvedor de backend"
     assert "Desenvolvedor(a) de backend" in preview.profile.summary
     assert "Projetos e responsabilidades" in preview.unassigned_lines
     assert any("não foi possível identificar o nome" in warning.casefold()
@@ -148,3 +148,23 @@ def test_document_title_discarded_without_losing_explicit_contact():
     assert preview.profile.contact.name == "Pessoa Exemplo"
     assert preview.profile.contact.email == "pessoa@exemplo.test"
     assert preview.profile.skills == ["Python", "SQL"]
+
+def test_summary_can_fill_explicit_career_headline_but_not_guess_from_skills():
+    explicit = draft_profile(
+        "Pessoa de Teste\nResumo\nAnalista de Dados com foco em SQL e relatórios."
+    )
+    assert explicit.profile.contact.headline == "Analista de Dados"
+    assert explicit.profile.summary.startswith("Analista de Dados")
+    assert "Python" not in explicit.profile.skills
+
+    unclear = draft_profile(
+        "Pessoa de Teste\nResumo\nTenho experiência com Python e SQL. Procuro desafios."
+    )
+    assert unclear.profile.contact.headline == ""
+
+
+def test_contact_headline_takes_precedence_over_summary_extraction():
+    example = draft_profile(
+        "Pessoa de Teste\nTítulo: Engenheira de IA\nResumo\nAnalista de Dados com SQL."
+    )
+    assert example.profile.contact.headline == "Engenheira de IA"

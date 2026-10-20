@@ -89,3 +89,27 @@ test("full descriptions improve evidence matching without inventing unsupported 
  assert.ok(match.matched.includes("Docker"));
  assert.ok(!match.matched.includes("Power BI"));
 });
+
+test("explicit developer role in an unstructured summary starts the next search",()=>{
+ const summary="Desenvolvedor(a) de backend com experiência em automações e integração. Desenvolvimento de APIs REST com Python e FastAPI.";
+ const input={...profile,contact:{...profile.contact,name:"",headline:""},experiences:[],skills:[],projects:[],summary};
+ const planned=planCareerSearch(input);
+ assert.deepEqual(planned.roleQueries,["Desenvolvedor de backend"]);
+ assert.ok(planned.evidence.some(x=>x.term==="Python"&&x.source==="resumo"));
+ assert.ok(planned.evidence.some(x=>x.term==="FastAPI"&&x.source==="resumo"));
+ assert.ok(!planned.evidence.some(x=>x.term==="Kubernetes"));
+});
+test("literal analyst role in summary can seed a search without inventing skills",()=>{
+ const input={...profile,contact:{...profile.contact,headline:""},experiences:[],projects:[],skills:[],
+  summary:"Analista de Dados com foco em SQL e relatórios."};
+ const planned=planCareerSearch(input);
+ assert.deepEqual(planned.roleQueries,["Analista de Dados"]);
+ assert.ok(planned.evidence.some(x=>x.term==="SQL"));
+});
+test("no job title in summary does not produce a speculative role",()=>{
+ const input={...profile,contact:{...profile.contact,headline:""},experiences:[],projects:[],skills:[],
+  summary:"Tenho experiência com Python e automação. Procuro novos desafios."};
+ const planned=planCareerSearch(input);
+ assert.deepEqual(planned.roleQueries,[]);
+ assert.ok(planned.evidence.some(x=>x.term==="Python"&&x.source==="resumo"));
+});

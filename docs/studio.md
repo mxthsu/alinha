@@ -48,3 +48,15 @@ O Studio não possui área de **Melhorias com IA**, seletor de provedor ou descr
 ## Sobre compatibilidade ATS
 
 Modelos limpos e texto selecionável reduzem riscos comuns de extração, mas nenhum deles garante pontuação, classificação ou aprovação em sistemas ATS. Veja [diagnóstico de legibilidade](ats.md).
+
+## Título profissional identificado no currículo
+
+Quando o documento contém explicitamente um cargo no início do resumo (por exemplo,
+"Desenvolvedor(a) de backend com experiência..."), o importador pode preencher
+**Título profissional** com o trecho literal do cargo. Isso permite ao agente
+sugerir uma busca logo após o upload sem exigir digitação repetitiva.
+
+O Alinha não infere uma profissão apenas por uma habilidade, linguagem ou projeto.
+Quando o cargo não está explícito, o usuário o informa ou revisa manualmente.
+O resumo completo é preservado para edição no Studio, e nenhuma candidatura é enviada
+sem ação do usuário.

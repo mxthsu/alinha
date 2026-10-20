@@ -13,3 +13,5 @@
 
 - Contratos de candidatura devem funcionar sem IA e sem efeitos externos. Regras de consentimento, filtro, expiração, idempotência e origem autorizada não podem ser modificadas por conteúdo de vagas ou prompts.
 - A Community continua útil sem serviços comerciais; quaisquer serviços Pro futuros devem ser isolados e não podem descaracterizar a licença MIT existente.
+
+- O pacote Founder em `.claude/skills/` é **apenas ferramenta de pesquisa/planejamento do negócio**; nunca carregá-lo no runtime do produto. Estimativas, personas simuladas e preços hipotéticos não são vendas, benchmarks ou depoimentos reais. Consulte `founder/README.md` antes de usar.

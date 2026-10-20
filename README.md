@@ -10,7 +10,7 @@ O Alinha está evoluindo para um **agente de carreira**: da criação do curríc
 [![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-286443)](LICENSE)
 [![Contribuições](https://img.shields.io/badge/contribui%C3%A7%C3%B5es-bem--vindas-619a59)](CONTRIBUTING.md)
 
-[**Começar**](docs/getting-started.md) · [**Documentação**](docs/architecture.md) · [**Contribuir**](CONTRIBUTING.md) · [**Roteiro**](docs/roadmap.md)
+[**Começar**](docs/getting-started.md) · [**Documentação**](docs/architecture.md) · [**Contribuir**](CONTRIBUTING.md) · [**Roteiro**](docs/roadmap.md) · [**Validação de negócio**](founder/README.md)
 
 </div>
 

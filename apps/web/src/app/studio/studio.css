@@ -274,3 +274,14 @@
 .studio-draft-status{display:flex;flex-wrap:wrap;align-items:center;gap:6px;color:#39714b;font-size:11px;margin:-9px 0 22px;padding:10px 12px;background:#eef7ec;border:1px solid #dae9d4;border-radius:9px;line-height:1.5}
 .studio-draft-status span{color:#75927c;font-size:10px}
 .studio-file-options button{width:100%;justify-content:flex-start;text-align:left}
+
+/* Keep destructive commands inside the options menu, visually distinct. */
+.studio-file-options .studio-delete-action{color:#9c403a;border-top:1px solid #e8eeea;border-radius:5px}
+.studio-file-options .studio-delete-action:hover{background:#fff0ec;color:#862f27}
+.studio-app button:focus-visible,.studio-app a:focus-visible,.studio-app summary:focus-visible{
+ outline:3px solid #35834f;outline-offset:3px;
+}
+@media(max-width:780px){
+ .studio-sidebar-steps button{min-height:44px;scroll-margin-inline:12px}
+ .studio-sidebar-steps{overscroll-behavior-inline:contain;scrollbar-color:#a8c9aa transparent}
+}

@@ -60,3 +60,15 @@ O Alinha não infere uma profissão apenas por uma habilidade, linguagem ou proj
 Quando o cargo não está explícito, o usuário o informa ou revisa manualmente.
 O resumo completo é preservado para edição no Studio, e nenhuma candidatura é enviada
 sem ação do usuário.
+
+## Importação e navegação no celular
+
+Ao importar um documento novo enquanto há um currículo preenchido, o Studio
+solicita confirmação antes da substituição. A opção de desfazer a importação
+funciona enquanto a mesma tela permanecer aberta; para preservar uma cópia
+entre sessões, exporte antes o JSON do perfil.
+
+As seis seções podem ser acessadas pela faixa horizontal no celular ou pelos
+botões anterior/próxima. Ao selecionar uma seção, a faixa mantém seu título
+visível; a movimentação respeita a preferência de animação reduzida.
+A opção de apagar o currículo fica dentro de **Opções** e exige confirmação.

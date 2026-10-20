@@ -253,3 +253,54 @@ def test_approved_versions_reject_untrusted_vacancy_and_unproven_data(tmp_path):
     with pytest.raises(ValueError):
         storage.save_record("resume_versions", [dict(version, approvedAt="data-inválida")],
                             0, tmp_path / "db.sqlite3")
+
+
+def test_job_preferences_opt_in_validation_and_legacy_config(tmp_path):
+    from pydantic import ValidationError
+
+    legacy = storage.CommunitySettings()
+    assert legacy.job_preferences is None
+    config_path = tmp_path / "prefs" / "config.jsonc"
+    stored = storage.CommunitySettings(
+        ai=storage.AiOptions(preferred_provider="gemini"),
+        job_preferences=storage.JobPreferences(
+            source="github", workMode="hybrid",
+            contract="clt", city="Florianópolis, SC", salary="5500",
+        ),
+    )
+    storage.write_settings(stored, config_path)
+    reloaded = storage.read_settings(config_path)
+    assert reloaded.job_preferences.city == "Florianópolis, SC"
+    assert reloaded.ai.preferred_provider == "gemini"
+    assert reloaded.job_preferences.salary == "5500"
+    assert "GEMINI_API_KEY" not in config_path.read_text("utf-8")
+    with pytest.raises(ValidationError):
+        storage.JobPreferences(source="bad-source")
+    with pytest.raises(ValidationError):
+        storage.JobPreferences(city="foo@bar.com")
+    with pytest.raises(ValidationError):
+        storage.JobPreferences(salary="1000001")
+    with pytest.raises(ValidationError):
+        storage.JobPreferences(salary="-25")
+
+
+def test_job_preferences_api_opt_in_clear_and_preserve_connector(client):
+    headers = {"origin": "http://localhost:3000"}
+    original = client.get("/api/v1/community/settings").json()
+    assert original["job_preferences"] is None
+    original["connectors"]["github"]["enabled"] = False
+    original["job_preferences"] = {
+        "source": "lever", "workMode": "remote",
+        "contract": "pj", "city": "São José, SC", "salary": "7500",
+    }
+    saved = client.put("/api/v1/community/settings", json=original, headers=headers)
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["job_preferences"]["city"] == "São José, SC"
+    assert saved.json()["connectors"]["github"]["enabled"] is False
+    assert client.get("/api/v1/community/settings").json()["job_preferences"]["salary"] == "7500"
+    saved_data = saved.json()
+    saved_data["job_preferences"] = None
+    cleared = client.put("/api/v1/community/settings", json=saved_data, headers=headers)
+    assert cleared.status_code == 200, cleared.text
+    assert cleared.json()["job_preferences"] is None
+    assert cleared.json()["connectors"]["github"]["enabled"] is False

@@ -61,11 +61,37 @@ class AiOptions(_StrictModel):
     preferred_provider: Literal["gemini", "anthropic", "openai_api", "ollama", "chatgpt"] | None = None
 
 
+class JobPreferences(_StrictModel):
+    """Saved only after an explicit user action. Never a profile or credential."""
+
+    source: Literal["all", "gupy", "lever", "github", "himalayas"] = "all"
+    workMode: Literal["remote", "hybrid", "onsite"] = "remote"
+    contract: Literal["any", "clt", "pj", "internship", "trainee"] = "any"
+    city: str = Field(default="", max_length=100)
+    salary: str = Field(default="", max_length=7, pattern=r"^(?:|[0-9]{1,7})$")
+
+    @field_validator("city")
+    @classmethod
+    def check_city(cls, value: str) -> str:
+        city = value.strip()
+        if any(ord(char) < 32 for char in city) or "@" in city:
+            raise ValueError("Cidade inválida.")
+        return city
+
+    @field_validator("salary")
+    @classmethod
+    def check_salary(cls, value: str) -> str:
+        if value and int(value) > 1_000_000:
+            raise ValueError("Salário acima do limite permitido.")
+        return value
+
+
 class CommunitySettings(_StrictModel):
     version: Literal[1] = 1
     ai: AiOptions = Field(default_factory=AiOptions)
     agent: AgentOptions = Field(default_factory=AgentOptions)
     connectors: Connectors = Field(default_factory=Connectors)
+    job_preferences: JobPreferences | None = None
 
 
 def _strip_jsonc_comments(raw: str) -> str:

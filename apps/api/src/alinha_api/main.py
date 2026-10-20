@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, ValidationError
 from pypdf.errors import PdfReadError
 
 from alinha_api.agent.discovery import JobSearchResult, JobSearchUnavailable, search_jobs
+from alinha_api.agent.github_jobs import search_github_jobs
 from alinha_api.agent.gupy import search_gupy
 from alinha_api.agent.lever import search_lever
 from alinha_api.agent.models import CandidateCriteria
@@ -163,7 +164,7 @@ def discover_jobs(
     q: str = Query(min_length=2, max_length=80),
     page: int = Query(default=1, ge=1, le=5),
     remote_only: bool = Query(default=True),
-    source: str = Query(default="himalayas", pattern="^(all|himalayas|gupy|lever)$"),
+    source: str = Query(default="himalayas", pattern="^(all|himalayas|gupy|lever|github)$"),
 ) -> JobSearchResult:
     """Community-only remote job search through a single vetted public source.
 
@@ -177,7 +178,7 @@ def discover_jobs(
         connectors = read_settings().connectors
         if source != "all" and not getattr(connectors, source).enabled:
             raise HTTPException(status_code=409, detail="Esta fonte está desativada nas configurações.")
-        if source == "all" and not (connectors.gupy.enabled or connectors.himalayas.enabled or connectors.lever.enabled):
+        if source == "all" and not (connectors.gupy.enabled or connectors.himalayas.enabled or connectors.lever.enabled or connectors.github.enabled):
             raise HTTPException(status_code=409, detail="Ative uma fonte de vagas em Meu Alinha.")
     except (ValueError, OSError, ValidationError) as exc:
         raise HTTPException(status_code=503, detail="Configuração local inválida.") from exc
@@ -190,7 +191,11 @@ def discover_jobs(
                 sources["Lever"] = lambda: search_lever(q, page=page, remote_only=remote_only)
             if connectors.himalayas.enabled:
                 sources["Himalayas"] = lambda: search_jobs(q, page=page)
+            if connectors.github.enabled:
+                sources["GitHub"] = lambda: search_github_jobs(q, page=page, remote_only=remote_only)
             return search_multi_source(sources)
+        if source == "github":
+            return search_github_jobs(q, page=page, remote_only=remote_only)
         if source == "lever":
             return search_lever(q, page=page, remote_only=remote_only)
         if source == "gupy":

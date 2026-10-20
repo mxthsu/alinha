@@ -76,6 +76,7 @@ export default function Jobs() {
               <option value="all">Todas as fontes</option>
               <option value="gupy">Gupy · Brasil</option>
               <option value="lever">Lever · empresas no Brasil</option>
+              <option value="github">Comunidades GitHub · Brasil</option>
               <option value="himalayas">Himalayas · remoto</option>
             </select>
           </label>
@@ -102,7 +103,7 @@ export default function Jobs() {
             {loading?<LoaderCircle className="vacancies-loading-icon" size={17}/>:<Search size={17}/>}
             {loading?"Buscando…":"Buscar oportunidades"}
           </button>
-          <p className="vacancies-attribution">Fontes: Gupy (experimental), Lever (Brasil) e <a href="https://himalayas.app" target="_blank" rel="noopener noreferrer">Himalayas <ExternalLink size={12}/></a>. Confira os dados na vaga original.</p>
+          <p className="vacancies-attribution">Fontes: GitHub (comunidades brasileiras), Gupy (experimental), Lever (Brasil) e <a href="https://himalayas.app" target="_blank" rel="noopener noreferrer">Himalayas <ExternalLink size={12}/></a>. Confira os dados na vaga original.</p>
         </form>
         <section className="vacancies-results" aria-live="polite">
           <div className="vacancies-results-head">
@@ -130,7 +131,7 @@ export default function Jobs() {
                   <p className="vacancies-review">A confirmar: {contractPending?"vínculo pretendido; ":""}
                     {salaryPending?"salário mínimo mensal; ":""}{city.trim()?"localidade; ":""}
                     {item.missing_information.join("; ")}.</p>}
-                <div className="vacancies-card-footer"><span>Fonte: <a href={job.source==="gupy"?"https://portal.gupy.io/":job.source==="lever"?"https://jobs.lever.co/Flex":"https://himalayas.app"} target="_blank" rel="noopener noreferrer">{job.source==="gupy"?"Gupy":job.source==="lever"?"Lever":"Himalayas"}</a></span>
+                <div className="vacancies-card-footer"><span>Fonte: <a href={job.source==="gupy"?"https://portal.gupy.io/":job.source==="lever"?"https://jobs.lever.co/Flex":job.source==="github-vagas"?"https://github.com/backend-br/vagas":"https://himalayas.app"} target="_blank" rel="noopener noreferrer">{job.source==="gupy"?"Gupy":job.source==="lever"?"Lever":job.source==="github-vagas"?"Comunidades GitHub":"Himalayas"}</a></span>
                   <div className="vacancies-card-actions">
                     {job.source_url&&<Link href="/preparar" className="vacancies-prepare" onClick={()=>
                       selectOpportunity({title:job.title,company:job.company,url:job.source_url!,

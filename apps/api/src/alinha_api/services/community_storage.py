@@ -54,6 +54,7 @@ class Connectors(_StrictModel):
     himalayas: ConnectorSettings = Field(default_factory=ConnectorSettings)
     gupy: ConnectorSettings = Field(default_factory=lambda: ConnectorSettings(enabled=False))
     lever: ConnectorSettings = Field(default_factory=ConnectorSettings)
+    github: ConnectorSettings = Field(default_factory=ConnectorSettings)
 
 
 class AiOptions(_StrictModel):

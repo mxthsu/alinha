@@ -231,9 +231,9 @@ export default function CareerAgent(){
       <div className="agent-results-heading"><div><span className="agent-section-eyebrow">RESULTADOS DA BUSCA</span>
        <h3>{ordered.length} {ordered.length===1?"oportunidade":"oportunidades"} para conferir</h3>
        <p>Busca: {searchedQuery}. Ordenação por sinais literais no anúncio, não por nota ATS.</p></div>
-       <span className="agent-source-tag">Fonte: Himalayas</span></div>
+       <span className="agent-source-tag">Fontes: {jobs?.source_name||"selecionadas"}</span></div>
       {ordered.length===0&&<div className="agent-no-results"><Search size={28}/>
-       <strong>Nenhum resultado nesta busca.</strong><p>Tente outro cargo. A fonte inicial reúne vagas remotas.</p></div>}
+       <strong>Nenhum resultado nesta busca.</strong><p>Tente outro cargo ou confira as fontes habilitadas em Meu Alinha.</p></div>}
       {ordered.map(item=>{
        const job=item.opportunity,match=assessAgentJob(item,plan,searchedQuery);
        const alreadySaved=tracked.some(saved=>saved.source===job.source&&saved.sourceId===job.external_id);

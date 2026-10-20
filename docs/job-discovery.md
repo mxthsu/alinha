@@ -1,6 +1,6 @@
 # Descoberta multifuente de vagas — Alinha Community
 
-As fontes atuais são **Himalayas** (vagas remotas elegíveis a brasileiros), **Lever**
+As fontes atuais são **GitHub Vagas** (comunidades brasileiras), **Himalayas** (vagas remotas elegíveis a brasileiros), **Lever**
 (catálogo inicial de empresas com vagas brasileiras) e **Gupy** (experimental).
 A fonte Gupy foi desativada por padrão porque o endpoint comunitário atualmente
 responde HTTP 404, verificado em 17/10/2026. A API oficial Gupy documentada em
@@ -21,7 +21,7 @@ https://developers.gupy.io/reference/findjobs é autenticada e diferente.
 
 ## Fontes e abrangência
 
-- Himalayas: https://himalayas.app/docs/remote-jobs-api — remoto elegível para Brasil,
+- GitHub Vagas: https://github.com/backend-br/vagas e https://github.com/frontendbr/vagas — issues abertas de comunidades brasileiras de desenvolvimento; a data de encerramento nem sempre reflete o fim real do processo seletivo. A consulta usa a API pública de issues do GitHub com limites e cache, sem login nem scraping.\n- Himalayas: https://himalayas.app/docs/remote-jobs-api — remoto elegível para Brasil,
   crédito visível e links originais.
 - Lever: https://github.com/lever/postings-api — API pública por empresa. O primeiro
   board cadastrado é `Flex`, com vagas publicadas para Remote / Brazil; testado

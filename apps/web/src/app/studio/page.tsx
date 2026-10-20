@@ -85,12 +85,23 @@ export default function Studio() {
   const [success, setSuccess] = useState("");
   const upload = useRef<HTMLInputElement>(null);
   const resumeUpload = useRef<HTMLInputElement>(null);
+  const paneTabs = useRef<HTMLDivElement>(null);
   const [importError, setImportError] = useState("");
   const [importNotice, setImportNotice] = useState<string | null>(null);
   const [canUndoImport, setCanUndoImport] = useState(false);
   const [unassignedImportLines, setUnassignedImportLines] = useState<string[]>([]);
   const previousProfile = useRef<Resume | null>(null);
   const api=resolveApiOrigin();
+  useEffect(()=>{
+    const list=paneTabs.current;
+    if(!list||!window.matchMedia("(max-width: 780px)").matches)return;
+    const current=list.querySelector<HTMLElement>("button[aria-current='step']");
+    if(!current)return;
+    const left=current.offsetLeft-list.offsetLeft-
+      Math.max(0,(list.clientWidth-current.clientWidth)/2);
+    list.scrollTo({left:Math.max(0,left),behavior:
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth"});
+  },[pane]);
 
   useEffect(()=>{
     let active=true;
@@ -194,6 +205,12 @@ export default function Studio() {
   async function importResume(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (hasResumeContent(profile) && !window.confirm(
+      "Substituir o currículo atual? Você poderá desfazer a importação enquanto permanecer nesta tela. Exporte um backup antes de trocar, se quiser conservar o perfil."
+    )) {
+      event.target.value = "";
+      return;
+    }
     messages(); setImportError(""); setBusy("import");
     try {
       if (!/\.(pdf|docx|txt)$/i.test(file.name) || file.size > 3 * 1024 * 1024 || !file.size) {
@@ -273,8 +290,8 @@ export default function Studio() {
             <div className="studio-file-options">
               <button type="button" onClick={()=>upload.current?.click()}><FolderOpen size={16}/> Importar perfil JSON</button>
               <button type="button" onClick={saveJson}><Download size={16}/> Salvar perfil JSON</button>
+              <button type="button" className="studio-delete-action" onClick={()=>void eraseLocalDraft()}><Trash2 size={16}/> Apagar rascunho local</button>
             </div>
-              <button type="button" onClick={()=>void eraseLocalDraft()}><Trash2 size={16}/> Apagar rascunho local</button>
           </details>
           <button type="button" className="studio-primary" disabled={Boolean(busy)} onClick={exportDocx}>
             <Download size={17}/> {busy==="docx"?"Exportando…":"Exportar DOCX"}
@@ -285,7 +302,7 @@ export default function Studio() {
     <div className="studio-layout">
       <nav className="studio-sidebar" aria-label="Seções do currículo">
         <div className="studio-sidebar-header"><strong>Seu currículo</strong><span>Edite por seções</span></div>
-        <div className="studio-sidebar-steps">
+        <div className="studio-sidebar-steps" ref={paneTabs}>
           {panes.map(({id,label,icon:Icon},i)=><button key={id} type="button"
             onClick={()=>{setPane(id);messages();}}
             aria-current={pane===id?"step":undefined} className={pane===id?"active":""}>

@@ -122,3 +122,29 @@ def test_excess_experience_highlights_remain_visible_for_review():
     draft = draft_profile(text)
     assert len(draft.profile.experiences[0].highlights) == 10
     assert any("número 12" in line for line in draft.unassigned_lines)
+
+def test_demonstration_document_title_is_not_candidate_name():
+    from pathlib import Path
+
+    sample_path = Path(__file__).resolve().parents[3] / "examples" / "resume.txt"
+    preview = draft_profile(sample_path.read_text(encoding="utf-8"))
+    assert preview.profile.contact.name == ""
+    assert preview.profile.contact.headline == ""
+    assert "Desenvolvedor(a) de backend" in preview.profile.summary
+    assert "Projetos e responsabilidades" in preview.unassigned_lines
+    assert any("não foi possível identificar o nome" in warning.casefold()
+               for warning in preview.warnings)
+    assert not preview.profile.experiences
+    assert not preview.profile.skills
+
+
+def test_document_title_discarded_without_losing_explicit_contact():
+    preview = draft_profile(
+        "CURRÍCULO DEMONSTRATIVO (FICTÍCIO)\n"
+        "Nome: Pessoa Exemplo\n"
+        "pessoa@exemplo.test\n"
+        "Competências\nPython, SQL"
+    )
+    assert preview.profile.contact.name == "Pessoa Exemplo"
+    assert preview.profile.contact.email == "pessoa@exemplo.test"
+    assert preview.profile.skills == ["Python", "SQL"]

@@ -63,12 +63,20 @@ jobs:
         run: |
           set -o pipefail
           bash benchmarks/architecture/rust/run.sh | tee benchmark-rust.log
+      - name: Go core / Rust browser bridge
+        id: bridge
+        continue-on-error: true
+        working-directory: benchmarks/architecture/go
+        run: |
+          set -o pipefail
+          go run ./bridge | tee "$GITHUB_WORKSPACE/benchmark-bridge.log"
       - name: Summarize measured results
         if: always()
         env:
           TS_STATUS: ${{ steps.ts.outcome }}
           GO_STATUS: ${{ steps.go.outcome }}
           RUST_STATUS: ${{ steps.rust.outcome }}
+          BRIDGE_STATUS: ${{ steps.bridge.outcome }}
         run: python3 benchmarks/architecture/summarize.py
       - name: Attach raw logs
         if: always()
@@ -77,13 +85,15 @@ jobs:
           name: architecture-benchmark-ubuntu
           path: benchmark-*.log
           if-no-files-found: warn
-      - name: Enforce all three candidate runs
+      - name: Enforce all four candidate runs
         if: always()
         env:
           TS_STATUS: ${{ steps.ts.outcome }}
           GO_STATUS: ${{ steps.go.outcome }}
           RUST_STATUS: ${{ steps.rust.outcome }}
+          BRIDGE_STATUS: ${{ steps.bridge.outcome }}
         run: |
           test "$TS_STATUS" = "success"
           test "$GO_STATUS" = "success"
           test "$RUST_STATUS" = "success"
+          test "$BRIDGE_STATUS" = "success"

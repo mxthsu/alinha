@@ -1,5 +1,7 @@
 # Plano de conclusão do Alinha Community
 
+> **Nomenclatura atual:** [Community Open Source para desenvolvedores](CONTINUAR-ALINHA.md), **Desktop** como aplicativo instalável para usuários finais e **Cloud** como serviço futuro. Esta página acompanha funcionalidades do núcleo local, mas não substitui [a próxima fatia vertical do agente](agent-runtime-contract.md). Itens marcados como completos refletem implementações do repositório, não homologação de produto final.
+
 Este documento controla o escopo da edição local e open source. O Community deve ser útil sem assinatura, banco hospedado ou conta Cloud.
 
 ## Experiência essencial

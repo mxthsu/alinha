@@ -1,5 +1,7 @@
 # Contratos do agente de candidaturas (fundação)
 
+> Este documento descreve a **política de domínio** já modelada, não o coordenador completo do agente. Para a primeira jornada de delegação em uma tela, veja o [contrato proposto independente de linguagem](agent-runtime-contract.md); para retomada, [CONTINUAR-ALINHA.md](CONTINUAR-ALINHA.md).
+
 **Estado atual:** contratos Pydantic e política de decisão sem efeitos externos. Não há busca contínua, endpoint de candidatura, filas nem submissão real.
 
 ## Modelos abertos

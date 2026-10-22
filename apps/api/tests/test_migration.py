@@ -152,3 +152,28 @@ def test_backup_preserves_approved_versions_and_old_backups(tmp_path):
         backup, {"resume_versions": 2, "resume": 1, "opportunities": 0}, db,
     )
     assert result["revisions"]["resume_versions"] == 3
+
+
+
+def test_partial_legacy_import_does_not_resurrect_deleted_resume(tmp_path):
+    db = tmp_path / "community.sqlite3"
+    assert storage.save_record("resume", {"profile": profile()}, 0, db) == 1
+    assert storage.clear_record("resume", 1, db) == 2
+    versions = [{
+        "version": 1,
+        "job": {
+            "title": "Engenharia de IA", "company": "Empresa Fictícia",
+            "source": "lever", "excerpt": "",
+            "url": "https://jobs.lever.co/Flex/legacy-example",
+        },
+        "profile": profile(), "template": "classico",
+        "approvedAt": "2026-10-17T03:00:00Z",
+    }]
+    imported = migration.atomic_import(
+        {"resume_versions": versions}, {"resume_versions": 0}, path=db,
+    )
+    assert imported["revisions"] == {"resume_versions": 1}
+    assert storage.get_record("resume", db) == (None, 2)
+    assert storage.get_record("resume_versions", db)[0][0]["job"]["title"] == "Engenharia de IA"
+    with pytest.raises(storage.RevisionConflict):
+        migration.atomic_import({"resume": {"profile": profile()}}, {"resume": 2}, path=db)

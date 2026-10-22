@@ -8,6 +8,7 @@ import {
  SlidersHorizontal,Sparkles,WandSparkles,
 } from "lucide-react";
 import {PlatformNav} from "@/components/platform-nav";
+import {AgentDemoJourney} from "@/components/agent-demo-journey";
 import {useOpportunityTracker} from "@/hooks/use-opportunity-tracker";
 import {loadResumeDraft,saveResumeDraft,hasResumeContent,type ResumeProfile} from "@/lib/career-workspace";
 import {parseResumeImport,resumeFileProblem} from "@/lib/agent-import";
@@ -150,12 +151,12 @@ export default function CareerAgent(){
    <div className="agent-topline"><span><Sparkles size={15}/> SEU AGENTE DE CARREIRA</span>
     <span className="agent-privacy"><LockKeyhole size={14}/> Currículo preservado no dispositivo</span></div>
    <section className="agent-hero">
-    <div className="agent-hero-copy"><span className="agent-hero-eyebrow"><span className="agent-live-dot"/> Jornada conectada</span>
+    <div className="agent-hero-copy"><span className="agent-hero-eyebrow"><span className="agent-live-dot"/> Experiência integrada</span>
      <h1>{firstName?"Vamos encontrar seu próximo passo, "+firstName+".":"Sua carreira, com menos trabalho repetitivo."}</h1>
      <p>O Alinha parte do seu currículo para sugerir buscas, encontrar oportunidades e ajudar a preparar candidaturas. Você acompanha as etapas e mantém o controle.</p>
      <div className="agent-hero-actions">
-      <a href="#agent-workspace" className="agent-hero-primary">
-        {profile?"Explorar minhas oportunidades":"Começar pelo currículo"} <ArrowRight size={17}/>
+      <a href="#agent-demo" className="agent-hero-primary">
+        Experimentar jornada do agente <ArrowRight size={17}/>
       </a>
       <Link href="/studio">Editar meu currículo <ArrowUpRight size={17}/></Link>
      </div></div>
@@ -168,9 +169,11 @@ export default function CareerAgent(){
     </div>
    </section>
 
+   <AgentDemoJourney/>
+
    <section className="agent-workspace" id="agent-workspace">
     <div className="agent-workspace-header"><div><span className="agent-section-eyebrow">SEU ESPAÇO DE TRABALHO</span>
-     <h2>Uma busca que parte de você.</h2><p>Informações reais e próximas etapas claras, sem tarefas repetidas.</p></div>
+     <h2>Buscar com meu currículo</h2><p>Opção manual com fontes públicas autorizadas. A jornada fictícia do agente está acima.</p></div>
      <span className="agent-mode"><ShieldCheck size={15}/> Modo assistido</span></div>
     <div className="agent-columns"><div className="agent-main">
      <div className="agent-profile-card">

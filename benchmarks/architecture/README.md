@@ -5,6 +5,7 @@ Esta POC não escolhe arquitetura por linguagem ou preferência. Compara três c
 - Go/chromedp — pacote Go e automação CDP no mesmo processo.
 - Rust/agent-browser — CLI/daemon nativo de Rust com controle CDP.
 - TypeScript/Playwright — biblioteca no processo Node.js.
+- Go + Rust — prova de conceito do núcleo Go chamando agent-browser por subprocesso; avalia custo real da ponte.
 
 O workflow [Architecture Benchmark](../../.github/workflows/architecture-benchmark.yml) executa a matriz no mesmo runner Ubuntu e publica tempos individuais e mediana em GitHub Actions. Para repetir, abra um PR modificando este diretório ou dispare o workflow manualmente.
 

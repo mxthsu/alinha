@@ -26,7 +26,8 @@ el("workmode").addEventListener("change",()=>{el("dynamic").hidden=el("workmode"
 el("next").addEventListener("click",()=>{
   if(!el("fullname").value||!el("email").value||!el("phone").value||
      !el("workmode").value||(el("workmode").value==="remote"&&!el("timezone").value))return;
-  el("step-one").hidden=true;el("step-two").hidden=false;
+  el("step-one").hidden=true;
+  setTimeout(()=>{el("step-two").hidden=false;}, 175);
 });
 el("submit").addEventListener("click",()=>{
   if(el("cv").files.length!==1||!el("consent").checked)return;

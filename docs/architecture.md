@@ -1,4 +1,6 @@
-# Arquitetura inicial
+# Arquitetura implementada (referência do código atual)
+
+> **Atenção (22/10/2026):** este texto documenta majoritariamente a stack **atual**, não a arquitetura definitivamente escolhida para o agente. O produto terá Community Open Source (dev), Desktop (app) e Cloud (serviço futuro). O novo núcleo e o executor serão escolhidos por necessidade concreta; não pressupor reescrita em Rust/Go/Python/TypeScript. Leia [guia para novo chat](CONTINUAR-ALINHA.md), [decisão aberta](architecture-evaluation.md) e [contrato neutro](agent-runtime-contract.md).
 
 ## Objetivo
 

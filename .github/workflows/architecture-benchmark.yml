@@ -55,7 +55,7 @@ jobs:
         working-directory: benchmarks/architecture/go
         run: |
           set -o pipefail
-          go mod download
+          go mod tidy
           go run . | tee "$GITHUB_WORKSPACE/benchmark-go.log"
       - name: Rust / agent-browser
         id: rust

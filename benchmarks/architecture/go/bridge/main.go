@@ -36,11 +36,13 @@ func main(){
  if err:=os.Setenv("AGENT_BROWSER_EXECUTABLE_PATH",chrome);err!=nil{panic(err)}
  session:=fmt.Sprintf("alinha-go-rust-%d",os.Getpid())
  defer run(session,"close")
+ required(session,"open","about:blank")
  runs:=5
  if val,err:=strconv.Atoi(os.Getenv("BENCH_RUNS"));err==nil&&val>0&&val<=30{runs=val}
  for i:=0;i<runs;i++ {
   start:=time.Now()
-  required(session,"open",url)
+  required(session,"tab","new",url)
+  required(session,"wait","#fullname")
   required(session,"fill","#fullname","Pessoa Fictícia")
   required(session,"fill","#email","pessoa@example.test")
   required(session,"fill","#phone","000000000")
@@ -52,6 +54,7 @@ func main(){
   required(session,"click","#submit")
   response:=required(session,"is","visible","#confirmation")
   if !strings.Contains(strings.ToLower(response),"true"){panic("Fixture confirmation missing: "+response)}
+  required(session,"tab","close")
   fmt.Printf("go_rust_bridge run=%d latency_ms=%d valid=true ai_calls=0\n",i+1,time.Since(start).Milliseconds())
  }
 }

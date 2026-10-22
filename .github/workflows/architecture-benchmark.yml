@@ -1,0 +1,89 @@
+name: Architecture Benchmark
+
+on:
+  pull_request:
+    paths:
+      - 'benchmarks/architecture/**'
+      - '.github/workflows/architecture-benchmark.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    name: Synthetic browser engine comparison
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Install Node browser package
+        working-directory: benchmarks/architecture/typescript
+        run: npm install --no-audit --no-fund
+      - name: Install identical Chromium build for all candidates
+        working-directory: benchmarks/architecture/typescript
+        run: npx playwright install chromium --with-deps
+      - name: Install pinned native Rust agent-browser
+        run: npm install --global --no-audit --no-fund agent-browser@0.38.2
+      - name: Prepare strictly local fixture
+        run: |
+          set -euo pipefail
+          python3 -m http.server 18765 --bind 127.0.0.1 --directory benchmarks/architecture/fixtures > /tmp/alinha-fixture-http.log 2>&1 &
+          browser="$(find "$HOME/.cache/ms-playwright" -type f -name chrome -path '*/chrome-linux*/chrome' | head -1)"
+          test -n "$browser"
+          test -x "$browser"
+          curl --retry 5 --retry-delay 1 --retry-connrefused -fsS http://127.0.0.1:18765/application.html > /dev/null
+          echo "CHROME_PATH=$browser" >> "$GITHUB_ENV"
+          echo "BENCH_URL=http://127.0.0.1:18765/application.html" >> "$GITHUB_ENV"
+          echo "BENCH_CV=$GITHUB_WORKSPACE/benchmarks/architecture/fixtures/fictitious-resume.txt" >> "$GITHUB_ENV"
+          echo "BENCH_RUNS=5" >> "$GITHUB_ENV"
+      - name: TypeScript / Playwright
+        id: ts
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          node benchmarks/architecture/typescript/run.mjs | tee benchmark-typescript.log
+      - name: Go / chromedp
+        id: go
+        continue-on-error: true
+        working-directory: benchmarks/architecture/go
+        run: |
+          set -o pipefail
+          go mod download
+          go run . | tee "$GITHUB_WORKSPACE/benchmark-go.log"
+      - name: Rust / agent-browser
+        id: rust
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          bash benchmarks/architecture/rust/run.sh | tee benchmark-rust.log
+      - name: Summarize measured results
+        if: always()
+        env:
+          TS_STATUS: ${{ steps.ts.outcome }}
+          GO_STATUS: ${{ steps.go.outcome }}
+          RUST_STATUS: ${{ steps.rust.outcome }}
+        run: python3 benchmarks/architecture/summarize.py
+      - name: Attach raw logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: architecture-benchmark-ubuntu
+          path: benchmark-*.log
+          if-no-files-found: warn
+      - name: Enforce all three candidate runs
+        if: always()
+        env:
+          TS_STATUS: ${{ steps.ts.outcome }}
+          GO_STATUS: ${{ steps.go.outcome }}
+          RUST_STATUS: ${{ steps.rust.outcome }}
+        run: |
+          test "$TS_STATUS" = "success"
+          test "$GO_STATUS" = "success"
+          test "$RUST_STATUS" = "success"

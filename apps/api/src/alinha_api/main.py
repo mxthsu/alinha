@@ -17,7 +17,12 @@ from alinha_api.agent.lever import search_lever
 from alinha_api.agent.models import CandidateCriteria
 from alinha_api.agent.multisource import search_multi_source
 from alinha_api.agent.runtime import (
-    AdvanceRun, AgentCoordinator, ConfirmReview, RunSnapshot, RunViolation, StartRun,
+    AdvanceRun,
+    AgentCoordinator,
+    ConfirmReview,
+    RunSnapshot,
+    RunViolation,
+    StartRun,
 )
 from alinha_api.resume_schema import (
     ResumeProfile,

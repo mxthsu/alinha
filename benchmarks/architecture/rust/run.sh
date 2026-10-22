@@ -10,9 +10,12 @@ runs="${BENCH_RUNS:-5}"
 session="alinha-fixture-$$"
 ab(){ agent-browser --session "$session" "$@"; }
 trap 'ab close >/dev/null 2>&1 || true' EXIT
+# Keep one baseline tab, just as Go and Playwright keep their browser alive.
+ab open about:blank >/dev/null
 for ((i=1;i<=runs;i++)); do
   start="$(date +%s%3N)"
-  ab open "$BENCH_URL" >/dev/null
+  ab tab new "$BENCH_URL" >/dev/null
+  ab wait '#fullname' >/dev/null
   ab fill '#fullname' 'Pessoa Fictícia' >/dev/null
   ab fill '#email' 'pessoa@example.test' >/dev/null
   ab fill '#phone' '000000000' >/dev/null
@@ -24,6 +27,7 @@ for ((i=1;i<=runs;i++)); do
   ab click '#submit' >/dev/null
   visible="$(ab is visible '#confirmation')"
   [[ "$visible" == *true* ]] || { echo "Formulário não confirmou: $visible" >&2; exit 1; }
+  ab tab close >/dev/null
   elapsed=$(( $(date +%s%3N) - start ))
   echo "rust_agent_browser run=$i latency_ms=$elapsed valid=true ai_calls=0"
 done

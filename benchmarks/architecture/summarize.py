@@ -8,6 +8,7 @@ files = [
     ("TypeScript / Playwright", "benchmark-typescript.log", "TS_STATUS"),
     ("Go / chromedp", "benchmark-go.log", "GO_STATUS"),
     ("Rust / agent-browser", "benchmark-rust.log", "RUST_STATUS"),
+    ("Go + Rust bridge", "benchmark-bridge.log", "BRIDGE_STATUS"),
 ]
 lines = [
     "## Synthetic browser comparison",

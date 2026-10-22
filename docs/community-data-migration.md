@@ -11,12 +11,17 @@ ainda exigem consolidação específica.
 Abra **Meu Alinha > Currículo e dados > Ver dados antigos**. O Alinha inspeciona
 o currículo estruturado no IndexedDB e a lista de oportunidades no localStorage,
 valida os dados e consulta as revisões já presentes no SQLite. A tela apresenta
-uma prévia da quantidade de registros para revisão.
+uma prévia da quantidade de registros para revisão. Cada categoria (currículo,
+oportunidades e versões aprovadas) é avaliada separadamente: se o SQLite já
+tiver registros de uma categoria, ela não será sobrescrita e aparecerá no aviso
+de dados preservados. As outras categorias ainda poderão ser importadas.
+Uma revisão positiva, mesmo com valor apagado (tombstone), bloqueia a importação
+de cópias antigas daquela categoria.
 
 Ao clicar em **Confirmar migração segura**, o backend:
 1. Valida todos os registros antes de escrever qualquer um.
 2. Cria um backup SQLite em diretório privado do usuário (subpasta `backups`).
-3. Abre uma transação única para currículo e oportunidades.
+3. Abre uma transação única apenas para as categorias selecionadas (currículo, oportunidades e/ou versões aprovadas).
 4. Bloqueia conflitos de revisão ou dados já existentes que sejam diferentes.
 5. Grava os itens, confirma a transação e lê novamente os valores e revisões.
 6. Retorna o resultado. O navegador mantém a cópia anterior sem apagá-la.

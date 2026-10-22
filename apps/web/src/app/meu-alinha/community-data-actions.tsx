@@ -1,17 +1,11 @@
 "use client";
 import {resolveApiOrigin} from "@/lib/api-origin";
 import {useRef,useState,type ChangeEvent} from "react";
-import {loadLegacyResumeDraft,hasResumeContent,type ResumeProfile,type ResumeTemplate} from "@/lib/career-workspace";
+import {loadLegacyResumeDraft,hasResumeContent} from "@/lib/career-workspace";
 import {parseTracker,TRACKER_KEY,type TrackedOpportunity} from "@/lib/opportunity-tracker";
-import {loadLegacyApprovedResumes,type ApprovedResumeVersion} from "@/lib/approved-resume";
-
-type Resume={profile:ResumeProfile;template:ResumeTemplate};
-type Snapshot={value:unknown;revision:number};
-type Preview={
- resume:Resume|null;opportunities:TrackedOpportunity[]|null;
- resume_versions:ApprovedResumeVersion[]|null;
- expected_revisions:Record<string,number>;
-};
+import {loadLegacyApprovedResumes} from "@/lib/approved-resume";
+import {planCommunityMigration,hasMigratableData,
+ type MigrationPreview as Preview,type MigrationSnapshot as Snapshot} from "@/lib/community-migration-plan";
 const API=resolveApiOrigin();
 
 async function localRecord(kind:"resume"|"opportunities"|"resume_versions"):Promise<Snapshot>{
@@ -59,15 +53,14 @@ export function CommunityDataActions(){
    const [savedResume,savedJobs,savedVersions]=await Promise.all([
     localRecord("resume"),localRecord("opportunities"),localRecord("resume_versions"),
    ]);
-   if((resume&&savedResume.value!==null)||(opportunities&&savedJobs.value!==null)||
-      (resume_versions.length>0&&savedVersions.value!==null)){
-    throw new Error("Já existem registros no SQLite. Faça um backup antes de resolver o conflito; nada foi substituído.");
-   }
-   setPreview({resume,opportunities,resume_versions:resume_versions.length?resume_versions:null,
-    expected_revisions:{
-     resume:savedResume.revision,opportunities:savedJobs.revision,
-     resume_versions:savedVersions.revision,
-    }});
+   const candidate=planCommunityMigration(
+    {resume,opportunities,resume_versions},
+    {resume:savedResume,opportunities:savedJobs,resume_versions:savedVersions},
+   );
+   if(!hasMigratableData(candidate))throw new Error(candidate.skipped.length
+    ?"Os registros antigos já têm versões no SQLite. Nada foi substituído; faça backups antes de resolver diferenças."
+    :"Não há dados antigos pendentes de migração.");
+   setPreview(candidate);
   }catch(cause){setError(cause instanceof Error?cause.message:"Não foi possível preparar a migração.");}
   finally{setBusy(false);}
  }
@@ -76,7 +69,10 @@ export function CommunityDataActions(){
   setBusy(true);setError("");setMessage("");
   try{
    const result=await send<{revisions:Record<string,number>;backup_file:string}>(
-    "/api/v1/community/migration",preview);
+    "/api/v1/community/migration",{
+     resume:preview.resume,opportunities:preview.opportunities,
+     resume_versions:preview.resume_versions,expected_revisions:preview.expected_revisions,
+    });
    const [resume,jobs,versions]=await Promise.all([
     localRecord("resume"),localRecord("opportunities"),localRecord("resume_versions"),
    ]);
@@ -92,7 +88,8 @@ export function CommunityDataActions(){
     throw new Error("A verificação das versões aprovadas falhou; os originais permanecem no navegador.");
    }
    setPreview(null);
-   setMessage("Migração conferida no SQLite. Os dados originais do navegador foram preservados como recuperação.");
+   setMessage("Migração parcial ou completa conferida no SQLite. Dados anteriores preservados no navegador."
+    +(preview.skipped.length?" Registros já existentes no SQLite não foram alterados: "+preview.skipped.join(", ")+".":""));
   }catch(cause){setError(cause instanceof Error?cause.message:"Falha na migração.");}
   finally{setBusy(false);}
  }
@@ -148,6 +145,7 @@ export function CommunityDataActions(){
     <strong>Prévia da migração</strong>
     <p>Currículo: {preview.resume?"1 perfil estruturado":"nenhum"}. Oportunidades: {preview.opportunities?.length??0}. Versões de currículo aprovadas: {preview.resume_versions?.length??0}.</p>
     <p>Nada será apagado do navegador. O Alinha salvará uma cópia do SQLite antes da importação.</p>
+    {preview.skipped.length>0&&<p role="status">Já existem dados no SQLite que serão mantidos sem alterações: {preview.skipped.join(", ")}. As cópias antigas permanecem no navegador.</p>}
     <button type="button" disabled={busy} onClick={()=>void migrate()}>Confirmar migração segura</button>
    </div>}
    {busy&&<p role="status">Executando operação local…</p>}

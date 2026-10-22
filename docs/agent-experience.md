@@ -1,5 +1,7 @@
 # Meu agente de carreira — primeira jornada conectada
 
+> **Evolução de produto (22/10/2026):** a experiência final é um **único agente de carreira** que recebe objetivos em linguagem natural e mostra andamento/revisões na mesma tela. O fluxo descrito abaixo representa a implementação inicial, não todo o produto pronto. Ver [ponto de retomada](CONTINUAR-ALINHA.md) e [contrato do runtime](agent-runtime-contract.md).
+
 > A implementação atual é um primeiro fluxo de planejamento e descoberta **assistido**, ainda não um agente autônomo de candidaturas. Nenhuma ação externa é executada sem interação da pessoa, e o Alinha não procura vagas continuamente em segundo plano.
 
 ## Experiência

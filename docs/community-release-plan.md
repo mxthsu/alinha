@@ -14,7 +14,7 @@ Este documento controla o escopo da edição local e open source. O Community de
 - [ ] Homologar em instalação limpa, migração de todas as versões antigas e recuperação de múltiplas versões.
 - [x] Transferir descrições completas fornecidas por APIs de origem (Lever e demais quando disponíveis) diretamente para Preparar candidatura.
 - [ ] Expandir cobertura de descrições integrais em todas as fontes e tratar páginas sem essa informação.
-- [ ] Apresentar a jornada principal em uma única tela com interrupção, revisão e retomada.
+- [x] Apresentar a jornada principal em uma única tela com interrupção, revisão e retomada.
 
 ## Persistência, privacidade e instalação
 

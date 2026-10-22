@@ -95,6 +95,7 @@
 .agent-job-actions{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:16px}
 .agent-job-actions>a,.agent-job-actions>button{display:inline-flex;align-items:center;gap:6px;border:1px solid #d4e7d1;background:#fff;border-radius:8px;color:#407c51;padding:10px 12px;min-height:39px;font-size:11px;font-weight:800}
 .agent-job-actions>a:first-child{background:#2a6540;border-color:#2a6540;color:#fff}
+.agent-job-actions>.agent-prepare-button{background:#2a6540;border-color:#2a6540;color:#fff}
 .agent-job-actions>button:disabled{opacity:.5}
 .agent-job-actions>a:last-child{border:0;color:#5d8068}
 .agent-results-limitations{font-size:10px;line-height:1.6;color:#8c9c8e;margin-top:17px}
@@ -125,6 +126,7 @@
 .agent-next-card>strong{display:block;margin-top:9px;font-size:14px;line-height:1.4;color:#325b40}
 .agent-next-card p{font-size:11px;line-height:1.7;color:#718d78;margin:9px 0 16px}
 .agent-next-card a{display:flex;align-items:center;gap:6px;color:#387948;font-size:11px;font-weight:780}
+.agent-preparation{scroll-margin-top:20px;margin-top:34px;border-top:1px solid #dce9d9;padding-top:34px}
 @media(max-width:1050px){.agent-hero{grid-template-columns:1fr .55fr}.agent-orbit-two{display:none}.agent-columns{grid-template-columns:minmax(0,1fr) 265px}}
 @media(max-width:780px){.agent-hero{grid-template-columns:1fr;padding:30px}.agent-hero-art{display:none}.agent-columns{grid-template-columns:1fr}.agent-sidebar{grid-template-columns:1fr 1fr}.agent-steps-card{grid-column:1/-1}}
 @media(max-width:540px){.agent-page{padding-block:20px 50px}.agent-topline .agent-privacy{display:none}.agent-hero{padding:25px 22px;border-radius:16px;min-height:0}.agent-hero h1{font-size:33px}.agent-workspace{padding-top:28px}.agent-workspace-header{align-items:flex-start;flex-direction:column}.agent-columns{gap:14px}.agent-profile-card,.agent-search-card,.agent-matches{padding:17px}.agent-query-row{flex-wrap:wrap}.agent-query-row input{flex-basis:calc(100% - 35px);min-height:35px}.agent-query-row button{width:100%}.agent-job-top{flex-wrap:wrap}.agent-sidebar{grid-template-columns:1fr}.agent-card-heading h3{font-size:14px}}

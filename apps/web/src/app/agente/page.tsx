@@ -11,7 +11,8 @@ import {PlatformNav} from "@/components/platform-nav";
 import {useOpportunityTracker} from "@/hooks/use-opportunity-tracker";
 import {loadResumeDraft,saveResumeDraft,hasResumeContent,type ResumeProfile} from "@/lib/career-workspace";
 import {parseResumeImport,resumeFileProblem} from "@/lib/agent-import";
-import {selectOpportunity} from "@/lib/career-handoff";
+import {clearSelectedOpportunity,selectOpportunity,selectedOpportunity,type SelectedOpportunity} from "@/lib/career-handoff";
+import {PreparationJourney} from "@/app/preparar/page";
 import {planCareerSearch,assessAgentJob,orderAgentJobs,
  COMMUNITY_AGENT_PERMISSIONS,type AgentJob,type AgentSearchPlan} from "@/lib/career-agent";
 import "./agente.css";
@@ -38,6 +39,7 @@ export default function CareerAgent(){
  const [jobs,setJobs]=useState<RemoteResult|null>(null);
  const [error,setError]=useState("");
  const [notice,setNotice]=useState("");
+ const [activeOpportunity,setActiveOpportunity]=useState<SelectedOpportunity|null>(null);
  const abort=useRef<AbortController|null>(null);
  const {items:tracked,save:saveOpportunity}=useOpportunityTracker();
 
@@ -55,6 +57,14 @@ export default function CareerAgent(){
    }).finally(()=>{if(active)setLoadingProfile(false);});
   });
   return ()=>{active=false;cancelAnimationFrame(frame);abort.current?.abort();};
+ },[]);
+
+ useEffect(()=>{
+  const frame=window.requestAnimationFrame(()=>{
+   const selected=selectedOpportunity();
+   if(selected)setActiveOpportunity(selected);
+  });
+  return ()=>window.cancelAnimationFrame(frame);
  },[]);
 
  const ordered=useMemo(()=>jobs?orderAgentJobs(jobs.jobs,plan,searchedQuery):[],[jobs,plan,searchedQuery]);
@@ -139,7 +149,20 @@ export default function CareerAgent(){
   {name:"Planejamento da busca",detail:query.trim()?"Cargo: "+query.trim():"Defina um cargo para pesquisar",done:Boolean(query.trim())},
   {name:"Consulta à fonte",detail:run==="searching"?"Consultando vagas autorizadas":run==="completed"?"Consulta concluída":"Requer sua confirmação",done:run==="completed"},
   {name:"Verificação de evidências",detail:run==="completed"?"Sinais organizados para revisão":"Sem pontuação artificial",done:run==="completed"},
+  {name:"Preparação por vaga",detail:activeOpportunity?activeOpportunity.title:"Escolha uma oportunidade",done:Boolean(activeOpportunity)},
+  {name:"Revisão e aprovação",detail:"Sempre depende da sua decisão",done:false},
  ];
+
+ function prepareOpportunity(job:AgentJob["opportunity"],item:AgentJob){
+  if(!job.source_url)return;
+  const selected={title:job.title,company:job.company,url:job.source_url,source:job.source,
+   excerpt:item.excerpt,description:item.description??undefined};
+  if(!selectOpportunity(selected)){
+   setNotice("Não foi possível guardar a vaga para preparação nesta sessão.");return;
+  }
+  setActiveOpportunity(selected);
+  window.requestAnimationFrame(()=>document.querySelector("#agent-preparation")?.scrollIntoView({behavior:"smooth",block:"start"}));
+ }
 
  return <div className="platform-shell"><PlatformNav/>
   <main className="platform-container agent-page">
@@ -253,10 +276,8 @@ export default function CareerAgent(){
          <small>{match.note}</small>
         </div>
         <div className="agent-job-actions">
-         {job.source_url&&<Link href="/preparar" onClick={()=>selectOpportunity({
-          title:job.title,company:job.company,url:job.source_url!,source:job.source,excerpt:item.excerpt,
-          description:item.description??undefined,
-         })}>Preparar para esta vaga <ArrowRight size={15}/></Link>}
+         {job.source_url&&<button type="button" className="agent-prepare-button"
+          onClick={()=>prepareOpportunity(job,item)}>Preparar para esta vaga <ArrowRight size={15}/></button>}
          {job.source_url&&<button type="button" disabled={alreadySaved}
           onClick={async()=>{const response=await saveOpportunity({title:job.title,company:job.company,
            url:job.source_url!,source:job.source,sourceId:job.external_id});setNotice(response.message);}}>
@@ -292,5 +313,11 @@ export default function CareerAgent(){
     </aside>
    </div>
   </section>
+  {activeOpportunity&&<section id="agent-preparation" className="agent-preparation" aria-label="Preparação da candidatura">
+    <PreparationJourney embedded onClose={()=>{
+      clearSelectedOpportunity();setActiveOpportunity(null);
+      window.requestAnimationFrame(()=>document.querySelector(".agent-matches")?.scrollIntoView({behavior:"smooth",block:"start"}));
+    }}/>
+  </section>}
   </main></div>;
 }

@@ -25,7 +25,9 @@ type AtsReport = { document_type:string;assessment:"review_needed"|"basic_readab
 const severity: Record<Finding["severity"], string> = {important:"Importante",attention:"Atenção",suggestion:"Sugestão"};
 const api=resolveApiOrigin();
 
-export default function PrepareApplication() {
+type PreparationJourneyProps={embedded?:boolean;onClose?:()=>void};
+
+export function PreparationJourney({embedded=false,onClose}:PreparationJourneyProps) {
   const [mode, setMode] = useState<"file"|"text">("file");
   const [file, setFile] = useState<File|null>(null);
   const [resume, setResume] = useState("");
@@ -201,9 +203,15 @@ export default function PrepareApplication() {
     finally{setSavingVersion(false);}
   }
 
-  return <div className="platform-shell journey-shell">
-    <PlatformNav/>
-    <main className="platform-container journey-main">
+  const JourneyContainer=embedded?"section":"main";
+  return <div className={embedded?"journey-shell journey-embedded":"platform-shell journey-shell"}>
+    {!embedded&&<PlatformNav/>}
+    <JourneyContainer className={embedded?"journey-main":"platform-container journey-main"}>
+      {embedded&&<div className="journey-embedded-heading">
+        <div><span>CONTINUE SEM SAIR DA JORNADA</span><h2>Prepare esta candidatura.</h2>
+          <p>Verifique, compare e aprove uma versão do currículo para a vaga selecionada.</p></div>
+        {onClose&&<button type="button" onClick={onClose}>Voltar às oportunidades</button>}
+      </div>}
       <div className="platform-kicker"><ShieldCheck size={16}/> UMA JORNADA · DUAS VERIFICAÇÕES</div>
       <h1>Prepare sua candidatura.</h1>
       <p className="platform-lead">Comece verificando se o currículo pode ser lido. Depois, se quiser, compare-o com uma vaga usando a IA escolhida. Sem notas ou promessas de aprovação.</p>
@@ -307,6 +315,10 @@ export default function PrepareApplication() {
         <Link href="/studio" className="journey-finish-button"><FilePenLine size={17}/> Abrir Studio <ArrowRight size={17}/></Link>
       </section>
       <p className="journey-disclaimer"><Info size={17}/> Esta jornada não garante classificação, entrevista ou contratação. As decisões dependem dos critérios de cada empresa.</p>
-    </main>
+    </JourneyContainer>
   </div>;
+}
+
+export default function PrepareApplication(){
+  return <PreparationJourney/>;
 }

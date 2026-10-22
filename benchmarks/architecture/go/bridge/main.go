@@ -49,6 +49,7 @@ func main(){
   required(session,"select","#workmode","remote")
   required(session,"select","#timezone","brazil")
   required(session,"click","#next")
+  required(session,"wait","#cv")
   required(session,"upload","#cv",cv)
   required(session,"check","#consent")
   required(session,"click","#submit")

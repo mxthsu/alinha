@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><title>Alinha — formulário fictício</title></head>
+<body>
+<h1>Formulário fictício para benchmark</h1>
+<section id="step-one">
+  <label for="fullname">Nome completo</label><input id="fullname" required>
+  <label for="email">E-mail</label><input id="email" type="email" required>
+  <label for="phone">Telefone</label><input id="phone" type="tel" required>
+  <label for="workmode">Modalidade</label>
+  <select id="workmode"><option value="">Selecione</option><option value="remote">Remoto</option><option value="hybrid">Híbrido</option></select>
+  <div id="dynamic" hidden><label for="timezone">Fuso horário</label>
+    <select id="timezone"><option value="">Selecione</option><option value="brazil">Brasil</option></select>
+  </div>
+  <button id="next" type="button">Continuar</button>
+</section>
+<section id="step-two" hidden>
+  <label for="cv">Currículo</label><input id="cv" type="file" accept=".pdf,.docx,.txt" required>
+  <label><input id="consent" type="checkbox">Declaro que revisei os dados</label>
+  <button id="submit" type="button">Confirmar candidatura fictícia</button>
+</section>
+<div id="confirmation" role="status" hidden>Candidatura fictícia confirmada</div>
+<script>
+const el=id=>document.getElementById(id);
+el("workmode").addEventListener("change",()=>{el("dynamic").hidden=el("workmode").value!=="remote";});
+el("next").addEventListener("click",()=>{
+  if(!el("fullname").value||!el("email").value||!el("phone").value||
+     !el("workmode").value||(el("workmode").value==="remote"&&!el("timezone").value))return;
+  el("step-one").hidden=true;el("step-two").hidden=false;
+});
+el("submit").addEventListener("click",()=>{
+  if(el("cv").files.length!==1||!el("consent").checked)return;
+  el("confirmation").hidden=false;el("step-two").hidden=true;
+});
+</script>
+</body></html>

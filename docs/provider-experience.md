@@ -1,4 +1,6 @@
-# Experiência de conexão com IA no Community
+# Experiência de conexão com IA no Community e no Desktop
+
+> Os fluxos abaixo descrevem principalmente a conexão já implementada na Community de desenvolvimento. No **Desktop** planejado, a experiência será simplificada para o usuário final; no **Cloud** futuro, a IA poderá ser gerenciada com custos e contas isoladas. O modelo não define as ações nem a segurança do agente. Ver [contrato do runtime](agent-runtime-contract.md) e [produto](product-model.md).
 
 ## Referências examinadas
 

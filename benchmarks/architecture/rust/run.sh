@@ -22,6 +22,7 @@ for ((i=1;i<=runs;i++)); do
   ab select '#workmode' remote >/dev/null
   ab select '#timezone' brazil >/dev/null
   ab click '#next' >/dev/null
+  ab wait '#cv' >/dev/null
   ab upload '#cv' "$BENCH_CV" >/dev/null
   ab check '#consent' >/dev/null
   ab click '#submit' >/dev/null

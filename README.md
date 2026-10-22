@@ -10,7 +10,7 @@ O Alinha está evoluindo para um **agente de carreira**: da criação do curríc
 [![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-286443)](LICENSE)
 [![Contribuições](https://img.shields.io/badge/contribui%C3%A7%C3%B5es-bem--vindas-619a59)](CONTRIBUTING.md)
 
-[**Começar**](docs/getting-started.md) · [**Documentação**](docs/architecture.md) · [**Contribuir**](CONTRIBUTING.md) · [**Roteiro**](docs/roadmap.md)
+[**Começar**](docs/getting-started.md) · [**Retomar desenvolvimento**](docs/CONTINUAR-ALINHA.md) · [**Documentação**](docs/architecture.md) · [**Contribuir**](CONTRIBUTING.md) · [**Roteiro**](docs/roadmap.md)
 
 </div>
 
@@ -18,8 +18,8 @@ O Alinha está evoluindo para um **agente de carreira**: da criação do curríc
 
 ## Próxima fase: agente de carreira
 
-O projeto terá uma edição Community open source e uma futura oferta Pro gerenciada.
-O modelo de autonomia previsto é **automático com autorização prévia delimitada**:
+**Direção atual:** três distribuições do mesmo núcleo: **Alinha Community — Open Source** (desenvolvedores/self-hosted), **Alinha Desktop** (aplicativo instalável) e **Alinha Cloud** (serviço gerenciado futuro). O Desktop pode ser open source; distribuição não determina licença. Rust, Go, Python e TypeScript seguem em avaliação, sem reescrita aprovada. Consulte o [guia de retomada](docs/CONTINUAR-ALINHA.md), o [contrato do agente](docs/agent-runtime-contract.md) e a [avaliação sem viés](docs/architecture-evaluation.md).
+O modelo de autonomia previsto é **assistido por padrão, podendo evoluir para execução automática com autorização prévia delimitada**:
 fontes permitidas, critérios, versões de currículo aprovadas, prazo, limites por dia,
 pausa e revisão humana quando necessário. **Nenhuma candidatura é enviada nesta fase.**
 
@@ -71,11 +71,11 @@ Também incluímos um [currículo e uma vaga inteiramente fictícios](examples/R
 
 O Alinha não simula notas de sistemas ATS, não prevê contratações e não deve ser usado como decisão automática sobre candidatos.
 
-## Community livre e Cloud opcional
+## Community Open Source, Desktop e Cloud opcional
 
 No Alinha Community você escolhe o provedor de IA, incluindo Gemini, Claude API, OpenAI API e Ollama local, além de ChatGPT quando elegível em uso local autorizado. A conexão é configurada uma vez na central **Conexões de IA** (`/conexoes`); as ferramentas passam a listar os provedores disponíveis sem exibir novamente formulários de chave. A licença do Alinha não exige pagamento; cobranças de APIs externas e uso do hardware são de responsabilidade do usuário.
 
-O **Alinha Cloud ainda não existe como serviço público**. A proposta futura é infraestrutura gerenciada mediante assinatura com créditos de IA mensais e gastos extras apenas com autorização prévia. Leia [modelo Community + Cloud](docs/product-model.md) e [estratégia comercial](docs/cloud-business-model.md). Não há preços nem checkout disponíveis nesta versão.
+O **Alinha Desktop ainda não tem instalador público** e o **Alinha Cloud ainda não existe como serviço público**. A proposta futura é infraestrutura gerenciada com controle de consumo, sem assumir modelo definitivo de cobrança. Leia [modelo das três distribuições](docs/product-model.md) e [estratégia comercial](docs/cloud-business-model.md). Não há preços nem checkout disponíveis nesta versão.
 
 ## Acompanhe as oportunidades no Community
 

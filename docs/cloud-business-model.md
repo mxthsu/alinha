@@ -1,8 +1,10 @@
-# Estratégia comercial: Community livre e Cloud com consumo controlado
+# Estudo de monetização Cloud (hipóteses, não decisão final)
+
+> **Atualização de direção — 22/10/2026:** agora existem três distribuições planejadas: **Community Open Source (dev), Desktop (aplicativo) e Cloud (online)**. Modelos de mensalidade, planos, franquias e créditos abaixo são **alternativas históricas para estudo**, não decisões aprovadas. O usuário não aprovou assinatura mensal como padrão. A decisão comercial depende de custo por jornada e validação. Ver [modelo atual](product-model.md) e [guia para novo chat](CONTINUAR-ALINHA.md).
 
 > Documento de planejamento. Em outubro de 2026 **nenhum plano Cloud, pagamento, crédito ou acesso público gerenciado está disponível**. Não publicar valores definitivos nem simular checkout antes da implantação segura e da medição real de custos.
 
-## Decisão
+## Premissas do estudo anterior (não representam preços nem cobrança aprovada)
 
 O Alinha continuará um **produto open source sob licença MIT**, com os principais recursos disponíveis no Community, sem cadastro ou pagamento ao Alinha. A receita futura virá da conveniência da infraestrutura gerenciada, não do bloqueio artificial da análise de currículos.
 

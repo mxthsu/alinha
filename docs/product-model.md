@@ -1,119 +1,54 @@
-# Modelo de produto: Alinha Community + Alinha Cloud
+# Modelo de produto — Alinha Community, Desktop e Cloud
 
-> **Decisão de produto, não anúncio de serviço disponível.** O Alinha Cloud, planos pagos e login ChatGPT num site centralizado ainda não foram lançados. Não publicar preços, cotas ou promessas comerciais sem validação de custos, privacidade e viabilidade.
+> **Direção de produto em 22/10/2026, não anúncio de versões lançadas.** Para retomar o desenvolvimento em outro chat, começar em [CONTINUAR-ALINHA.md](CONTINUAR-ALINHA.md). A forma de monetização Cloud, a stack final e o instalador Desktop **não estão decididos nem prontos**.
 
-> **Atualização de direção (outubro/2026):** o Alinha evolui de um analisador de currículos para um **agente de carreira**, com busca de vagas, preparação e candidaturas autorizadas no roteiro. O Cloud ainda não existe; contratos e políticas iniciais estão em [visão de produto](career-product-vision.md), [open-core](open-core-boundaries.md) e [política do agente](agent-application-contract.md).
+## Um produto, três distribuições
 
-## Visão
+| Distribuição | Usuário principal | Como utilizará | Custos e conexão com IA |
+|---|---|---|---|
+| **Alinha Community — Open Source** | Desenvolvedor, contribuidor e pessoa com autonomia para auto-hospedar | Código-fonte, scripts de desenvolvimento; Docker/CLI se forem úteis e testados | Software MIT; BYOK, modelos locais ou integrações elegíveis; custos de terceiros por conta do usuário |
+| **Alinha Desktop** | Pessoa que deseja usar sem saber programar | Baixar instalador, abrir janela própria; dados e execução locais quando possível | Conexão simples à IA escolhida e armazenamento de credenciais no cofre do SO |
+| **Alinha Cloud** | Pessoa que prefere não instalar | Navegador com execução remota, conta, isolamento e sincronização | Infraestrutura e IA gerenciadas; franquias, créditos ou consumo a definir por medição |
 
-O Alinha é uma plataforma para analisar currículos em relação a oportunidades, com requisitos identificados, evidências do currículo e recomendações fundamentadas. A distribuição combina uma edição **Community**, livre e independente, com uma oferta de infraestrutura hospedada **inteiramente opcional**. O produto mantém sua identidade, objetivos e arquitetura próprios.
+**Importante:** o código do Desktop poderá ser open source; “Community” é o nome da edição voltada a desenvolvedores, **não uma categoria exclusiva de licença**. Community e Desktop não dependem do Cloud para tarefas essenciais. Não criar três agentes independentes: compartilhar regras e contratos.
 
-### Princípios inegociáveis
+## Experiência central
 
-1. **Core aberto e funcional**: o usuário pode executar o Alinha por conta própria, sem licença paga do Alinha, cadastro obrigatório na nuvem ou bloqueios artificiais. A licença do repositório permanece MIT.
-2. **Portabilidade**: dados e versões de currículo devem ter exportação em formato aberto; um usuário pode migrar do Cloud para uma instalação própria.
-3. **Provedores à escolha do usuário**: Gemini, OpenAI via API convencional, Ollama e outras integrações legítimas podem compartilhar a mesma interface `AnalysisProvider`; jamais depender de um fornecedor único.
-4. **Separação entre pagar pela infraestrutura e pagar pela IA**: a assinatura ChatGPT, o consumo de API e a assinatura do Alinha Cloud são produtos distintos, com custos e limites próprios.
-5. **Nenhuma alegação artificial sobre ATS**: correspondência é explicada por requisitos, evidências e limitações, não por porcentagens apresentadas como notas oficiais.
-6. **Privacidade de currículos**: consentimento claro, minimização de dados, controle de retenção e exclusão, registro de eventos sem conteúdo sensível e atendimento à LGPD antes da disponibilização pública.
-7. **Lançamento em pt-BR**: interface, README e documentação pública em pt-BR; código-fonte e identificadores técnicos em inglês. Preparado para tradução futura.
+O Alinha é um **agente de carreira**. A pessoa informa um objetivo em linguagem natural e vê numa única interface o plano, a busca de vagas, as evidências de adequação, a preparação de candidatura e os itens pendentes de revisão. Ações previsíveis usam código; IA é usada seletivamente para intenção, linguagem e ambiguidades. Navegador automatizado pode executar oculto, mas autenticação/MFA/CAPTCHA e requisitos de autorização podem exigir intervenção, sem prometer operação universal.
 
-## As duas formas de usar
+A importação de currículo preenche um perfil editável (sem inventar fatos), a busca prioriza vagas no Brasil e a verificação ATS é integrada à preparação. Não mostrar processos de browser ou múltiplas telas apenas para justificar arquitetura interna.
 
-### Alinha Community — open source (gratuito como software)
+## Inteligência conectável, não “IA própria”
 
-- Instalável no computador do usuário ou em um servidor controlado por ele; usar navegador **não** exige que seja um site público centralizado.
-- Site e API com extração, análise e relatórios de evidências; avaliações automatizadas e exportação avançada estão previstas para futuras versões.
-- Motor local via Ollama, se houver recursos computacionais; opções BYOK com chaves próprias de provedores, quando disponíveis.
-- **Sign in with ChatGPT para uso de plano** exclusivamente no modo oficialmente autorizado a aplicativos OSS locais ou auto-hospedados, conforme escopo, política e limites da OpenAI.
-- Dados armazenados somente quando o usuário habilitar funcionalidades de histórico; opção sem persistência por padrão.
-- Instalação pelo código-fonte com um comando de desenvolvimento, documentação e CI em PRs. Docker, empacotamento e distribuição simplificada continuam previstos, mas ainda não estão prontos.
+O Alinha possui o agente (regras, ferramentas, estado, memória e permissões); o modelo conectado fornece interpretação onde necessário. Adaptadores para Gemini, OpenAI API, Claude API, Ollama e alternativas devem obedecer a um contrato comum. Compatibilidade de modelos, disponibilidade, política de API, limites e preço precisam ser confirmados para cada modalidade. Login com uma conta de provedor **não é** login de usuário no Alinha. Não reutilizar credenciais de um operador para atender clientes Cloud.
 
-Não chamar de “IA ilimitada grátis”: custos de hardware, eletricidade, provedores BYOK e cotas de assinaturas externas continuam existindo.
+- **Community/Desktop:** escolha explícita de IA; BYOK/local e possibilidades autorizadas por provedor; sem obrigatoriedade de conta Google/Alinha.
+- **Cloud:** a infraestrutura cuida do uso gerenciado com isolamento por conta, limites, consentimento e transparência de custo. BYOK remoto seria opcional e exigiria proteção de segredos no backend.
+- Se um modelo não oferecer saída estruturada confiável ou falhar por quota/custo, o agente deve degradar com segurança para ações determinísticas ou revisão, sem forjar respostas.
 
-### Alinha Cloud — hospedado e gerenciado (produto opcional futuro)
+## Limites de segurança e de produto
 
-- Site público acessível sem instalação, com contas e sessões próprias do Alinha.
-- Serviço de análise hospedado com modelos escolhidos e avaliados; créditos/cotas, proteção contra abuso e política transparente de custos.
-- Histórico criptografado, sincronização entre dispositivos, backup e disponibilidade operacional gerenciados **como serviços**, não como bloqueio do software Community.
-- Opções possíveis: **Cloud Free** (demonstração ou pequena franquia quando houver viabilidade) e **Cloud Plus** (uso mensal/franquia ampliada). Valores e limites só após medir custos reais.
-- O usuário poderá optar por API externa própria conforme arquitetura de segurança, mas **BYOK no navegador não deve armazenar segredos em localStorage**. A edição Community já utiliza o cofre de credenciais do sistema operacional; para o Cloud, será necessária outra solução isolada por conta e protegida no servidor.
-- Futuramente, equipes/organizações podem contratar gestão e suporte — fora do escopo do primeiro MVP.
+- Nunca inventar experiência, habilidade, salário, elegibilidade, autorização de trabalho ou consentimento; campos desconhecidos exigem confirmação.
+- Nunca enviar candidatura real apenas porque o modelo solicitou. Para envio externo futuro, exigir autorização delimitada, conectores permitidos, idempotência e confirmação da plataforma.
+- Tratar vagas, currículos e HTML como fontes não confiáveis, inclusive possíveis injeções de prompt.
+- Logs sem currículos/segredos; minimização, retenção, exclusão e obrigações de privacidade antes da Cloud pública.
+- O software Community sob MIT permanece funcional, não uma demonstração dependente de API proprietária do Cloud.
 
-**Proibição de atalho:** não utilizar a assinatura ChatGPT de um operador para atender outros visitantes. A autorização OSS local não dá automaticamente direito de oferecer uso de planos ChatGPT a visitantes de um SaaS remoto. Esse uso comercial/remotamente hospedado depende de aprovação e do fluxo aplicável; consulte [Sign in with ChatGPT](https://developers.openai.com/siwc) e [participação comercial](https://developers.openai.com/siwc/request-client-id).
+## Arquitetura: código atual vs. decisão futura
 
-## Experiência do usuário
+A implementação existente usa Next.js/React no web e FastAPI/Python, modelos Pydantic, LangGraph específico de análises, adaptadores de IA, persistência local em evolução e fontes de vagas. Isso **não torna essa stack definitiva**. Rust/Go/TS/Python são candidatos para coordenador, browser, serviços e empacotamento Desktop; a decisão deve ser pragmática e incremental. Ver [registro de arquitetura](architecture-evaluation.md) e [contrato de runtime](agent-runtime-contract.md).
 
-**Community (localhost)**: abrir o Alinha → configurar o provedor disponível → enviar documentos → analisar → revisar citações e recomendações. A exportação de relatórios e a seleção de provedores adicionais seguem no roteiro. Nenhum usuário precisa instalar um agente autônomo; a IA é chamada pelo fluxo de análise.
+## Negócio Cloud: aberto à validação
 
-**Cloud (domínio público)**: entrar no Alinha → usar cota gratuita quando disponível ou adquirir créditos/plano → enviar documentos → receber relatório → decidir se deseja salvar ou excluir. O Cloud nunca apresenta o botão de plano ChatGPT local como se fosse um login comercial aprovado.
+A Cloud deverá cobrar pelo valor de operação, conveniência e infraestrutura, não esconder artificialmente o núcleo open source. **Não foi definida cobrança mensal como única opção**: créditos, pagamento por uso ou combinações serão avaliadas por custo real por jornada, suporte, impostos, taxas, abuso e aceitação do público. **Não existem valores, assinaturas ou checkout públicos.**
 
-## Arquitetura alvo
+A página [cloud-business-model.md](cloud-business-model.md) contém um **estudo histórico de opções**, e não uma aprovação de preços, regras de cobrança ou assinatura.
 
-```text
-apps/web (Next.js: interface pt-BR)
-    |
-    v
-apps/api (FastAPI: validação, análise, relatórios)
-    |
-    +--> analysis core: extração -> geração -> checagem literal -> resposta
-    |
-    +--> provider adapter: Gemini / OpenAI API / Ollama / ChatGPT OSS local*
-    |
-    +--> deployment policy: community | cloud (separar comportamento)
-    |
-    +--> cloud services (somente modo cloud, futuros):
-         identidade e sessão | créditos e medição | pagamento |
-         histórico opcional | limites e auditoria
-```
+## Ordem de execução atual
 
-\* ChatGPT OSS exige modalidade de execução elegível, habilitação explícita e armazenamento protegido de credenciais. Não existe roteamento de token ChatGPT para a conta Alinha Cloud.
+1. Fazer a jornada principal `/agente` funcionar com dados fictícios e ferramentas controladas — ver [roadmap](roadmap.md).
+2. Validar um provedor BYOK real em teste voluntário, desempenho e limites sem custos inesperados.
+3. Provar distribuição Community Open Source reproduzível e Desktop instalável com suporte real em plataformas-alvo.
+4. Projetar Cloud e modelo financeiro somente com medidas e garantias de isolamento.
 
-### Regras técnicas
-
-- O fluxo de verificação de evidências é o **mesmo** para todos os provedores e modalidades de implantação.
-- `DeploymentMode` não pode ser inferido a partir de um cabeçalho informado pelo visitante; deve ser configurado e verificado no servidor.
-- `ProviderCapabilities` explicita login, autenticação, modelos, custos, retenção e disponibilidade conforme a implantação.
-- `UsageMetering` e `Billing` são contratos de serviço isolados; não espalhar verificações de plano pelas regras do domínio.
-- O front consome contratos estáveis e não transporta tokens de provedores.
-- Sem modelos fictícios como se estivessem conectados, sem troca silenciosa de provedor e sem cobranças inesperadas.
-- Testes funcionais e avaliações de qualidade usam currículos e vagas inteiramente sintéticos.
-- A publicação deve documentar política de privacidade, segurança, consentimento e termos de uso antes de processar documentos pessoais reais em produção.
-
-## Ordem de execução
-
-| Etapa | Entregável | Critério de conclusão |
-| --- | --- | --- |
-| 1. Fundação | Decisão Community/Cloud, contratos de provider/deployment, documentação de instalação | Nenhum caminho local confundido com SaaS público |
-| 2. Community MVP | Instalação reproduzível; Gemini BYOK + Ollama; ChatGPT OSS local quando elegível; demonstração | Análise ponta a ponta com provedor de teste e evidência verificada |
-| 3. Avaliação | Dataset sintético, avaliação de qualidade, custo e latência | Métricas replicáveis, limitações e benchmarks publicados |
-| 4. Cloud MVP | Autenticação do Alinha, provisionamento, quotas, políticas de privacidade e implantação | Sistema acessível publicamente sem exposição de chaves |
-| 5. Serviço pago | Créditos/assinatura, medição e controles financeiros | Margem/custo e abuso validados; pagamento confiável |
-| 6. Expansão | Histórico opcional, exportação, integrações, recursos para equipes | Funcionalidades mantidas portáveis entre Community e Cloud |
-
-## O que **não** faremos agora
-
-- Não cobrar por análises antes de entender custo por análise e proteção contra abuso.
-- Não implementar login com ChatGPT para um site remoto por imitação de endpoints privados.
-- Não vincular a autenticação dos usuários Alinha exclusivamente a uma assinatura ChatGPT.
-- Não criar vários agentes ou adicionar RAG, pgvector e novas filas sem necessidade comprovada.
-- Não afirmar que uso do ChatGPT OSS preserva uma franquia separada do Codex; limites podem ser compartilhados por aplicativos.
-- Não criar planos/pricing de fachada na interface.
-
-## Modelo comercial proposto
-
-A decisão mais concreta para o Cloud é **assinatura com franquia de créditos de IA**, sem cobrança por excedentes não autorizados. A versão local preserva a seleção de provedor e não paga licença do Alinha; cada pessoa assume os custos próprios de API, assinatura ou hardware. O serviço hospedado cobra conveniência de infraestrutura, sincronização e inferência gerenciada.
-
-As regras de autorização prévia, reserva atômica de créditos, cobrança e limites financeiros estão detalhadas no [plano de monetização Cloud](cloud-business-model.md). Nenhum checkout ou plano Cloud está disponível no site atual. Stripe Billing e Mercado Pago são alternativas a testar em sandbox, não decisões de fornecedor definitivas.
-
-## Próxima decisão técnica
-
-O PR [#3](https://github.com/mxthsu/alinha/pull/3) implementa **integrações locais** e continua separado da versão hospedada. Antes do merge, revisar especialmente:
-
-1. Habilitação segura do modo Community e vínculo a `127.0.0.1`, sem tokens expostos.
-2. Proibir OAuth ChatGPT de assinatura OSS quando o modo Cloud estiver configurado.
-3. Não oferecer Ollama no Cloud como se o navegador pudesse executar inferência no PC do usuário.
-4. Adicionar provedor OpenAI **com API key convencional** separado de ChatGPT OSS, além de Gemini/Ollama.
-5. Documentar claramente que OAuth local usa cotas do plano do usuário e depende de sua autorização.
-
-Essa separação permite evoluir o produto sem reconstruir a interface aprovada.
+Não tratar planos ou promessas comerciais como funcionalidades implementadas.

@@ -1,3 +1,19 @@
+# Próxima entrega — agente de carreira funcional (direção de 22/10/2026)
+
+**Leia [CONTINUAR-ALINHA.md](CONTINUAR-ALINHA.md) primeiro.** A arquitetura final continua em aberto; o objetivo é entregar funcionamento demonstrável, não iniciar outra reescrita. [Contrato mínimo](agent-runtime-contract.md) · [Análise sem viés](architecture-evaluation.md) · [Experimentos #42](https://github.com/mxthsu/alinha/pull/42).
+
+- [ ] **Fatia vertical em `/agente`**: objetivo em linguagem natural → plano → busca demonstrativa → avaliação de evidências → prévia de candidatura com revisão, tudo numa tela e com currículo fictício.
+- [ ] **Ferramentas autorizadas**: executor com esquemas tipados, limites de tempo/chamadas de IA, política de permissão, cancelamento e estado explícito; nenhum envio real.
+- [ ] **Provedor fake + um BYOK testável**, sem chave em log ou frontend, com fallback quando indisponível.
+- [ ] **Testes do fluxo**: sucesso, erro, cancelamento, perguntas desconhecidas, conteúdo não confiável e tentativa de envio não autorizado.
+- [ ] **Demo executável** no Community, sem necessidade de API paga ou sites de emprego reais.
+- [ ] **Comparar pacote/instalação Desktop** (Rust/Tauri, Go/Wails ou outra opção) *após* a fatia vertical, sem anunciar instalador antes de existir.
+- [ ] **Cloud somente depois**: identidade, isolamento, execução remota, observabilidade de custo, consentimento e cobrança definida por validação real.
+
+**As seções abaixo preservam o backlog histórico**, cujos nomes “Pro”/“Community + Cloud”, stacks e checklists não prevalecem sobre a divisão **Community Open Source / Desktop / Cloud** e o estado descrito no guia atual.
+
+---
+
 ## Próxima fase — Alinha como agente de carreira (planejado)
 
 Visão: [agente de carreira](career-product-vision.md).

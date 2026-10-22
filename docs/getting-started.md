@@ -1,4 +1,6 @@
-# Primeiros passos
+# Primeiros passos — Community em desenvolvimento
+
+> Esta instalação por código é para **Alinha Community Open Source**, voltado a desenvolvedores. **Alinha Desktop** (instalador para usuários comuns) e **Alinha Cloud** (serviço online) ainda não foram lançados. Consulte [o ponto de retomada](CONTINUAR-ALINHA.md) para o estado real e o próximo desenvolvimento. Next.js/FastAPI são a base atual, não uma decisão final da stack.
 
 Este guia coloca o Alinha Community em execução no seu próprio computador. A interface funciona no navegador e a demonstração não exige conta, cartão ou chave de IA.
 

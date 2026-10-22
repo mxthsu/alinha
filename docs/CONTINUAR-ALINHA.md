@@ -1,0 +1,77 @@
+# Alinha — ponto de retomada para outro chat
+
+> **Fonte principal de contexto do projeto, atualizada em 22/10/2026.** Leia este arquivo, [AGENTS.md](../AGENTS.md), o código real na branch escolhida e os documentos vinculados **antes** de decidir a próxima tarefa. O estado do GitHub pode mudar; confirme branches, CI e PRs ao começar. Este texto não prova que funcionalidades planejadas já funcionem.
+
+## Produto definido
+
+O **Alinha** é um **agente de carreira**, não uma coleção de abas com IA. A pessoa deve conseguir delegar um objetivo em linguagem natural (“Encontre vagas de Python remotas, compare com meu perfil e prepare candidaturas”), acompanhar uma **única jornada visível** e intervir somente quando necessário. Importar currículo deve preencher um perfil editável; a busca prioriza oportunidades no Brasil; preparação de currículo e verificação ATS devem ser integradas; recomendações não podem inventar dados.
+
+**Três formas de uso da mesma plataforma:**
+
+| Nome público | Quem usa | Distribuição desejada | IA |
+|---|---|---|---|
+| **Alinha Community — Open Source** | Desenvolvedores, contribuidores e pessoas que hospedam por conta própria | Código no GitHub; setup reproduzível e opção self-hosted/CLI, conforme necessidade | BYOK e/ou modelo local; sem conta Alinha obrigatória |
+| **Alinha Desktop** | Usuário final | Aplicativo instalável, janela própria, Windows/macOS/Linux quando validado | Conectar IA de modo simplificado, credenciais protegidas localmente |
+| **Alinha Cloud** | Usuário que prefere serviço online | Site e processamento remoto, sem instalação | IA/infraestrutura gerenciada com controle de consumo; BYOK opcional a avaliar |
+
+O Desktop **pode ser open source**; “Community” nomeia a distribuição voltada a desenvolvedores, não uma proibição de compartilhar o código Desktop. Cloud é um **produto futuro**, não hospedagem disponível hoje. Monetização (créditos, consumo, planos) **não foi fechada**; não presumir cobrança exclusivamente por mensalidade. Código público atual sob MIT; revisar implicações de licenças de qualquer dependência.
+
+### Princípios estáveis
+- **A experiência é agêntica; a execução é principalmente determinística.** IA interpreta intenção, ambiguidade e textos não estruturados; código executa ações previsíveis e controla estado, custos, erros e permissões.
+- **IA intercambiável** por contrato único: Gemini/OpenAI/Claude/Ollama e outros compatíveis quando suportados; Community/Desktop com chaves próprias ou modelos locais; Cloud pode oferecer inferência gerenciada. Modelo não escolhe política de segurança.
+- **Interface principal em uma tela**, com progresso, cancelamento, tarefas e revisão. Áreas manuais podem continuar, mas secundárias. Não mostrar o navegador headless preenchendo sites.
+- **Privacidade e segurança:** dados pessoais mínimos, proveniência e veracidade, sem segredos em commits/logs. Não enviar candidaturas reais sem permissão específica, validação de respostas e confirmação externa. CAPTCHA, MFA, termos de plataformas e limitação de acesso exigem interrupção/handoff, nunca bypass.
+- **Brasil primeiro**, texto/documentação em pt-BR e arquitetura preparada para i18n; evitar complexidade, slogans e poluição visual.
+- Um **agente de carreira único com ferramentas**, não criar um enxame de agentes genéricos sem necessidade; framework de agentes opcional.
+
+## Estado verificável do repositório `main` nesta data
+
+**Existe código e um fluxo parcial; o produto não está em produção e não foi homologado pelo usuário de ponta a ponta.** Não confundir testes automatizados com lançamento.
+
+| Área | Evidência de implementação | Limite conhecido |
+|---|---|---|
+| `apps/web` | Next.js/React: `/agente`, `/studio`, `/preparar`, `/vagas`, `/conexoes`, `/candidaturas` | Não há jornada de candidatura inteiramente agêntica/única validada |
+| `apps/api` | FastAPI/Pydantic: importação estruturada de CV, análise com evidências, diagnóstico ATS, endpoints de buscas | Não há executor de aplicações externas em produção |
+| IA | Adaptadores de provedores em `services/provider.py`, central de conexão, cofre local e workflows existentes | Nem todas as ações do agente usam um contrato universal de ferramentas |
+| Dados | Armazenamento no navegador e migração/SQLite local em evolução | Testar efetivamente migração, recuperação e consistência entre telas |
+| Vagas | Fontes públicas selecionáveis e integração parcial a ATS/boards | Cobertura, descrições completas, limites e autorização variam por fonte |
+| Autorização | Modelos e `agent/policy.py` de planejamento | “Aprovado para despachar” na política **não é envio**; não há envio externo |
+
+Ver [arquitetura implementada](architecture.md), [experiência atual do agente](agent-experience.md) e [plano Community](community-release-plan.md). As descrições detalhadas dessas páginas podem refletir etapas anteriores: este arquivo prevalece para **direção de produto**, não para afirmar comportamento do código.
+
+## Arquitetura: decisão ainda aberta, sem viés por histórico ou novidade
+
+- **Hoje implementado:** Next.js/TypeScript + FastAPI/Python + LangGraph em análises específicas. **Isso é um ponto de partida, não uma escolha irreversível.**
+- **Interessam ao projeto:** Rust (coordenação/desktop/execução), Go (core e serviços), TypeScript (interface/automação) e Python (integrações/IA/extração).
+- **NÃO foi decidido:** reescrever tudo em Rust, Go + Rust, migrar tudo para Python, substituir Next.js por Vite/Svelte, escolher Wails/Tauri/desktop, manter LangGraph para o agente completo.
+- A escolha é por **capacidade, confiabilidade, distribuição, desenvolvimento e custo total**, não por microbenchmark de 100–400 ms nem por familiaridade. O usuário não quer novos ciclos longos de pesquisa abstrata: use experimentos *pontuais* quando houver bloqueio real.
+- Referências de padrão: OpenCode, LoopCV, goose, Browser Use, Skyvern, Stagehand, Jan/AnythingLLM; são inspirações, **não bibliotecas já aprovadas para adoção**. Evitar copiar código/UI sem verificar licença.
+
+**Experimentos isolados:** [PR #42 — benchmark de motores de navegador](https://github.com/mxthsu/alinha/pull/42) (**rascunho, não mergeada**), com testes sintéticos Ubuntu e Windows. Quatro motores passaram no Ubuntu; em Windows, Go/chromedp, TypeScript/Playwright e Rust/agent-browser completaram 10/10 formulários sintéticos cada; um coordenador Rust in-memory passou 6/6 testes; Go→Rust travou no Windows e **não foi validado**. As medições não são diretamente comparáveis em todos os cenários e **não elegem stack**. Detalhes e código ficam **na PR, não na main**: [relatório Windows](https://github.com/mxthsu/alinha/blob/chore/architecture-benchmark-2026/benchmarks/architecture/results-windows-2026-10-22.md). Não trazer experimentos para produção automaticamente.
+
+## Situação do computador de desenvolvimento (precisa reconferir)
+
+Em 22/10/2026 foi vista uma cópia local do Alinha na branch `feat/job-full-descriptions` com **muitas alterações não commitadas**, incluindo conectores de vagas e páginas web. Outra cópia `alinha-community-finish` também existe. **Essas alterações NÃO foram publicadas automaticamente no GitHub**. Antes de sincronizar qualquer checkout: `git status`, `git branch -vv`, `git diff --stat`, conferir remotes; nunca `reset --hard`, `clean -fd`, merge ou force-push nessas pastas sem revisar. Para trabalho novo, use branch/worktree/clone separado. O computador pode estar offline em outro chat.
+
+## Próxima entrega de maior valor: um agente demonstrável, não nova reescrita
+
+Fazer uma **fatia vertical integrada** e acessível em `/agente`: perfil de CV **fictício** → objetivo em linguagem natural → plano explicável → busca por fonte de teste ou autorizada → sinais e requisitos comprovados → prévia de candidatura a revisar na mesma tela. Usar fake provider para comportamento reprodutível; testar ao menos um adaptador real **somente** com chave de teste voluntária e limites. Nada de submissão real nesta fatia.
+
+**Critérios de aceite obrigatórios:**
+1. Uma solicitação explícita inicia uma jornada clara e permite cancelar; mensagens e estados em pt-BR.
+2. A IA pode propor ações por esquema tipado, mas o executor valida ferramentas, argumentos, escopo, orçamento, origem e permissões; não obedece instruções embutidas em anúncios.
+3. O currículo não é alterado silenciosamente; dados desconhecidos e perguntas sensíveis vão para revisão; nenhuma experiência é inventada.
+4. Uma vaga falsa, perfil fictício e respostas simuladas permitem demonstrar ponta a ponta sem APIs pagas ou plataformas externas.
+5. A UI não anuncia “enviado” se só gerou prévia; o estado é explícito (“rascunho”, “revisão necessária”, “não enviado”).
+6. Testes de sucesso/falha/cancelamento/consentimento/limites, além de `uv run pytest -q`, `npm run test:local`, lint e build quando disponíveis.
+7. Nenhum rework massivo de framework antes de haver gargalo concreto. Ajustes visuais subordinados ao objetivo de facilitar a delegação.
+
+Ver [contrato proposto](agent-runtime-contract.md) e [roadmap](roadmap.md). Implementar por PRs pequenos, com evidência de execução.
+
+## Como começar um novo chat, sem depender deste histórico
+
+Copie e envie o seguinte pedido (e dê acesso ao GitHub/PC, se aplicável):
+
+> Continue o projeto open source **mxthsu/alinha**. Leia primeiro `AGENTS.md`, `docs/CONTINUAR-ALINHA.md` e `docs/agent-runtime-contract.md`, depois inspecione a `main`, as PRs abertas e o código. A visão é um agente de carreira único, com **Community Open Source (dev), Desktop (aplicativo) e Cloud (online)**. IA conectável/BYOK; experiência em uma tela; execução determinística com IA seletiva; segurança e autorização obrigatórias. **Não presuma stack definitiva**: Rust/Go/Python/TypeScript seguem em avaliação, mas não pare para recomeçar pesquisa. Preserve mudanças locais não commitadas. Construa a próxima fatia vertical do `/agente` com fake provider, ferramentas autorizadas e prévia de candidatura **sem envio externo**, rode testes e abra PR. Relate o que foi implementado e o que segue pendente. Não confunda protótipos da PR #42 com código da `main`.
+
+**Lembrete operacional:** GitHub `main` é fonte de código publicado; PRs são hipóteses e trabalho não integrado; documentação contém intenções. Confirme resultados em CI e no produto rodando antes de declarar qualquer recurso pronto.

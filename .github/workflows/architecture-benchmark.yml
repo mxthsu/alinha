@@ -42,7 +42,7 @@ jobs:
           echo "CHROME_PATH=$browser" >> "$GITHUB_ENV"
           echo "BENCH_URL=http://127.0.0.1:18765/application.html" >> "$GITHUB_ENV"
           echo "BENCH_CV=$GITHUB_WORKSPACE/benchmarks/architecture/fixtures/fictitious-resume.txt" >> "$GITHUB_ENV"
-          echo "BENCH_RUNS=5" >> "$GITHUB_ENV"
+          echo "BENCH_RUNS=10" >> "$GITHUB_ENV"
       - name: TypeScript / Playwright
         id: ts
         continue-on-error: true

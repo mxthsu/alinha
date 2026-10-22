@@ -12,6 +12,7 @@ try{
   for(let i=0;i<runs;i++){
     const start=performance.now();
     const page=await browser.newPage();
+    let valid=false;
     try{
       await page.goto(url);
       await page.locator("#fullname").fill("Pessoa Fictícia");
@@ -24,7 +25,9 @@ try{
       await page.locator("#consent").check();
       await page.locator("#submit").click();
       if(!await page.locator("#confirmation").isVisible()) throw new Error("Sem confirmação do formulário fictício");
-      console.log(`typescript_playwright run=${i+1} latency_ms=${(performance.now()-start).toFixed(1)} valid=true ai_calls=0`);
+      valid=true;
     }finally{await page.close();}
+    if(!valid)throw new Error("Formulário não confirmado");
+    console.log(`typescript_playwright run=${i+1} latency_ms=${(performance.now()-start).toFixed(1)} valid=true ai_calls=0`);
   }
 }finally{await browser.close();}

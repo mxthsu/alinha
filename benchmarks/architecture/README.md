@@ -11,13 +11,13 @@ O workflow [Architecture Benchmark](../../.github/workflows/architecture-benchma
 
 ## Cenário controlado
 
-O fixture local tem nome, e-mail e telefone; seleção que revela uma pergunta condicional; segunda etapa; upload de um CV inteiramente fictício; consentimento explícito; confirmação DOM. Os executores preenchem **somente esse formulário sintético**. Cinco repetições com navegador reaproveitado para reduzir variação de inicialização. Zero chamadas de IA.
+O fixture local tem nome, e-mail e telefone; seleção que revela uma pergunta condicional; segunda etapa; upload de um CV inteiramente fictício; consentimento explícito; confirmação DOM. Os executores preenchem **somente esse formulário sintético**. Cada iteração cria **uma aba nova**, executa as ações e fecha a aba; o navegador/daemon permanece aquecido. Uma validação assíncrona de 175 ms entre etapas obriga cada motor a aguardar a transição. Cinco repetições. Zero chamadas de IA.
 
 ## Critérios de interpretação
 
 1. A execução deve terminar em confirmação verificável. Falhas são falhas, nunca resultados de 0ms.
 2. Comparar medianas **somente** entre runs concluídos; analisar também variabilidade e logs.
-3. Agent-browser envolve uma CLI por ação enquanto as outras versões chamam bibliotecas in-process: os tempos refletem arquiteturas de integração **diferentes**, não uma comparação pura de linguagens.
+3. Agent-browser envolve uma CLI por ação enquanto as outras versões chamam bibliotecas in-process: os tempos refletem arquiteturas de integração **diferentes**, não uma comparação pura de linguagens. Todos criam/fecham nova aba a cada repetição e aguardam a transição assíncrona.
 4. Este fixture favorece seletores estáveis. Ainda não mede detecção semântica, navegação em sites reais, autenticação, CAPTCHA, recuperação de erros, UX em uma tela, portabilidade, RAM do Chromium, custo cloud ou qualidade de modelos.
 5. Não converter diferença pequena de milissegundos em motivo de reescrita do Alinha. Uma arquitetura só vence se os testes de compatibilidade, custos e empacotamento também favorecerem-na.
 

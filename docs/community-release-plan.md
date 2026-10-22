@@ -16,6 +16,14 @@ Este documento controla o escopo da edição local e open source. O Community de
 - [ ] Expandir cobertura de descrições integrais em todas as fontes e tratar páginas sem essa informação.
 - [x] Apresentar a jornada principal em uma única tela com interrupção, revisão e retomada.
 
+A preparação pode ser pausada e retomada após reabrir o navegador: a vaga e a
+descrição editada ficam salvas localmente. O currículo é recuperado da fonte local
+existente e sua leitura ATS é refeita. A análise com IA e a proposta ainda não
+aprovada não são guardadas; para retomá-las, o usuário solicita nova comparação.
+Ao trocar de vaga durante uma preparação aberta, o formulário é reiniciado para a
+nova oportunidade. **Encerrar preparação** apaga a seleção salva, sem excluir
+currículos ou vagas acompanhadas.
+
 ## Persistência, privacidade e instalação
 
 - [x] Chaves de provedores de IA no cofre de credenciais do sistema operacional.

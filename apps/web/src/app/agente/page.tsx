@@ -40,6 +40,7 @@ export default function CareerAgent(){
  const [error,setError]=useState("");
  const [notice,setNotice]=useState("");
  const [activeOpportunity,setActiveOpportunity]=useState<SelectedOpportunity|null>(null);
+ const [preparationOpen,setPreparationOpen]=useState(false);
  const abort=useRef<AbortController|null>(null);
  const {items:tracked,save:saveOpportunity}=useOpportunityTracker();
 
@@ -155,12 +156,20 @@ export default function CareerAgent(){
 
  function prepareOpportunity(job:AgentJob["opportunity"],item:AgentJob){
   if(!job.source_url)return;
+  if(activeOpportunity?.url===job.source_url){
+   setPreparationOpen(true);
+   window.requestAnimationFrame(()=>document.querySelector("#agent-preparation")?.scrollIntoView({behavior:"smooth",block:"start"}));
+   return;
+  }
+  if(activeOpportunity&&activeOpportunity.url!==job.source_url&&preparationOpen&&
+   !window.confirm("Trocar de vaga? A análise ainda não aprovada desta vaga será descartada."))return;
   const selected={title:job.title,company:job.company,url:job.source_url,source:job.source,
    excerpt:item.excerpt,description:item.description??undefined};
   if(!selectOpportunity(selected)){
    setNotice("Não foi possível guardar a vaga para preparação nesta sessão.");return;
   }
   setActiveOpportunity(selected);
+  setPreparationOpen(true);
   window.requestAnimationFrame(()=>document.querySelector("#agent-preparation")?.scrollIntoView({behavior:"smooth",block:"start"}));
  }
 
@@ -313,10 +322,18 @@ export default function CareerAgent(){
     </aside>
    </div>
   </section>
-  {activeOpportunity&&<section id="agent-preparation" className="agent-preparation" aria-label="Preparação da candidatura">
-    <PreparationJourney embedded onClose={()=>{
-      clearSelectedOpportunity();setActiveOpportunity(null);
-      window.requestAnimationFrame(()=>document.querySelector(".agent-matches")?.scrollIntoView({behavior:"smooth",block:"start"}));
+  {activeOpportunity&&!preparationOpen&&<section className="agent-resume-card" aria-label="Preparação pausada">
+    <div><span>CONTINUE DE ONDE PAROU</span><h2>{activeOpportunity.title}</h2>
+      <p>{activeOpportunity.company} · A vaga e a descrição revisada estão salvas neste navegador. A comparação com IA precisará ser solicitada novamente.</p></div>
+    <div className="agent-resume-actions"><button type="button" onClick={()=>setPreparationOpen(true)}>Retomar preparação <ArrowRight size={15}/></button>
+      <button type="button" onClick={()=>{clearSelectedOpportunity();setActiveOpportunity(null);}}>Encerrar preparação</button></div>
+  </section>}
+  {activeOpportunity&&preparationOpen&&<section id="agent-preparation" className="agent-preparation" aria-label="Preparação da candidatura">
+    <PreparationJourney key={activeOpportunity.url} embedded opportunity={activeOpportunity}
+     onClearSelection={()=>{setActiveOpportunity(null);setPreparationOpen(false);}} onClose={()=>{
+      setActiveOpportunity(selectedOpportunity());
+      setPreparationOpen(false);
+      window.requestAnimationFrame(()=>document.querySelector(".agent-resume-card")?.scrollIntoView({behavior:"smooth",block:"start"}));
     }}/>
   </section>}
   </main></div>;

@@ -127,6 +127,13 @@
 .agent-next-card p{font-size:11px;line-height:1.7;color:#718d78;margin:9px 0 16px}
 .agent-next-card a{display:flex;align-items:center;gap:6px;color:#387948;font-size:11px;font-weight:780}
 .agent-preparation{scroll-margin-top:20px;margin-top:34px;border-top:1px solid #dce9d9;padding-top:34px}
+.agent-resume-card{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-top:28px;padding:24px;border:1px solid #cfe3cb;border-radius:16px;background:#f1f8ee}
+.agent-resume-card span{font-size:10px;font-weight:800;letter-spacing:.1em;color:#5c9566}
+.agent-resume-card h2{font-size:20px;color:#255338;margin:8px 0}
+.agent-resume-card p{font-size:12px;line-height:1.6;color:#63806c;margin:0;max-width:640px}
+.agent-resume-actions{display:flex;gap:10px;flex-wrap:wrap}
+.agent-resume-actions button{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:10px 13px;border:1px solid #c9dec7;border-radius:9px;background:#fff;color:#336b42;font-size:12px;font-weight:750}
+.agent-resume-actions button:first-child{background:#2a6540;border-color:#2a6540;color:#fff}
 @media(max-width:1050px){.agent-hero{grid-template-columns:1fr .55fr}.agent-orbit-two{display:none}.agent-columns{grid-template-columns:minmax(0,1fr) 265px}}
 @media(max-width:780px){.agent-hero{grid-template-columns:1fr;padding:30px}.agent-hero-art{display:none}.agent-columns{grid-template-columns:1fr}.agent-sidebar{grid-template-columns:1fr 1fr}.agent-steps-card{grid-column:1/-1}}
 @media(max-width:540px){.agent-page{padding-block:20px 50px}.agent-topline .agent-privacy{display:none}.agent-hero{padding:25px 22px;border-radius:16px;min-height:0}.agent-hero h1{font-size:33px}.agent-workspace{padding-top:28px}.agent-workspace-header{align-items:flex-start;flex-direction:column}.agent-columns{gap:14px}.agent-profile-card,.agent-search-card,.agent-matches{padding:17px}.agent-query-row{flex-wrap:wrap}.agent-query-row input{flex-basis:calc(100% - 35px);min-height:35px}.agent-query-row button{width:100%}.agent-job-top{flex-wrap:wrap}.agent-sidebar{grid-template-columns:1fr}.agent-card-heading h3{font-size:14px}}

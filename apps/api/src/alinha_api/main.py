@@ -29,6 +29,7 @@ from alinha_api.agent.intent_model import (
     validated_proposal,
 )
 from alinha_api.agent.journey_store import (
+    AiCallRecord,
     ConfirmIntentJourney,
     IntentReceipt,
     JourneyConflict,
@@ -54,6 +55,7 @@ from alinha_api.agent.runtime import (
     RunViolation,
     StartRun,
 )
+from alinha_api.agent.token_usage import begin_usage_capture, captured_usage, end_usage_capture
 from alinha_api.resume_schema import (
     ResumeProfile,
     ResumeReviewRequest,
@@ -182,6 +184,8 @@ def interpret_agent_objective(request: Request, response: Response, body: Intent
         ) from exc
     except CallBudgetUnavailable as exc:
         raise HTTPException(status_code=503, detail="Limite de IA indisponível. Nenhuma chamada feita.") from exc
+    capture_token = begin_usage_capture()
+    usage_recorded = False
     try:
         suggestion = validated_proposal(MODELS[body.provider](), body.objective)
         plan = build_reviewed_plan(
@@ -191,6 +195,12 @@ def interpret_agent_objective(request: Request, response: Response, body: Intent
             calls_remaining=reservation.calls_remaining,
             preview_requested=body.preview_requested,
         )
+        # Store provider usage BEFORE the proposal becomes confirmable.
+        journey_store.record_model_usage(
+            run_id=body.run_id, request_id=body.request_id, provider=body.provider,
+            status="completed", usage=captured_usage(),
+        )
+        usage_recorded = True
         # Persist only the proposed job title and flags. This does not authorize
         # searches, create a run or send any external application.
         journey_store.save_intent_proposal(
@@ -207,11 +217,37 @@ def interpret_agent_objective(request: Request, response: Response, body: Intent
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except JourneyStorageUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    finally:
+        usage = captured_usage()
+        end_usage_capture(capture_token)
+        # Even failed or ambiguous provider attempts must be audited; missing
+        # counters are NULL rather than an invented zero.
+        if not usage_recorded:
+            try:
+                journey_store.record_model_usage(
+                    run_id=body.run_id, request_id=body.request_id,
+                    provider=body.provider, status="failed", usage=usage,
+                )
+            except (JourneyStorageUnavailable, JourneyConflict) as exc:
+                raise HTTPException(
+                    status_code=503, detail="Não foi possível auditar o consumo da IA."
+                ) from exc
 
 
 # Durable execution control plane. UI integrations and tool dispatch come later;
 # never expose begin_step or finish_step to untrusted browser requests.
 journey_store = JourneyStore()
+
+
+@app.get("/api/v1/agent/intent/usage/{run_id}", response_model=list[AiCallRecord])
+def get_agent_model_usage(request: Request, response: Response, run_id: UUID) -> list[AiCallRecord]:
+    """Local audit of provider-reported tokens; missing usage is unknown, not free."""
+    _community_api_only(request)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return journey_store.list_model_usage(run_id)
+    except JourneyStorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @app.get("/api/v1/agent/intent/proposals/{run_id}", response_model=IntentReceipt)

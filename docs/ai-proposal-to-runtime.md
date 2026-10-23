@@ -1,6 +1,6 @@
 # Ponte entre interpretação por IA e jornada durável
 
-A interpretação opt-in do objetivo continua limitada a duas tentativas de modelo por UUID da jornada. A restrição não é um teto de gastos ou tokens.
+A interpretação opt-in do objetivo continua limitada a duas tentativas de modelo por UUID da jornada. A restrição não é um teto de gastos ou tokens. A contagem de tokens que cada provedor efetivamente reportar é persistida separadamente em SQLite e consultável em `GET /api/v1/agent/intent/usage/{run_id}`; ausência de contagem ou custo permanece `null`. Consulte [auditoria de consumo](agent-token-accounting.md).
 
 O endpoint POST /api/v1/agent/interpret agora salva a sugestão validada de cargo por uma hora, sem armazenar o objetivo completo ou o currículo. A IA não executa nenhuma ferramenta.
 

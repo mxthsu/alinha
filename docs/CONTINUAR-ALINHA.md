@@ -2,6 +2,14 @@
 
 > **Fonte principal de contexto do projeto, atualizada em 23/10/2026.** Leia este arquivo, [AGENTS.md](../AGENTS.md), o código real na branch escolhida e os documentos vinculados **antes** de decidir a próxima tarefa. O estado do GitHub pode mudar; confirme branches, CI e PRs ao começar. Este texto não prova que funcionalidades planejadas já funcionem.
 
+## Auditoria de tokens reportados pelos provedores (23/10/2026)
+
+**PR #61 integrada:** filtros reais de modalidade, cidade, vínculo e salário em todas as jornadas backend, com dados não comprovados excluídos quando exigidos.
+
+**Nesta branch:** a interpretação opt-in de IA captura tokens efetivamente informados pelas respostas Gemini, OpenAI, Claude e Ollama, com contadores isolados por chamada e persistência SQLite dos eventos. A consulta de histórico é `GET /api/v1/agent/intent/usage/{run_id}`. Não armazenar prompts nem respostas do modelo. Valores ausentes são desconhecidos, **não zero**; `cost_usd` é nulo pois não há tabela de preços versionada, e não deve ser apresentado como custo gratuito. [Contrato de consumo](agent-token-accounting.md).
+
+**Ainda faltam:** teste BYOK real apenas com autorização do usuário, orçamento financeiro com preço versionado, retomada supervisionada de uma etapa interrompida e integração posterior ao frontend/desktop. A UI existente permanece intacta.
+
 ## Backend com filtros reais na busca (23/10/2026)
 
 **PRs #55 a #60 integradas na main:** jornadas persistentes, confirmação de sugestão por IA, busca real, comparação literal de vagas com currículo local versionado, rascunhos revisáveis e comando único.

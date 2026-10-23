@@ -1,4 +1,5 @@
 """Opt-in model-assisted intent proposal. Model output never authorizes a tool."""
+
 from __future__ import annotations
 
 import json
@@ -12,6 +13,7 @@ from google import genai
 from google.genai import errors, types
 from pydantic import UUID4, BaseModel, ConfigDict, Field, ValidationError, field_validator
 
+from alinha_api.agent.token_usage import report_usage
 from alinha_api.services.api_key_store import api_key as saved_api_key
 from alinha_api.services.deployment import local_ollama_allowed
 from alinha_api.services.gemini_limits import LocalQuotaExceeded, QuotaStorageUnavailable
@@ -46,10 +48,9 @@ class IntentSuggestion(BaseModel):
     @field_validator("role")
     @classmethod
     def safe_role(cls, value: str) -> str:
-        if (
-            re.search(r"https?://|www\.|[@<>\n\r{}]|\b(?:api_key|token|senha)\b", value, re.IGNORECASE)
-            or not re.search(r"[\wÀ-ÿ]", value)
-        ):
+        if re.search(
+            r"https?://|www\.|[@<>\n\r{}]|\b(?:api_key|token|senha)\b", value, re.IGNORECASE
+        ) or not re.search(r"[\wÀ-ÿ]", value):
             raise ValueError("Cargo sugerido inválido.")
         return value
 
@@ -65,6 +66,7 @@ class IntentRequest(BaseModel):
 
 class IntentToolProposal(BaseModel):
     """Validated human-review suggestion, not an executed model tool call."""
+
     tool: Literal["job.search"] = "job.search"
     query: str
     reason: str
@@ -76,6 +78,7 @@ class IntentToolProposal(BaseModel):
 
 class PlannedToolStep(BaseModel):
     """Review-only tool roadmap; it does not dispatch any tool."""
+
     model_config = ConfigDict(extra="forbid")
     tool: Literal["job.search", "job.assess", "application.preview"]
     state: Literal["proposed"] = "proposed"
@@ -85,6 +88,7 @@ class PlannedToolStep(BaseModel):
 
 class ReviewedIntentPlan(IntentToolProposal):
     """The model proposes only a role; the code fixes the allowed step sequence."""
+
     run_id: UUID
     calls_used: int = Field(ge=1, le=2)
     calls_remaining: int = Field(ge=0, le=1)
@@ -105,13 +109,15 @@ def build_reviewed_plan(
     ]
     if preview_requested:
         steps.append(PlannedToolStep(tool="application.preview", requires_confirmation=True))
-    return ReviewedIntentPlan.model_validate({
-        **suggestion.model_dump(),
-        "run_id": run_id,
-        "calls_used": calls_used,
-        "calls_remaining": calls_remaining,
-        "steps": [step.model_dump() for step in steps],
-    })
+    return ReviewedIntentPlan.model_validate(
+        {
+            **suggestion.model_dump(),
+            "run_id": run_id,
+            "calls_used": calls_used,
+            "calls_remaining": calls_remaining,
+            "steps": [step.model_dump() for step in steps],
+        }
+    )
 
 
 class IntentModel(Protocol):
@@ -142,7 +148,9 @@ class GeminiIntentModel:
         try:
             reserve_gemini_request(model)
         except (LocalQuotaExceeded, QuotaStorageUnavailable) as exc:
-            raise ProviderError("Limite local de chamadas Gemini atingido ou indisponível.") from exc
+            raise ProviderError(
+                "Limite local de chamadas Gemini atingido ou indisponível."
+            ) from exc
         try:
             with genai.Client(
                 api_key=credential,
@@ -152,7 +160,8 @@ class GeminiIntentModel:
                 ),
             ) as client:
                 result = client.models.generate_content(
-                    model=model, contents=objective,
+                    model=model,
+                    contents=objective,
                     config=types.GenerateContentConfig(
                         system_instruction=SYSTEM,
                         response_mime_type="application/json",
@@ -162,7 +171,17 @@ class GeminiIntentModel:
                     ),
                 )
         except (errors.APIError, httpx.HTTPError) as exc:
-            raise ProviderError("O Gemini não concluiu a interpretação. Confira chave e cota.") from exc
+            raise ProviderError(
+                "O Gemini não concluiu a interpretação. Confira chave e cota."
+            ) from exc
+        metadata = getattr(result, "usage_metadata", None)
+        if metadata is not None:
+            report_usage(
+                model=model,
+                input_tokens=getattr(metadata, "prompt_token_count", None),
+                output_tokens=getattr(metadata, "candidates_token_count", None),
+                total_tokens=getattr(metadata, "total_token_count", None),
+            )
         if result.parsed is not None:
             try:
                 return IntentSuggestion.model_validate(result.parsed)
@@ -186,19 +205,39 @@ class OpenAIIntentModel:
                     "input": objective,
                     "max_output_tokens": OUTPUT_LIMIT,
                     "store": False,
-                    "text": {"format": {"type": "json_schema", "name": "career_intent",
-                        "strict": True, "schema": OPENAI_OUTPUT_SCHEMA}},
+                    "text": {
+                        "format": {
+                            "type": "json_schema",
+                            "name": "career_intent",
+                            "strict": True,
+                            "schema": OPENAI_OUTPUT_SCHEMA,
+                        }
+                    },
                 },
                 timeout=25,
             )
             response.raise_for_status()
             body = response.json()
         except (httpx.HTTPError, ValueError) as exc:
-            raise ProviderError("A OpenAI API não concluiu a interpretação. Confira chave e cota.") from exc
+            raise ProviderError(
+                "A OpenAI API não concluiu a interpretação. Confira chave e cota."
+            ) from exc
+        usage = body.get("usage")
+        if isinstance(usage, dict):
+            report_usage(
+                model=body.get("model") or os.getenv("OPENAI_API_MODEL", "gpt-4.1-mini"),
+                input_tokens=usage.get("input_tokens"),
+                output_tokens=usage.get("output_tokens"),
+                total_tokens=usage.get("total_tokens"),
+            )
         if body.get("status") != "completed":
             raise ProviderError("O modelo não concluiu a interpretação.")
-        raw = "".join(part.get("text", "") for item in body.get("output", [])
-                      for part in item.get("content", []) if part.get("type") == "output_text")
+        raw = "".join(
+            part.get("text", "")
+            for item in body.get("output", [])
+            for part in item.get("content", [])
+            if part.get("type") == "output_text"
+        )
         return _parse(raw)
 
 
@@ -222,11 +261,31 @@ class AnthropicIntentModel:
             response.raise_for_status()
             body = response.json()
         except (httpx.HTTPError, ValueError) as exc:
-            raise ProviderError("O Claude API não concluiu a interpretação. Confira chave e cota.") from exc
+            raise ProviderError(
+                "O Claude API não concluiu a interpretação. Confira chave e cota."
+            ) from exc
+        usage = body.get("usage")
+        if isinstance(usage, dict):
+            input_count, output_count = usage.get("input_tokens"), usage.get("output_tokens")
+            total = (
+                input_count + output_count
+                if type(input_count) is int
+                and type(output_count) is int
+                and input_count >= 0
+                and output_count >= 0
+                else None
+            )
+            report_usage(
+                model=body.get("model") or os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-5"),
+                input_tokens=input_count,
+                output_tokens=output_count,
+                total_tokens=total,
+            )
         if body.get("stop_reason") != "end_turn":
             raise ProviderError("O modelo não concluiu a interpretação.")
-        raw = "".join(part.get("text", "") for part in body.get("content", [])
-                      if part.get("type") == "text")
+        raw = "".join(
+            part.get("text", "") for part in body.get("content", []) if part.get("type") == "text"
+        )
         return _parse(raw)
 
 
@@ -248,7 +307,13 @@ class OllamaIntentModel:
                 timeout=25,
             )
             response.raise_for_status()
-            raw = response.json().get("response")
+            body = response.json()
+            raw = body.get("response")
+            report_usage(
+                model=body.get("model") or os.getenv("OLLAMA_MODEL", "qwen2.5:7b"),
+                input_tokens=body.get("prompt_eval_count"),
+                output_tokens=body.get("eval_count"),
+            )
         except (httpx.HTTPError, ValueError) as exc:
             raise ProviderError("O Ollama local não concluiu a interpretação.") from exc
         if not isinstance(raw, str):

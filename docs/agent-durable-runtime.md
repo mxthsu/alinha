@@ -2,6 +2,8 @@
 
 > **Status:** controle de execução integrado à API Community. `job.search` consulta os conectores públicos habilitados; `job.assess` compara as vagas persistidas com a versão autorizada do currículo armazenado no Community, sem modelo de IA. `application.preview` cria até três rascunhos locais revisáveis; um comando único já coordena os passos autorizados com checkpoints; a integração à UI ainda falta. Não confundir com o coordenador sintético `/agent/demo`.
 
+A jornada já aceita filtros rígidos de cidade, modalidade, vínculo e salário anunciado, além do comportamento remoto padrão. Os filtros são persistidos na confirmação e aplicados antes de limitar os resultados. Consulte [filtros verificados](agent-search-filters.md).
+
 ## Entrega
 
 O backend possui tabelas SQLite para jornadas reais, separadas do histórico do exemplo fictício. O Core gera o plano com ferramentas **fixas** `job.search → job.assess → application.preview` (última opcional); a IA ou o frontend não escolhem outras ferramentas. **As três ferramentas estão disponíveis no backend** e o endpoint `execute` permite percorrê-las com uma única chamada, sob autorização prévia e controle do servidor. A UI pode ser conectada depois de o fluxo ser finalizado e validado.

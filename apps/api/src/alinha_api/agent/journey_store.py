@@ -21,6 +21,7 @@ from pydantic import UUID4, BaseModel, ConfigDict, Field, ValidationError, field
 
 from alinha_api.agent.assessment import AssessmentReport
 from alinha_api.agent.discovery import JobSearchResult
+from alinha_api.agent.models import CandidateCriteria
 from alinha_api.agent.preview import PreviewBatch, prepare_local_previews
 from alinha_api.services.community_storage import user_paths
 
@@ -53,6 +54,9 @@ class StartJourney(BaseModel):
     search_authorized: Literal[True]
     prepare_preview: bool = False
     max_jobs: int = Field(default=10, ge=1, le=15)
+    criteria: CandidateCriteria = Field(
+        default_factory=lambda: CandidateCriteria(allowed_work_modes=["remote"])
+    )
     profile_revision: int | None = Field(default=None, ge=1, le=2**31)
 
     @field_validator("query")
@@ -73,6 +77,9 @@ class ConfirmIntentJourney(BaseModel):
     search_authorized: Literal[True]
     profile_revision: int = Field(ge=1, le=2**31)
     max_jobs: int = Field(default=10, ge=1, le=15)
+    criteria: CandidateCriteria = Field(
+        default_factory=lambda: CandidateCriteria(allowed_work_modes=["remote"])
+    )
 
 
 class IntentReceipt(BaseModel):
@@ -103,6 +110,9 @@ class JourneySnapshot(BaseModel):
     events: list[JourneyEvent]
     result_count: int | None = None
     profile_revision: int | None = None
+    criteria: CandidateCriteria = Field(
+        default_factory=lambda: CandidateCriteria(allowed_work_modes=["remote"])
+    )
     external_submission: Literal[False] = False
 
 
@@ -114,6 +124,9 @@ class StepLease(BaseModel):
     max_jobs: int
     query: str
     profile_revision: int | None = None
+    criteria: CandidateCriteria = Field(
+        default_factory=lambda: CandidateCriteria(allowed_work_modes=["remote"])
+    )
 
 
 class JourneyStore:
@@ -140,6 +153,7 @@ class JourneyStore:
                     max_jobs INTEGER NOT NULL, active_token TEXT,
                     step_started_at INTEGER, result_count INTEGER,
                     profile_revision INTEGER,
+                    criteria_json TEXT,
                     created_at INTEGER NOT NULL
                 )
             """)
@@ -147,6 +161,8 @@ class JourneyStore:
             columns = {row[1] for row in connection.execute("PRAGMA table_info(agent_journeys)")}
             if "profile_revision" not in columns:
                 connection.execute("ALTER TABLE agent_journeys ADD COLUMN profile_revision INTEGER")
+            if "criteria_json" not in columns:
+                connection.execute("ALTER TABLE agent_journeys ADD COLUMN criteria_json TEXT")
             connection.execute("""
                 CREATE TABLE IF NOT EXISTS agent_journey_events (
                     run_id TEXT NOT NULL, sequence INTEGER NOT NULL,
@@ -236,6 +252,9 @@ class JourneyStore:
                 events=[JourneyEvent(**dict(e)) for e in events],
                 result_count=row["result_count"],
                 profile_revision=row["profile_revision"],
+                criteria=CandidateCriteria.model_validate_json(row["criteria_json"])
+                if row["criteria_json"]
+                else CandidateCriteria(allowed_work_modes=["remote"]),
             )
         except (ValidationError, ValueError, TypeError) as exc:
             raise JourneyConflict(
@@ -338,6 +357,7 @@ class JourneyStore:
                 prepare_preview=bool(proposed["preview_requested"]),
                 max_jobs=body.max_jobs,
                 profile_revision=body.profile_revision,
+                criteria=body.criteria,
             )
             serialized = request.model_dump(mode="json")
             signature = hashlib.sha256(
@@ -366,8 +386,8 @@ class JourneyStore:
                 """
                 INSERT INTO agent_journeys
                 (run_id,request_id,signature,query,plan,status,
-                 max_jobs,profile_revision,created_at)
-                VALUES (?,?,?,?,?,'ready',?,?,?)
+                 max_jobs,profile_revision,criteria_json,created_at)
+                VALUES (?,?,?,?,?,'ready',?,?,?,?)
             """,
                 (
                     str(request.run_id),
@@ -377,6 +397,7 @@ class JourneyStore:
                     json.dumps(plan),
                     request.max_jobs,
                     request.profile_revision,
+                    request.criteria.model_dump_json(),
                     int(time.time()),
                 ),
             )
@@ -446,8 +467,8 @@ class JourneyStore:
             conn.execute(
                 """
                 INSERT INTO agent_journeys
-                (run_id,request_id,signature,query,plan,status,max_jobs,profile_revision,created_at)
-                VALUES (?,?,?,?,?,'ready',?,?,?)
+                (run_id,request_id,signature,query,plan,status,max_jobs,profile_revision,criteria_json,created_at)
+                VALUES (?,?,?,?,?,'ready',?,?,?,?)
             """,
                 (
                     str(request.run_id),
@@ -457,6 +478,7 @@ class JourneyStore:
                     json.dumps(plan),
                     request.max_jobs,
                     request.profile_revision,
+                    request.criteria.model_dump_json(),
                     int(time.time()),
                 ),
             )
@@ -472,6 +494,16 @@ class JourneyStore:
     def get(self, run_id: UUID) -> JourneySnapshot:
         with self._db() as conn:
             return self._snapshot(conn, self._row(conn, run_id))
+
+    def get_search_criteria(self, run_id: UUID) -> CandidateCriteria:
+        """Read the immutable user-approved filters from this journey."""
+        with self._db() as conn:
+            row = self._row(conn, run_id)
+            return (
+                CandidateCriteria.model_validate_json(row["criteria_json"])
+                if row["criteria_json"]
+                else CandidateCriteria(allowed_work_modes=["remote"])
+            )
 
     def cancel(self, run_id: UUID) -> JourneySnapshot:
         with self._db() as conn:
@@ -519,6 +551,9 @@ class JourneyStore:
                 token=token,
                 query=row["query"],
                 max_jobs=row["max_jobs"],
+                criteria=CandidateCriteria.model_validate_json(row["criteria_json"])
+                if row["criteria_json"]
+                else CandidateCriteria(allowed_work_modes=["remote"]),
                 profile_revision=row["profile_revision"],
             )
 

@@ -32,6 +32,7 @@ MAX_AGE_SECONDS = 14 * 86400
 MAX_RESULT_BYTES = 350_000
 MAX_ASSESSMENT_BYTES = 100_000
 MAX_PREVIEW_BYTES = 60_000
+MAX_RETRY_APPROVALS = 2
 INTENT_PROPOSAL_SECONDS = 3600
 
 
@@ -108,6 +109,16 @@ class AiCallRecord(BaseModel):
     observed_at: int
     # No configured price table, exchange rate or cost inference.
     cost_usd: None = None
+
+
+class RetryInterruptedJourney(BaseModel):
+    """User review of the exact interrupted event, never model-supplied."""
+
+    model_config = ConfigDict(extra="forbid")
+    request_id: UUID4
+    expected_step: int = Field(ge=0, le=2)
+    observed_sequence: int = Field(ge=1)
+    retry_authorized: Literal[True]
 
 
 class JourneyEvent(BaseModel):
@@ -230,6 +241,14 @@ class JourneyStore:
                     total_tokens INTEGER,
                     provider_reported INTEGER NOT NULL,
                     observed_at INTEGER NOT NULL,
+                    PRIMARY KEY (run_id, request_id)
+                )
+            """)
+            connection.execute("""
+                CREATE TABLE IF NOT EXISTS agent_journey_retry_approvals (
+                    run_id TEXT NOT NULL, request_id TEXT NOT NULL,
+                    original_event_seq INTEGER NOT NULL,
+                    tool TEXT NOT NULL, approved_at INTEGER NOT NULL,
                     PRIMARY KEY (run_id, request_id)
                 )
             """)
@@ -533,6 +552,12 @@ class JourneyStore:
                 return self._snapshot(conn, old)
             # Only expired terminal runs are pruned. Never erase active work automatically.
             cutoff = int(time.time()) - MAX_AGE_SECONDS
+            conn.execute(
+                "DELETE FROM agent_journey_retry_approvals WHERE run_id IN "
+                "(SELECT run_id FROM agent_journeys WHERE created_at < ? "
+                "AND status IN (\u0027completed\u0027,\u0027cancelled\u0027,\u0027failed\u0027))",
+                (cutoff,),
+            )
             conn.execute(
                 "DELETE FROM agent_journey_previews WHERE run_id IN "
                 "(SELECT run_id FROM agent_journeys WHERE created_at < ? "
@@ -881,6 +906,89 @@ class JourneyStore:
                 "Não foi possível executar esta etapa. Nenhuma candidatura foi enviada.",
             )
             return self._snapshot(conn, self._row(conn, lease.run_id))
+
+    def authorize_retry(
+        self,
+        run_id: UUID,
+        approval: RetryInterruptedJourney,
+    ) -> JourneySnapshot:
+        """Require explicit review of a specific interruption before another tool call.
+
+        This method changes only local state, never calls a provider or submits.
+        """
+        with self._db() as conn:
+            row = self._row(conn, run_id)
+            plan = json.loads(row["plan"])
+            if approval.expected_step >= len(plan):
+                raise JourneyConflict("Etapa não pertence ao plano autorizado.")
+            requested_tool = plan[approval.expected_step]
+            existing = conn.execute(
+                """
+                SELECT * FROM agent_journey_retry_approvals
+                WHERE run_id=? AND request_id=?
+            """,
+                (str(run_id), str(approval.request_id)),
+            ).fetchone()
+            if existing is not None:
+                if (
+                    existing["original_event_seq"] != approval.observed_sequence
+                    or existing["tool"] != requested_tool
+                ):
+                    raise JourneyConflict("Identificador de revisão reutilizado com outros dados.")
+                return self._snapshot(conn, row)
+            if (
+                row["status"] != "needs_review"
+                or row["next_step"] != approval.expected_step
+                or row["next_step"] >= len(plan)
+            ):
+                raise JourneyConflict("A jornada não tem uma etapa interrompida para revisar.")
+            latest = conn.execute(
+                """
+                SELECT sequence,step,status FROM agent_journey_events
+                WHERE run_id=? ORDER BY sequence DESC LIMIT 1
+            """,
+                (str(run_id),),
+            ).fetchone()
+            if (
+                latest is None
+                or latest["sequence"] != approval.observed_sequence
+                or latest["status"] != "interrupted"
+                or latest["step"] != requested_tool
+            ):
+                raise JourneyConflict("Revisão obsoleta ou execução já concluída.")
+            count = conn.execute(
+                "SELECT COUNT(*) FROM agent_journey_retry_approvals WHERE run_id=?",
+                (str(run_id),),
+            ).fetchone()[0]
+            if count >= MAX_RETRY_APPROVALS:
+                raise JourneyConflict("Limite de novas tentativas revisadas atingido.")
+            conn.execute(
+                """
+                INSERT INTO agent_journey_retry_approvals
+                (run_id,request_id,original_event_seq,tool,approved_at)
+                VALUES (?,?,?,?,?)
+            """,
+                (
+                    str(run_id),
+                    str(approval.request_id),
+                    approval.observed_sequence,
+                    requested_tool,
+                    int(time.time()),
+                ),
+            )
+            conn.execute(
+                "UPDATE agent_journeys SET status='ready',active_token=NULL,"
+                "step_started_at=NULL WHERE run_id=?",
+                (str(run_id),),
+            )
+            self._event(
+                conn,
+                str(run_id),
+                requested_tool,
+                "created",
+                "Nova tentativa autorizada após revisão; nenhuma ação enviada.",
+            )
+            return self._snapshot(conn, self._row(conn, run_id))
 
     def interrupt_stale(self, *, min_age_seconds: int = 60) -> int:
         """Never silently replay an ambiguous in-flight tool after a restart."""

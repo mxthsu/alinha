@@ -21,6 +21,7 @@ from pydantic import UUID4, BaseModel, ConfigDict, Field, field_validator
 
 from alinha_api.agent.assessment import AssessmentReport
 from alinha_api.agent.discovery import JobSearchResult
+from alinha_api.agent.preview import PreviewBatch, prepare_local_previews
 from alinha_api.services.community_storage import user_paths
 
 RunState = Literal["ready", "running", "needs_review", "completed", "failed", "cancelled"]
@@ -28,6 +29,7 @@ Tool = Literal["job.search", "job.assess", "application.preview"]
 MAX_AGE_SECONDS = 14 * 86400
 MAX_RESULT_BYTES = 350_000
 MAX_ASSESSMENT_BYTES = 100_000
+MAX_PREVIEW_BYTES = 60_000
 
 
 class JourneyConflict(Exception):
@@ -142,6 +144,13 @@ class JourneyStore:
                     FOREIGN KEY(run_id) REFERENCES agent_journeys(run_id)
                 )
             """)
+            connection.execute("""
+                CREATE TABLE IF NOT EXISTS agent_journey_previews (
+                    run_id TEXT PRIMARY KEY, payload TEXT NOT NULL,
+                    profile_revision INTEGER NOT NULL, stored_at INTEGER NOT NULL,
+                    FOREIGN KEY(run_id) REFERENCES agent_journeys(run_id)
+                )
+            """)
             yield connection
             connection.execute("COMMIT")
         except (sqlite3.Error, OSError) as exc:
@@ -213,6 +222,12 @@ class JourneyStore:
                 return self._snapshot(conn, old)
             # Only expired terminal runs are pruned. Never erase active work automatically.
             cutoff = int(time.time()) - MAX_AGE_SECONDS
+            conn.execute(
+                "DELETE FROM agent_journey_previews WHERE run_id IN "
+                "(SELECT run_id FROM agent_journeys WHERE created_at < ? "
+                "AND status IN ('completed','cancelled','failed'))",
+                (cutoff,),
+            )
             conn.execute(
                 "DELETE FROM agent_journey_assessments WHERE run_id IN "
                 "(SELECT run_id FROM agent_journeys WHERE created_at < ? "
@@ -463,6 +478,65 @@ class JourneyStore:
             if stored is None:
                 raise JourneyConflict("A comparação ainda não está disponível.")
             return AssessmentReport.model_validate_json(stored["payload"])
+
+    def finish_previews(self, lease: StepLease, batch: PreviewBatch) -> JourneySnapshot:
+        """Persist only the exact previews deterministically derived from stored facts."""
+        if lease.index != 2 or lease.tool != "application.preview":
+            raise JourneyConflict("Etapa de prévia não autorizada.")
+        batch = PreviewBatch.model_validate(batch)
+        if lease.profile_revision is None or batch.profile_revision != lease.profile_revision:
+            raise JourneyConflict("Versão do currículo inconsistente com a jornada.")
+        payload = batch.model_dump_json()
+        if len(payload.encode("utf-8")) > MAX_PREVIEW_BYTES:
+            raise JourneyConflict("Prévias excederam o tamanho permitido.")
+        with self._db() as conn:
+            row = self._row(conn, lease.run_id)
+            self._require_active_lease(row, lease)
+            search = conn.execute(
+                "SELECT payload FROM agent_journey_search_results WHERE run_id=?",
+                (str(lease.run_id),),
+            ).fetchone()
+            assessed = conn.execute(
+                "SELECT payload FROM agent_journey_assessments WHERE run_id=?",
+                (str(lease.run_id),),
+            ).fetchone()
+            if not search or not assessed:
+                raise JourneyConflict("Dados necessários para a prévia estão incompletos.")
+            expected = prepare_local_previews(
+                AssessmentReport.model_validate_json(assessed["payload"]),
+                JobSearchResult.model_validate_json(search["payload"]),
+            )
+            if batch != expected:
+                raise JourneyConflict("Prévia divergente dos dados e das regras verificadas.")
+            conn.execute(
+                "INSERT INTO agent_journey_previews "
+                "(run_id,payload,profile_revision,stored_at) VALUES (?,?,?,?)",
+                (str(lease.run_id), payload, batch.profile_revision, int(time.time())),
+            )
+            conn.execute(
+                "UPDATE agent_journeys SET status='needs_review',next_step=3,"
+                "active_token=NULL,step_started_at=NULL WHERE run_id=?",
+                (str(lease.run_id),),
+            )
+            self._event(
+                conn,
+                str(lease.run_id),
+                "application.preview",
+                "completed",
+                "Prévias locais prontas para revisão; nenhuma candidatura enviada.",
+            )
+            return self._snapshot(conn, self._row(conn, lease.run_id))
+
+    def get_previews(self, run_id: UUID) -> PreviewBatch:
+        with self._db() as conn:
+            self._row(conn, run_id)
+            found = conn.execute(
+                "SELECT payload FROM agent_journey_previews WHERE run_id=?",
+                (str(run_id),),
+            ).fetchone()
+            if found is None:
+                raise JourneyConflict("Prévias ainda não disponíveis.")
+            return PreviewBatch.model_validate_json(found["payload"])
 
     def fail_step(self, lease: StepLease) -> JourneySnapshot:
         """Record fixed, non-sensitive failure text; never store connector exceptions."""

@@ -2,13 +2,13 @@
 
 > **Fonte principal de contexto do projeto, atualizada em 23/10/2026.** Leia este arquivo, [AGENTS.md](../AGENTS.md), o código real na branch escolhida e os documentos vinculados **antes** de decidir a próxima tarefa. O estado do GitHub pode mudar; confirme branches, CI e PRs ao começar. Este texto não prova que funcionalidades planejadas já funcionem.
 
-## Próxima camada do backend: comparação segura do currículo (23/10/2026)
+## Backend com três ferramentas de carreira (23/10/2026)
 
-**PRs #55 e #56 já integradas na main:** persistência transacional das jornadas e execução real de `job.search` com fontes públicas configuradas, limites, eventos e resultados SQLite. A API não repete buscas após reinício e invalida resultados tardios de ações canceladas.
+**PRs #55, #56 e #57 integradas à main:** o servidor tem jornadas SQLite duráveis, `job.search` ligado às fontes públicas habilitadas, resultados com proveniência, e `job.assess` lendo o currículo estruturado **dentro do registro versionado Community**. Exige `profile_revision` autorizado na criação; compara apenas coincidências literais de competências declaradas. Nunca inventa requisitos, não chama IA na comparação e não envia CV às fontes.
 
-**Nova implementação desta branch:** `job.assess` lê o currículo estruturado **dentro do registro versionado do próprio Community**, exige `profile_revision` autorizado na criação da jornada, compara somente termos de competências declaradas com o texto das vagas armazenadas e registra sinais para revisão. A operação é determinística: não inventa requisitos, não usa IA nem envia dados do currículo a fornecedores de vagas. Somente os termos coincidentes ficam nos registros da jornada; o currículo inteiro permanece no registro local original.
+**Nova implementação desta branch:** `application.preview` cria até três rascunhos locais somente a partir de competências declaradas e presentes nos anúncios, sem contato pessoal nem inferência de experiência. O Core revalida deterministicamente os textos antes de persisti-los; entrega `needs_review` e **não envia candidatura**. As três ferramentas exigem chamadas explícitas de backend e autorização/ordem corretas. A interface `/agente` anterior permanece intacta.
 
-**Ainda em aberto na issue #48:** executar `application.preview` no backend a partir da avaliação, validar custos/tokens de IA, consolidar filtros, recuperação revisável após falha e a jornada automática controlada. **Não conectar ao frontend** antes de concluir o fluxo de backend; a rota /agente atual continua sendo a experiência anterior. Consulte [contrato das jornadas](agent-durable-runtime.md). As seções históricas abaixo tratam de etapas anteriores.
+**Próximo trabalho na issue #48:** criar um comando coordenado único para `job.search → job.assess → application.preview` com estados/cancelamento e retomada revisável, validar custo/tokens e pelo menos uma IA BYOK real, consolidar filtros e testar a jornada ponta a ponta antes de integrar ao frontend. Consulte [contrato das jornadas](agent-durable-runtime.md). As seções históricas abaixo tratam de etapas anteriores.
 
 ## Integrado na `main` — IA opt-in e plano revisável (23/10/2026)
 

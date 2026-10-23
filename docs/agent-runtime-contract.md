@@ -2,6 +2,8 @@
 
 > **Especificação proposta para a próxima implementação.** Não é API disponível, protocolo estabilizado nem compromisso com Rust, Go, Python ou TypeScript. O objetivo é fazer o mesmo agente funcionar no Community, Desktop e Cloud, com adaptadores trocáveis e revisões verificáveis.
 
+A interface deve seguir a [experiência conversacional](agent-experience.md): texto livre e sugestões, componentes contextuais e resultados acessíveis. Os tipos abaixo são exemplos conceituais; para APIs já implementadas, consultar [jornadas persistentes](agent-durable-runtime.md). O próximo incremento integra esse núcleo ao chat, sem criar outro executor.
+
 ## Separar quatro responsabilidades
 
 1. **Interface**: recebe intenção, exibe plano e eventos, solicita dados/consentimento, permite cancelar/revisar. Ela nunca executa ações externas por iniciativa própria.

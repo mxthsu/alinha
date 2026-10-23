@@ -1,6 +1,6 @@
 # Plano de conclusão do Alinha Community
 
-> **Nomenclatura atual:** [Community Open Source para desenvolvedores](CONTINUAR-ALINHA.md), **Desktop** como aplicativo instalável para usuários finais e **Cloud** como serviço futuro. Esta página acompanha funcionalidades do núcleo local, mas não substitui [a próxima fatia vertical do agente](agent-runtime-contract.md). Itens marcados como completos refletem implementações do repositório, não homologação de produto final.
+> **Nomenclatura atual:** [Community Open Source para desenvolvedores](CONTINUAR-ALINHA.md), **Desktop** como aplicativo instalável para usuários finais e **Cloud** como serviço futuro. Esta página acompanha funcionalidades do núcleo local, mas não substitui o [roadmap vigente](roadmap.md) e a [experiência conversacional](agent-experience.md). O chat completo, sugestões contextuais e criação de currículo por conversa permanecem metas pendentes. Itens marcados como completos refletem implementações do repositório, não homologação de produto final.
 
 Este documento controla o escopo da edição local e open source. O Community deve ser útil sem assinatura, banco hospedado ou conta Cloud.
 
@@ -38,7 +38,8 @@ Este documento controla o escopo da edição local e open source. O Community de
 ## Fontes de vagas
 
 - [x] Primeira fonte remota autorizada com atribuição e links de origem.
-- [x] Integrar issues de comunidades brasileiras de desenvolvimento por API GitHub pública e catálogos fixos, além de APIs públicas de ATS já integradas.\n- [ ] Estudar feeds oficiais de ATS adicionais e dados JobPosting públicos de páginas com crawling permitido, mantendo atribuição, privacidade e deduplicação.
+- [x] Integrar issues de comunidades brasileiras de desenvolvimento por API GitHub pública e catálogos fixos, além de APIs públicas de ATS já integradas.
+- [ ] Estudar feeds oficiais de ATS adicionais e dados JobPosting públicos de páginas com crawling permitido, mantendo atribuição, privacidade e deduplicação.
 - [ ] Adicionar conectores compatíveis com Community e um eventual produto pago.
 - [ ] Conservar URL, fonte, data de coleta e regras de confiança para evitar vagas inventadas.
 

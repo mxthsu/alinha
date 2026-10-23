@@ -1,56 +1,85 @@
-# Meu agente de carreira — primeira jornada conectada
+# Experiência conversacional do Alinha
 
-> **Evolução de produto (22/10/2026):** a experiência final é um **único agente de carreira** que recebe objetivos em linguagem natural e mostra andamento/revisões na mesma tela. O fluxo descrito abaixo representa a implementação inicial, não todo o produto pronto. Ver [ponto de retomada](CONTINUAR-ALINHA.md) e [contrato do runtime](agent-runtime-contract.md).
+> **Requisitos de produto aprovados em 23/10/2026; implementação pendente.** A interface atual de `/agente` ainda não entrega este chat completo. A API já possui execução persistente de busca, avaliação literal e prévias; o estado verificável está no [ponto de retomada](CONTINUAR-ALINHA.md). Esta página rege a experiência, junto à [visão](career-product-vision.md); os contratos técnicos vigentes continuam regendo execução e autorização.
 
-> A implementação atual é um primeiro fluxo de planejamento e descoberta **assistido**, ainda não um agente autônomo de candidaturas. Nenhuma ação externa é executada sem interação da pessoa, e o Alinha não procura vagas continuamente em segundo plano.
+## Tela principal
 
-## Experiência
+Uma conversa em pt-BR é o ponto de entrada. A pessoa escreve livremente, escolhe uma sugestão ou interage com um componente. O agente apresenta a próxima ação útil, aproveita o contexto confirmado e não exige percorrer abas, menus técnicos ou um wizard fixo.
 
-A pessoa pode enviar **PDF, DOCX ou TXT de até 3 MB diretamente no agente**,
-sem passar por abas do Studio. A ação **Enviar currículo e encontrar vagas**
-autoriza organizar o perfil e executar a primeira consulta de cargo: o
-arquivo é interpretado pelo backend local; somente o perfil estruturado é salvo
-no navegador, nunca o PDF original ou o texto integral de origem. O agente
-identifica cargos explícitos, inicia a busca quando possível e avisa caso falte
-alguma informação essencial. Revisar os campos detalhadamente é opcional;
-substituir um currículo existente requer confirmação.
+Acesso discreto a currículo, vagas salvas, candidaturas e configurações permite recuperar resultados sem procurar mensagens antigas. Os editores e rotas atuais podem continuar como acessos auxiliares durante a transição, sem bloquear a jornada principal.
 
-A rota `/agente` organiza a jornada:
+A experiência inicial sugere, por exemplo: **Montar meu currículo**, **Encontrar vagas**, **Mudar de área**, **Ainda não sei**. São entradas opcionais; a pessoa pode pedir outra coisa. Não exigir conexão de IA ou upload quando a tarefa não precisar disso.
 
-1. Importar currículo diretamente no agente ou recuperar o perfil salvo no Studio (IndexedDB do mesmo navegador).
-2. Extrair **somente cargos declarados** no título profissional e nas experiências; exibir sugestões de busca editáveis.
-3. Identificar termos técnicos escritos explicitamente no currículo, sem inferir tecnologias ou experiências.
-4. Consultar a fonte pública após clicar em **Encontrar vagas** ou **Enviar currículo e encontrar vagas**, enviando somente o cargo, sem currículo completo, nome, contato ou documentos.
-5. Apresentar resultados reais do conector já existente, classificados por **indícios literais** no título ou resumo disponível, com avisos sobre dados incompletos. Não há pontuação ATS, garantia de compatibilidade nem aprovação automática.
-6. Abrir o anúncio original, salvar a oportunidade no Kanban ou avançar para Preparar candidatura com o contexto da vaga. A descrição completa continua necessária antes de pedir sugestões para o currículo.
+## Sugestões que ajudam a pessoa
 
-Uma pessoa sem currículo pode pesquisar manualmente, mas não recebe sinais personalizados. Ambas as telas reutilizam a mesma API de importação e o mesmo perfil; o Studio fica disponível somente para edições detalhadas quando desejadas.
+Mostrar poucas opções relevantes ao contexto, normalmente duas a quatro, em linguagem simples e com área de toque adequada. Elas podem ser produzidas por regras ou IA; cliques e renderização não exigem inferência. Não presumir que todo modelo conectado suporta geração estruturada confiável.
 
-## Referências de produto e arquitetura
+| Situação | Intervenção do Alinha | Resposta ou componente possível |
+|---|---|---|
+| Não sabe como começar | Pergunta o que deseja resolver agora | Montar currículo / procurar vagas / explorar possibilidades |
+| Não tem currículo | Pergunta sobre atividades, estudos, projetos e experiências reais | Texto livre, escolhas rápidas e prévia editável |
+| Relata atendimento ao público | Pergunta quais atividades realizou | Atendimento presencial / telefone / resolver reclamações / outra atividade |
+| Faltam preferências para a busca | Esclarece o critério que muda a consulta | Cidade, modalidade ou vínculo, sem pedir tudo de uma vez |
+| Encontra oportunidades | Explica motivos, impedimentos e informações ausentes | Cards de vagas e seleção de interesse |
+| Prepara currículo ou resposta | Mostra sugestão baseada em informações confirmadas | Comparação antes/depois ou texto editável |
+| Falta disponibilidade ou habilitação | Faz a pergunta à pessoa | Responder / informar depois / não se aplica, quando pertinente |
+| Uma ferramenta falha | Explica o efeito e oferece caminhos válidos | Revisar / tentar novamente quando permitido / continuar outra tarefa |
 
-- O LoopCV inspira a **jornada**: perfil → buscas → oportunidades → candidaturas → acompanhamento.
-- O OpenCode inspira o **modelo de execução**: ferramentas com permissões, planejamento visível, revisão antes de ações sensíveis e histórico confiável.
-- A identidade, telas, código, textos, fluxos, contratos e documentação do Alinha são originais.
+Uma sugestão de resposta deve ser reconhecível como proposta. Escolher uma atividade confirma somente o que o texto da opção expressa; não comprova senioridade, duração, resultados numéricos ou habilidades relacionadas. Respostas pessoais desconhecidas nunca são preenchidas silenciosamente. Ao transformar as respostas em currículo, mostrar a redação para revisão.
 
-O módulo público `apps/web/src/lib/career-agent.ts` implementa a **primeira avaliação determinística**, sem chamadas a modelos de IA. Ele não é uma simulação de agente inteligente: exibe o que realmente analisou e mostra o que não consegue saber a partir de um resumo.
+Texto livre pode corrigir escolhas e mudar o objetivo. Uma preferência não reconhecida é esclarecida, não descartada ou convertida silenciosamente para um padrão. Evitar perguntas repetidas sobre informações já confirmadas; permitir revisá-las.
 
-As permissões iniciais da edição Community são:
+## Componentes no momento necessário
 
-| Ação | Permissão | Comportamento presente |
-| --- | --- | --- |
-| Ler currículo local | permitida | Recuperar somente o rascunho salvo no dispositivo |
-| Pesquisar vagas | solicitar autorização | Disparada por clique e consulta fixa a uma fonte |
-| Identificar sinais literais | permitida | Comparação determinística apenas com texto disponível |
-| Preparar rascunho específico | solicitar autorização | Abre fluxo existente de Preparar candidatura |
-| Enviar candidatura | negada | Sem conector nem execução |
+- **Dentro da conversa:** upload, respostas rápidas, cards, resumo de progresso, seleção de vagas, formulário curto e prévia simples.
+- **Painel ou modal:** edição extensa do currículo, comparação de versões, revisão de materiais ou conexão de provedor. Voltar à conversa preserva contexto e trabalho.
+- **Pedido de intervenção:** pergunta indispensável, autenticação ou decisão de autorização; apresentar o que falta e seu efeito.
 
-## Evolução real para um agente de IA
+Evitar modais em sequência e sobreposição de componentes. Uma tarefa previsível deve ser concluída pelo agente dentro da autorização, sem pedir que a pessoa aprove cada passo interno. Ações que exigem nova autorização mantêm a confirmação específica. Escolha de modelo, nomes de ferramentas, UUIDs e logs ficam nos detalhes/configurações quando úteis, não na conversa por padrão.
 
-1. Planejador com provedores intercambiáveis e schema de tarefas, mantendo filtros e autorizações no domínio determinístico.
-2. Ferramentas versionadas para descoberta de vagas, leitura de descrições com permissão de fonte, comparação com evidências e preparação de versões de currículo.
-3. Sessões e histórico de execução transparentes, sem armazenar dados pessoais desnecessários, com possibilidade de parar/revogar.
-4. Versões de currículo vinculadas a cada vaga e alterações aprovadas pela pessoa, preservando sempre o original.
-5. Fontes adicionais com permissão contratual, quotas e mecanismos de deduplicação.
-6. Automações do Pro, após autenticação, auditoria, isolamento por conta, idempotência e conectores autorizados.
+## Jornada ilustrativa
 
-**Limites:** a fonte atual é especializada em vagas remotas e frequentemente retorna somente resumos; esses trechos não comprovam aderência a todos os requisitos. As classificações “Sinais relevantes”, “Alguns sinais” e “Precisa de revisão” significam apenas indícios literais, não uma avaliação de contratação. Nenhum currículo é enviado ao provedor de vagas. A comparação com IA em Preparar candidatura continua sujeita à escolha de provedor e solicitação explícita. O código é aberto e não contém credenciais comerciais.
+1. A pessoa pede: “Quero encontrar trabalho administrativo perto de casa”.
+2. O agente oferece usar o currículo salvo, importar um arquivo ou construir o perfil por conversa, conforme o que já existe.
+3. Esclarece localização e outros critérios necessários, resume o escopo e solicita autorização para a consulta.
+4. Mostra progresso e cards com fonte, motivos e incertezas. A pessoa pode revisar preferências ou escolher oportunidades.
+5. Prepara materiais para as vagas escolhidas e abre a revisão necessária na mesma experiência.
+6. Na versão atual, identifica o resultado como **rascunho / não enviado** e permite acessar a fonte para candidatura manual. No futuro, um conector de envio só avança com autorização válida e registra a confirmação externa.
+7. A pessoa interrompe e depois retoma o trabalho no contexto salvo, com resultados recuperáveis.
+
+Outras jornadas podem começar pela edição de currículo, por um link de vaga ou pelo acompanhamento. O agente não força pesquisa de vagas para quem só deseja montar um currículo.
+
+## Estado e execução
+
+A conversa apresenta a jornada; o núcleo mantém o estado verificável. Mensagens do modelo, rótulos de cards e histórico textual não comprovam consentimento, versão de currículo, conclusão de ferramenta ou envio.
+
+- Vincular decisões e componentes à jornada, etapa e versão vigentes. Cliques em cards antigos não podem executar uma ação obsoleta.
+- Uma resposta “sim” só pode confirmar um pedido atual e inequívoco. Em caso de ambiguidade, esclarecer; nunca reinterpretar como autorização mais ampla.
+- Distinguir **responder/editar**, **aprovar uma alteração** e **autorizar uma ação**. A UI deve comunicar o efeito antes do clique.
+- Manter cancelamento acessível; respostas tardias não reabrem tarefas canceladas nem substituem decisões posteriores.
+- Recuperar currículo, resultados e estado após reinício; não inferir retomada pela última mensagem nem repetir chamadas pagas ou operações ambíguas automaticamente.
+- Uma alteração do currículo exige validar a revisão antes de continuar ações vinculadas à versão anterior; resolver conflitos sem sobrescrita silenciosa.
+- Histórico conversacional durável requer definição mínima de dados, migração, retenção e exclusão antes da implementação; não persistir documentos integrais ou segredos por conveniência.
+
+Reutilizar o [executor persistente](agent-durable-runtime.md), a [ponte de intenção](ai-proposal-to-runtime.md) e a [recuperação supervisionada](agent-supervised-recovery.md). Não criar outro runtime de produção para sustentar o chat. Regras de permissão permanecem determinísticas; sugestões de IA não fornecem URLs, ferramentas ou permissões arbitrárias para execução.
+
+## Critérios de aceite da experiência
+
+Estes critérios são metas; só marcar como entregues com evidência executada.
+
+- Uma pessoa sem currículo consegue iniciar sua construção pela conversa, revisar a redação e obter documento exportável sem inventar fatos nem preencher obrigatoriamente um formulário longo.
+- Uma pessoa com currículo importa uma vez e usa o mesmo perfil na busca e na preparação, com correção e confirmação de substituição.
+- A pessoa pode iniciar, corrigir e mudar o objetivo por texto livre ou sugestões; nenhuma escolha depende exclusivamente de botões.
+- Sugestões acompanham o contexto e podem ser editadas/ignoradas; fatos, preferências e consentimentos não são presumidos.
+- Buscar, escolher uma vaga e revisar materiais ocorre na mesma experiência; painel/modal retorna ao ponto correto sem perder trabalho.
+- Interações usam o estado do núcleo, rejeitam componentes obsoletos e preservam autorização, idempotência e revisão do currículo.
+- Cancelamento, erro de fonte, falha de IA, informação desconhecida, retomada e conflito entre abas têm caminhos compreensíveis, sem repetir ações silenciosamente.
+- O usuário recupera currículo, vagas e materiais sem rolar todo o histórico. Rascunhos e envios confirmados são distintos.
+- O fluxo funciona em desktop e celular, por teclado e com leitores de tela: foco retorna ao componente de origem, progresso é anunciado e conteúdo não depende só de cor ou hover.
+- Testes sintéticos cobrem áreas diferentes (por exemplo, atendimento, administração, trabalho operacional, saúde e tecnologia), primeiro emprego e transição, sem assumir remoto ou formação superior. Isso não comprova cobertura de todas as profissões.
+
+## Validação proporcional
+
+Testar regras e estado com fakes; executar testes de navegador com fontes sintéticas interceptadas, storage temporário e nenhum dado pessoal real. Cobrir criação/importação, respostas sugeridas e livres, edição, sucesso, erro, cancelamento, contexto obsoleto e reinício. Integrar smoke do fluxo à CI com isolamento.
+
+Avaliar qualidade de interpretação e recomendações em conjunto anotado, incluindo negações, experiências informais e cursos que não equivalem a experiência profissional. Homologação com provedor ou fonte real exige condições e limites próprios; testes simulados não a substituem. Usabilidade deve observar conclusão, esforço, erros e compreensão, além de aparência.

@@ -14,6 +14,12 @@ A preparação avançada é a PreparationJourney da PR #41, expandível na mesma
 
 Os contratos e o executor fictício da PR #45 continuam na API para testes de política determinística, mas o componente separado de demonstração foi excluído da rota. O trabalho de integração acontece na única tela /agente.
 
+## Preparação automática de até três candidaturas locais
+
+Quando a intenção contém solicitação de candidatura/rascunho, a interface prepara **até três prévias** da lista atual, sem chamadas adicionais de IA, sem upload do currículo para a fonte e sem envio externo. O algoritmo `agent-queue.ts` reutiliza `rankCareerJobs`, descarta vagas com incompatibilidades comprovadas, exige URL pública segura, deduplica anúncios e mantém as incertezas em cada prévia. O usuário escolhe qual deseja editar e, somente se quiser, abre a preparação avançada integrada com análise por IA conectada mediante consentimento.
+
+A interpretação agora sinaliza CLT/PJ inequívoco e só exclui vagas quando o contrato publicado difere de uma preferência explícita; ausência de contrato é revisão, não incompatibilidade. Salário anual não vira valor mensal silenciosamente. O navegador limita uma consulta a **30 segundos**; falhas/timeout não são apresentadas como sucesso. O resultado não é persistido como execução concluída após reinício; apenas a seleção ativa tem a retomada da PR #41.
+
 ## Como testar
 
 ### Testes locais

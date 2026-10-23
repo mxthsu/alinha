@@ -5,6 +5,7 @@ import {assessAgentJob,planCareerSearch,type AgentJob} from "./career-agent.ts";
 export type CareerIntent={
  role:string;remoteOnly:boolean;workMode:"remote"|"hybrid"|"onsite"|null;
  city:string|null;brazilOnly:boolean;minSalaryBrl:number|null;
+ contract:"clt"|"pj"|null;
  needsConfirmation:string[];
 };
 export type JobJudgement={
@@ -30,7 +31,8 @@ export function interpretCareerIntent(input:string,defaultRole=""):CareerIntent{
   /\bhibrid[oa]s?\b/.test(simple)?"hybrid":
   /\bpresencia(?:l|is)\b/.test(simple)?"onsite":null;
  let role="";
- const match=text.match(/(?:vagas?|oportunidades?)\s+(?:de|para)\s+(.+?)(?=\s+(?:remot[oa]s?|h[ií]brid[oa]s?|presencia(?:l|is)|no\s+brasil|em\s+[\p{L}]|com\s+sal[aá]rio|acima\s+de|que\s+paguem|e\s+(?:compare|prepare)|para\s+(?:compare|preparar))|[,.;]|$)/iu);
+ const match=text.match(/(?:vagas?|oportunidades?)\s+(?:de|para)\s+(.+?)(?=\s+(?:remot[oa]s?|h[ií]brid[oa]s?|presencia(?:l|is)|no\s+brasil|em\s+[\p{L}]|com\s+sal[aá]rio|acima\s+de|que\s+paguem|e\s+(?:compare|prepare)|para\s+(?:compare|preparar))|[,.;]|$)/iu)
+  ??text.match(/(?:trabalhar|atuar)\s+(?:como|de)\s+(.+?)(?=\s+(?:remot[oa]s?|h[ií]brid[oa]s?|presencial|no\s+brasil|em\s+[\p{L}]|com\s+sal[aá]rio)|[,.;]|$)/iu);
  if(match)role=match[1].trim();
  else if(!/\b(?:vagas?|oportunidades?)\b/i.test(text)&&text.length<=80)role=text;
  role=(role||defaultRole).trim().slice(0,80);
@@ -40,16 +42,20 @@ export function interpretCareerIntent(input:string,defaultRole=""):CareerIntent{
  const brazilOnly=/\b(?:no brasil|do brasil|para o brasil|brasileir[oa]s?)\b/.test(simple);
  const salaryText=text.match(/(?:r\$\s*|sal[aá]rio\s+(?:de\s+|a\s+partir\s+de\s+)?|acima\s+de\s+(?:r\$\s*)?)(\d{4,7}|\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d{1,3})(\s*k\b)?/iu);
  const parsed=salaryText?currency(salaryText[1])*(salaryText[2]?1000:1):null;
- const minSalaryBrl=parsed!==null&&Number.isFinite(parsed)&&parsed>=500&&parsed<=200000?parsed:null;
+ const annual=/\b(?:por ano|ao ano|anual|anuais)\b/.test(simple);
+ const minSalaryBrl=!annual&&parsed!==null&&Number.isFinite(parsed)&&parsed>=500&&parsed<=200000?parsed:null;
+ const mentionsClt=/\bclt\b/.test(simple);
+ const mentionsPj=/\bpj\b/.test(simple);
+ const contract=mentionsClt!==mentionsPj?(mentionsClt?"clt":"pj"):null;
  const needsConfirmation:string[]=[];
  if((simple.includes("salario")||text.includes("R$")||simple.includes("acima de"))&&minSalaryBrl===null)
   needsConfirmation.push("Valor salarial não interpretado: informe um valor em reais para filtrar.");
- if(/\b(clt|pj|junior|pleno|senior|estagio|beneficio|beneficios|plano de saude|ingles|experiencia minima)\b/.test(simple))
+ if((mentionsClt&&mentionsPj)||/\b(junior|pleno|senior|estagio|beneficio|beneficios|plano de saude|ingles|experiencia minima)\b/.test(simple))
   needsConfirmation.push("Vínculo, senioridade, benefícios e exigências adicionais não têm filtro automático; confira cada anúncio.");
  if(brazilOnly)needsConfirmation.push("Confirme no anúncio se a empresa admite contratação de residentes no Brasil.");
  if(city)needsConfirmation.push("A localização informada pode não indicar elegibilidade geográfica; confira o anúncio.");
  if(!role||role.length<2)needsConfirmation.push("Não foi possível identificar o cargo. Informe o cargo desejado.");
- return {role,remoteOnly:mode==="remote",workMode:mode,city,brazilOnly,minSalaryBrl,needsConfirmation};
+ return {role,remoteOnly:mode==="remote",workMode:mode,city,brazilOnly,minSalaryBrl,contract,needsConfirmation};
 }
 
 export function judgeCareerJob(job:AgentJob,profile:ResumeProfile,intent:CareerIntent):JobJudgement{
@@ -60,6 +66,10 @@ export function judgeCareerJob(job:AgentJob,profile:ResumeProfile,intent:CareerI
  const unknown:string[]=[];
  const excluded:string[]=[];
  const work=opportunity.work_mode;
+ if(intent.contract&&opportunity.contract_type!==intent.contract){
+  if(opportunity.contract_type==="unspecified")unknown.push("Vínculo CLT/PJ não confirmado pela fonte.");
+  else excluded.push("Tipo de contrato diferente do solicitado.");
+ }
  if(intent.workMode&&work!==intent.workMode){
   if(work==="unspecified")unknown.push("Modalidade não informada pela fonte.");
   else excluded.push("Modalidade diferente do solicitado.");

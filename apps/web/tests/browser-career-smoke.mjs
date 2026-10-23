@@ -68,7 +68,7 @@ try{
  );
  await page.getByRole("checkbox").check();
  await page.getByRole("button",{name:/Encontrar e comparar vagas/}).click();
- await page.getByText("Empresa Horizonte (fictícia)").waitFor({timeout:25000});
+ await page.locator("#career-results").getByText("Empresa Horizonte (fictícia)").waitFor({timeout:25000});
  assert.equal(searchCalls.length,1,"Uma ação não deve repetir a consulta");
  assert.match(new URL(searchCalls[0]).searchParams.get("q"),/Engenheiro de IA/);
  assert.equal(new URL(searchCalls[0]).searchParams.get("remote_only"),"true");
@@ -76,7 +76,9 @@ try{
  const foundCount=await cards.count();
  assert.equal(foundCount,2);
  assert.match(await cards.nth(1).getAttribute("class"),/muted/);
- await cards.first().getByRole("button",{name:/Preparar prévia/}).click();
+ const prepared=page.getByRole("region",{name:"Candidaturas preparadas"});
+ assert.equal(await prepared.locator("li").count(),1,"Vaga presencial deve ser excluída das prévias");
+ await prepared.getByRole("button",{name:/Revisar rascunho/}).click();
  await page.getByText("RASCUNHO · NÃO ENVIADO").waitFor();
  const draft=await page.locator("#career-draft").inputValue();
  assert.match(draft,/Python/);

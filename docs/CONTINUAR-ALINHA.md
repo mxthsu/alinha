@@ -15,6 +15,12 @@
 - **Validação:** executar testes Python da API, testes Node da Web, Ruff, ESLint e build. Smoke Chrome reproduzível: iniciar API e Next localmente com APPDATA/LOCALAPPDATA isolados, depois executar npm run test:browser dentro de apps/web (Chrome instalado; vagas interceptadas sinteticamente). Ver [jornada integrada](integrated-agent-journey.md). Não usar dados pessoais no smoke, screenshot ou commit.
 - **Destino após aprovação:** usar **PR integrada como substituta** de #41 e #45; depois que a integração estiver mergeada, fechar as duas PRs como substituídas para evitar merge duplicado. **Não** fazer merge de #41/#45 separadamente antes da integração. #42 pode permanecer como referência experimental.
 
+### Incremento seguinte — geração de múltiplas prévias, sem novas permissões externas
+
+Na branch feat/integrated-career-agent, quando o pedido inclui preparar candidaturas, a jornada agora monta **até três rascunhos locais automaticamente** a partir das vagas com URL segura, sem novas chamadas ao modelo. Duplicatas são removidas, resultados explicitamente fora dos filtros são descartados e cada prévia mostra fatos comprovados e pendências para revisão. A pessoa escolhe qual rascunho abrir/editar. Não envia nem tenta enviar candidaturas. O mecanismo não persiste uma fila de execução após reinício: a retomada segura da PR #41 continua guardando somente a vaga escolhida e sua descrição, não afirma execução anterior de fontes remotas.
+
+O parser também aceita expressões como "quero trabalhar como...", reconhece preferência inequívoca por CLT ou PJ, sinaliza combinações ambíguas e não trata salário anual como piso mensal. Uma busca tem limite local de 30 segundos; timeout vira falha explícita, não sucesso. Testes sintéticos em apps/web/tests/agent-queue.test.mjs e smoke real de navegador usam API local isolada e vagas interceptadas. A contagem de testes Web aumentou para 64 no desenvolvimento local; confirme no commit/CI mais recente, pois este documento não substitui evidência do GitHub.
+
 ### Próxima evolução após a integração
 
 Melhorar cobertura de fontes autorizadas, interpretação sem heurísticas frágeis e preparação avançada com usuários; validar provedor real apenas com chave de teste expressamente fornecida e limites. Não recomeçar pesquisa de stack. Rust/Go/TS/Python seguem opções, não requisitos. Community primeiro, Desktop e Cloud depois.

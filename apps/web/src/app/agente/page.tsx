@@ -14,6 +14,7 @@ import {
 } from "@/lib/career-handoff";
 import type {AgentJob} from "@/lib/career-agent";
 import {planCareerSearch} from "@/lib/career-agent";
+import {prepareApplicationQueue,wantsApplicationDrafts} from "@/lib/agent-queue";
 import {
  interpretCareerIntent,rankCareerJobs,judgeCareerJob,prepareCareerPreview,
  type CareerIntent,type JobJudgement,
@@ -51,6 +52,7 @@ export default function CareerAgent(){
  const [results,setResults]=useState<RemoteResult|null>(null);
  const [runIntent,setRunIntent]=useState<CareerIntent|null>(null);
  const [runPlanRole,setRunPlanRole]=useState("");
+ const [runRequestedDrafts,setRunRequestedDrafts]=useState(false);
  const [selected,setSelected]=useState<SelectedOpportunity|null>(null);
  const [reviewing,setReviewing]=useState(false);
  const [advanced,setAdvanced]=useState(false);
@@ -65,6 +67,8 @@ export default function CareerAgent(){
  const parsed=useMemo(()=>interpretCareerIntent(intentText),[intentText]);
  const ranked=useMemo(()=>profile&&runIntent&&results?
   rankCareerJobs(results.jobs,profile,runIntent):[],[results,profile,runIntent]);
+ const prepared=useMemo(()=>profile&&runIntent&&runRequestedDrafts?
+  prepareApplicationQueue(ranked,profile):[],[ranked,profile,runIntent,runRequestedDrafts]);
  const chosen=useMemo(()=>{
   if(!selected||!profile)return null;
   const item=ranked.find(i=>i.job.opportunity.source_url===selected.url);
@@ -104,7 +108,7 @@ export default function CareerAgent(){
    const imported=parseResumeImport(await response.json());
    await saveResumeDraft(imported.profile,"classico");
    setProfile(imported.profile);
-   setResults(null);setRunIntent(null);setStatus("idle");
+   setResults(null);setRunIntent(null);setRunRequestedDrafts(false);setStatus("idle");
    const roles=planCareerSearch(imported.profile).roleQueries;
    if(roles[0]&&!intentEdited.current)setIntentText("Encontre vagas de "+roles[0]+" remotas no Brasil, compare com meu currículo e prepare candidaturas");
    setNotice(imported.unassigned_lines.length||imported.warnings.length?
@@ -122,6 +126,9 @@ export default function CareerAgent(){
   const current=++generation.current;
   setStatus("searching");setResults(null);setRunIntent(null);setError("");setReviewed(false);
   setRunPlanRole(parsed.role);
+  setRunRequestedDrafts(wantsApplicationDrafts(intentText));
+  let timedOut=false;
+  const deadline=window.setTimeout(()=>{timedOut=true;controller.abort();},30000);
   try{
    // Source adapters, settings and rate limits are enforced by the existing local API.
    const qs=new URLSearchParams({q:parsed.role,source:"all",page:"1",remote_only:String(parsed.remoteOnly)});
@@ -137,10 +144,11 @@ export default function CareerAgent(){
    setResults({...data,jobs:data.jobs.slice(0,30)});
    setRunIntent(parsed);setStatus("review");
   }catch(e){
-   if(!controller.signal.aborted&&current===generation.current){
-    setStatus("failed");setError(e instanceof Error?e.message:"Erro desconhecido na busca.");
+   if(current===generation.current&&(!controller.signal.aborted||timedOut)){
+    setStatus("failed");setError(timedOut?"A consulta excedeu 30 segundos. Nenhum resultado foi confirmado. Tente novamente.":
+     e instanceof Error?e.message:"Erro desconhecido na busca.");
    }
-  }
+  }finally{window.clearTimeout(deadline);}
  }
 
  function cancel(){
@@ -179,7 +187,7 @@ export default function CareerAgent(){
   {label:"Entender objetivo",detail:runPlanRole||parsed.role||"Cargo não informado"},
   {label:"Consultar vagas",detail:status==="searching"?"Buscando nas fontes autorizadas":results?"Consulta realizada":"Aguardando autorização"},
   {label:"Conferir requisitos",detail:results?"Evidências e critérios organizados":"Sem suposições"},
-  {label:"Revisar candidatura",detail:reviewing?"Prévia local disponível":"Nenhum envio externo"},
+  {label:"Preparar prévias",detail:prepared.length>0?prepared.length+" rascunho(s) locais; revisão pendente":reviewing?"Prévia local para revisar":"Nenhum envio externo"},
  ];
 
  return <div className="platform-shell"><PlatformNav/>
@@ -220,6 +228,7 @@ export default function CareerAgent(){
        {parsed.city&&<span>Cidade: {parsed.city}</span>}
        {parsed.brazilOnly&&<span>Brasil</span>}
        {parsed.minSalaryBrl!==null&&<span>A partir de {parsed.minSalaryBrl.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</span>}
+       {parsed.contract&&<span>Contrato {parsed.contract.toUpperCase()}</span>}
       </div>
       {parsed.needsConfirmation.length>0&&<details className="unified-uncertainties">
        <summary><CircleAlert size={15}/> {parsed.needsConfirmation.length} condição(ões) que precisam de confirmação <ChevronDown size={14}/></summary>
@@ -242,16 +251,33 @@ export default function CareerAgent(){
    <section className="unified-progress" aria-label="Progresso do agente">
     <div className="unified-section-head"><h2>Progresso</h2>
      <span role="status" aria-live="polite">{status==="searching"?"Consultando fontes…":
-      status==="review"?"Oportunidades prontas para revisão":
+      status==="review"?results?.jobs.length?"Oportunidades disponíveis para revisão":"Busca concluída, sem vagas encontradas":
       status==="failed"?"Consulta interrompida por erro":
       status==="cancelled"?"Busca cancelada": "Aguardando seu pedido"}</span></div>
     <ol>{steps.map((step,index)=>{const done=index===0?Boolean(profile):index===1?Boolean(runPlanRole):
-     index===2?Boolean(results):index===3?Boolean(results&&runIntent):Boolean(reviewing&&chosen);
+     index===2?Boolean(results):index===3?Boolean(results&&runIntent):Boolean(prepared.length||reviewing&&chosen);
      return <li key={step.label} className={done?"done":""}>
      <span>{done?<Check size={13}/>:index+1}</span><div><strong>{step.label}</strong><small>{step.detail}</small></div></li>;})}</ol>
    </section>
    {(status==="failed"||status==="cancelled")&&<p role="alert" className="unified-error">
     {status==="failed"?error:"A busca foi cancelada. Nenhuma candidatura foi enviada; você pode começar outra quando quiser."}</p>}
+   {results&&runIntent&&runRequestedDrafts&&<section className="unified-batch" aria-label="Candidaturas preparadas">
+    <div className="unified-section-head"><div>
+     <span className="unified-eyebrow">PREPARAÇÃO LOCAL · NÃO ENVIADO</span>
+     <h2>Prévias prontas para sua revisão</h2>
+     <p>{prepared.length} de até 3 prévias geradas com informações do seu currículo, sem utilizar IA nem enviar candidaturas.</p>
+    </div></div>
+    {prepared.length===0?<p>Nenhum anúncio elegível e com link seguro para preparar. Ajuste os filtros ou confira as fontes.</p>:
+     <ol className="unified-batch-list">{prepared.map(entry=><li key={entry.url}>
+      <div><strong>{entry.title}</strong><small>{entry.company} · {entry.source}</small>
+       <span>{entry.preview.verifiedSkills.length} competência(s) documentada(s) · {entry.preview.unknownQuestions.length} ressalva(s)</span></div>
+      <button type="button" onClick={()=>{
+       const item=ranked.find(job=>job.job.opportunity.source+":"+job.job.opportunity.external_id===entry.key);
+       if(item)choose(item);
+      }}>Revisar rascunho <ArrowRight size={14}/></button>
+     </li>)}</ol>}
+    <p className="unified-limitation">Prévia não significa candidatura enviada. Respostas desconhecidas dependem de você.</p>
+   </section>}
    {results&&runIntent&&<section className="unified-results" id="career-results">
     <div className="unified-section-head"><div><h2>Oportunidades encontradas</h2>
      <p>{results.jobs.length} vagas · {results.source_name}. A ordem considera sinais literais e incertezas; não é pontuação ATS.</p></div></div>

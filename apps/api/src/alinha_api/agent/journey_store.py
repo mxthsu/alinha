@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Literal
 from uuid import UUID, uuid4
 
-from pydantic import UUID4, BaseModel, ConfigDict, Field, field_validator
+from pydantic import UUID4, BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from alinha_api.agent.assessment import AssessmentReport
 from alinha_api.agent.discovery import JobSearchResult
@@ -192,16 +192,21 @@ class JourneyStore:
         """,
             (row["run_id"],),
         ).fetchall()
-        return JourneySnapshot(
-            run_id=row["run_id"],
-            status=row["status"],
-            query=row["query"],
-            next_step=row["next_step"],
-            plan=json.loads(row["plan"]),
-            events=[JourneyEvent(**dict(e)) for e in events],
-            result_count=row["result_count"],
-            profile_revision=row["profile_revision"],
-        )
+        try:
+            return JourneySnapshot(
+                run_id=row["run_id"],
+                status=row["status"],
+                query=row["query"],
+                next_step=row["next_step"],
+                plan=json.loads(row["plan"]),
+                events=[JourneyEvent(**dict(e)) for e in events],
+                result_count=row["result_count"],
+                profile_revision=row["profile_revision"],
+            )
+        except (ValidationError, ValueError, TypeError) as exc:
+            raise JourneyConflict(
+                "Plano ou eventos persistidos inválidos; execução bloqueada."
+            ) from exc
 
     def create(self, request: StartJourney) -> JourneySnapshot:
         data = request.model_dump(mode="json")

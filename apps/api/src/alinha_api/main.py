@@ -39,7 +39,9 @@ from alinha_api.agent.journey_store import (
 from alinha_api.agent.lever import search_lever
 from alinha_api.agent.models import CandidateCriteria
 from alinha_api.agent.multisource import search_multi_source
+from alinha_api.agent.preview import PreviewBatch
 from alinha_api.agent.real_assessment import AssessmentUnavailable, execute_authorized_assessment
+from alinha_api.agent.real_preview import PreviewUnavailable, execute_authorized_previews
 from alinha_api.agent.real_search import SearchToolUnavailable, execute_authorized_search
 from alinha_api.agent.runtime import (
     AdvanceRun,
@@ -282,6 +284,40 @@ def get_agent_assessment(request: Request, response: Response, run_id: UUID) -> 
     response.headers["Cache-Control"] = "no-store"
     try:
         return journey_store.get_assessment(run_id)
+    except JourneyNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except JourneyConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except JourneyStorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.post("/api/v1/agent/runs/{run_id}/execute-preview", response_model=JourneySnapshot)
+def execute_agent_preview(request: Request, response: Response, run_id: UUID) -> JourneySnapshot:
+    """Generate review-only local drafts from previously verified literal signals."""
+    _community_api_only(request, mutation=True)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return execute_authorized_previews(
+            journey_store, run_id, lambda: get_record("resume")[1],
+        )
+    except JourneyNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except JourneyConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except JourneyStorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except PreviewUnavailable as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/api/v1/agent/runs/{run_id}/previews", response_model=PreviewBatch)
+def get_agent_previews(request: Request, response: Response, run_id: UUID) -> PreviewBatch:
+    """Read saved drafts; no tools or remote systems are contacted."""
+    _community_api_only(request)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return journey_store.get_previews(run_id)
     except JourneyNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except JourneyConflict as exc:

@@ -1,4 +1,4 @@
-# Jornadas duráveis do agente — execução das três ferramentas no backend
+# Jornadas duráveis do agente — intenção confirmada e execução
 
 > **Status:** controle de execução integrado à API Community. `job.search` consulta os conectores públicos habilitados; `job.assess` compara as vagas persistidas com a versão autorizada do currículo armazenado no Community, sem modelo de IA. `application.preview` cria até três rascunhos locais revisáveis; um comando único já coordena os passos autorizados com checkpoints; a integração à UI ainda falta. Não confundir com o coordenador sintético `/agent/demo`.
 
@@ -34,10 +34,10 @@ A API requer modo Community, loopback, `Origin` permitido para mutações e bloq
 }
 ```
 
-**Ainda faltam:** avaliação semântica opcional e verificável, filtros completos, revisão de ações, retomada revisável de **operações interrompidas dentro de uma etapa**, homologação com ao menos um provedor real e contabilidade real de tokens/custos dos provedores. O executor de um comando já retoma passos **concluídos** mas nunca reexecuta uma operação ambígua. A etapa atual usa somente **coincidência literal** entre termos de competências declaradas e texto do anúncio; não atribui nota ATS nem comprova requisitos da vaga. A documentação e os testes com fontes fictícias **não equivalem a homologação de todas as fontes externas reais**. Só depois ligar a interface `/agente`.
+**Ainda faltam:** medição real de tokens/custos da interpretação por cada provedor, homologação de BYOK real, avaliação semântica opcional e verificável, filtros completos, revisão de ações, retomada revisável de **operações interrompidas dentro de uma etapa**, homologação com ao menos um provedor real e contabilidade real de tokens/custos dos provedores. O executor de um comando já retoma passos **concluídos** mas nunca reexecuta uma operação ambígua. A etapa atual usa somente **coincidência literal** entre termos de competências declaradas e texto do anúncio; não atribui nota ATS nem comprova requisitos da vaga. A documentação e os testes com fontes fictícias **não equivalem a homologação de todas as fontes externas reais**. Só depois ligar a interface `/agente`.
 
 ## Testes
 
-`cd apps/api && uv run pytest -q tests/test_agent_journey_store.py tests/test_agent_real_search.py tests/test_agent_real_assessment.py tests/test_agent_real_preview.py tests/test_agent_runner.py && uv run ruff check .`
+`cd apps/api && uv run pytest -q tests/test_agent_journey_store.py tests/test_agent_real_search.py tests/test_agent_real_assessment.py tests/test_agent_real_preview.py tests/test_agent_runner.py tests/test_agent_intent_bridge.py && uv run ruff check .`
 
 Cobre UUIDs e idempotência, autorização, busca com fontes sintéticas interceptadas, preservação de proveniência, concorrência e cancelamento durante chamada à fonte, reinício sem reexecução, erro da fonte sem vazamento em eventos, rejeição de payload grande, recusa de URL maliciosa, proteção HTTP por origem e ausência de envio externo.

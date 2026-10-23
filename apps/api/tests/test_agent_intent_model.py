@@ -53,6 +53,7 @@ def payload(provider="gemini", objective="Encontre vagas de Engenheiro de IA rem
 
 
 def local_ledger(monkeypatch, tmp_path):
+    monkeypatch.setattr(main.journey_store, "path", tmp_path / "test-intent.sqlite3")
     monkeypatch.setattr(
         main, "reserve_call",
         lambda run_id, request_id: reserve_call(

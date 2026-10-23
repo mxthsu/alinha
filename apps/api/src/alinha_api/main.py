@@ -29,6 +29,8 @@ from alinha_api.agent.intent_model import (
     validated_proposal,
 )
 from alinha_api.agent.journey_store import (
+    ConfirmIntentJourney,
+    IntentReceipt,
     JourneyConflict,
     JourneyNotFound,
     JourneySnapshot,
@@ -157,6 +159,17 @@ def interpret_agent_objective(request: Request, response: Response, body: Intent
     """
     _community_api_only(request, mutation=True)
     response.headers["Cache-Control"] = "no-store"
+    # Do not spend another model call on an already confirmed journey.
+    try:
+        journey_store.get(body.run_id)
+    except JourneyNotFound:
+        pass
+    except JourneyConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except JourneyStorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    else:
+        raise HTTPException(status_code=409, detail="Jornada já confirmada.")
     # Reserve atomically before inference, so concurrent requests cannot overspend.
     # The ledger stores only opaque UUIDs, never objective, CV or provider credentials.
     try:
@@ -171,21 +184,62 @@ def interpret_agent_objective(request: Request, response: Response, body: Intent
         raise HTTPException(status_code=503, detail="Limite de IA indisponível. Nenhuma chamada feita.") from exc
     try:
         suggestion = validated_proposal(MODELS[body.provider](), body.objective)
-        return build_reviewed_plan(
+        plan = build_reviewed_plan(
             suggestion,
             run_id=body.run_id,
             calls_used=reservation.calls_used,
             calls_remaining=reservation.calls_remaining,
             preview_requested=body.preview_requested,
         )
+        # Persist only the proposed job title and flags. This does not authorize
+        # searches, create a run or send any external application.
+        journey_store.save_intent_proposal(
+            run_id=body.run_id, request_id=body.request_id, role=plan.query,
+            preview_requested=body.preview_requested, calls_used=reservation.calls_used,
+        )
+        return plan
     except ProviderError as exc:
         # Provider adapters report only static, non-sensitive messages.
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail="Cargo sugerido não permitido.") from exc
+    except JourneyConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except JourneyStorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 # Durable execution control plane. UI integrations and tool dispatch come later;
 # never expose begin_step or finish_step to untrusted browser requests.
 journey_store = JourneyStore()
+
+
+@app.get("/api/v1/agent/intent/proposals/{run_id}", response_model=IntentReceipt)
+def read_agent_intent_proposal(request: Request, response: Response, run_id: UUID) -> IntentReceipt:
+    """Retrieve a short-lived proposal after restart, without calling a provider."""
+    _community_api_only(request)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return journey_store.get_intent_proposal(run_id)
+    except JourneyNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except JourneyStorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.post("/api/v1/agent/runs/confirm-intent", response_model=JourneySnapshot)
+def confirm_agent_intent(
+    request: Request, response: Response, body: ConfirmIntentJourney,
+) -> JourneySnapshot:
+    """Confirm the server-saved role before any real tools may run."""
+    _community_api_only(request, mutation=True)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return journey_store.confirm_intent(body)
+    except JourneyConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except JourneyStorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @app.post("/api/v1/agent/runs", response_model=JourneySnapshot)

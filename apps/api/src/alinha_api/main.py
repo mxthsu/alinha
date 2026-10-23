@@ -43,6 +43,7 @@ from alinha_api.agent.preview import PreviewBatch
 from alinha_api.agent.real_assessment import AssessmentUnavailable, execute_authorized_assessment
 from alinha_api.agent.real_preview import PreviewUnavailable, execute_authorized_previews
 from alinha_api.agent.real_search import SearchToolUnavailable, execute_authorized_search
+from alinha_api.agent.runner import run_authorized_journey
 from alinha_api.agent.runtime import (
     AdvanceRun,
     AgentCoordinator,
@@ -324,6 +325,31 @@ def get_agent_previews(request: Request, response: Response, run_id: UUID) -> Pr
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except JourneyStorageUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.post("/api/v1/agent/runs/{run_id}/execute", response_model=JourneySnapshot)
+def execute_agent_journey(request: Request, response: Response, run_id: UUID) -> JourneySnapshot:
+    """One backend call dispatches the remaining authorized, checkpointed steps."""
+    _community_api_only(request, mutation=True)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return run_authorized_journey(
+            journey_store, run_id,
+            search=lambda query: discover_jobs(
+                request, q=query, page=1, remote_only=True, source="all",
+            ),
+            read_profile=lambda: get_record("resume"),
+        )
+    except JourneyNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except JourneyConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except JourneyStorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except SearchToolUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except (AssessmentUnavailable, PreviewUnavailable) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 # Ephemeral demo only: isolated synthetic data and no submission connector.

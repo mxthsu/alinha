@@ -2,13 +2,13 @@
 
 > **Fonte principal de contexto do projeto, atualizada em 23/10/2026.** Leia este arquivo, [AGENTS.md](../AGENTS.md), o código real na branch escolhida e os documentos vinculados **antes** de decidir a próxima tarefa. O estado do GitHub pode mudar; confirme branches, CI e PRs ao começar. Este texto não prova que funcionalidades planejadas já funcionem.
 
-## Backend com três ferramentas de carreira (23/10/2026)
+## Backend: três ferramentas + comando único (23/10/2026)
 
-**PRs #55, #56 e #57 integradas à main:** o servidor tem jornadas SQLite duráveis, `job.search` ligado às fontes públicas habilitadas, resultados com proveniência, e `job.assess` lendo o currículo estruturado **dentro do registro versionado Community**. Exige `profile_revision` autorizado na criação; compara apenas coincidências literais de competências declaradas. Nunca inventa requisitos, não chama IA na comparação e não envia CV às fontes.
+**PRs #55, #56, #57 e #58 integradas à main:** jornadas SQLite duráveis e ferramentas `job.search → job.assess → application.preview` operantes sob chamadas autorizadas. A busca usa conectores públicos habilitados, até 15 anúncios com proveniência; avaliação consulta a versão pinada de currículo do registro Community e calcula apenas sinais literais; preview prepara até três textos locais revisáveis, sem contato pessoal ou experiências inventadas. **Nenhuma candidatura é enviada.**
 
-**Nova implementação desta branch:** `application.preview` cria até três rascunhos locais somente a partir de competências declaradas e presentes nos anúncios, sem contato pessoal nem inferência de experiência. O Core revalida deterministicamente os textos antes de persisti-los; entrega `needs_review` e **não envia candidatura**. As três ferramentas exigem chamadas explícitas de backend e autorização/ordem corretas. A interface `/agente` anterior permanece intacta.
+**Nova implementação desta branch:** `POST /api/v1/agent/runs/{run_id}/execute` executa em um único comando os passos do plano permitidos pelo Core, com checkpoint transacional entre cada ferramenta e possibilidade de continuar apenas passos ainda não iniciados após reinício. A API recusa currículo ausente/inválido, revisão alterada e planos corrompidos *antes de consumir quota dos conectores*. Nunca reexecuta automaticamente uma etapa ambígua `running`. A UI `/agente` permanece intacta.
 
-**Próximo trabalho na issue #48:** criar um comando coordenado único para `job.search → job.assess → application.preview` com estados/cancelamento e retomada revisável, validar custo/tokens e pelo menos uma IA BYOK real, consolidar filtros e testar a jornada ponta a ponta antes de integrar ao frontend. Consulte [contrato das jornadas](agent-durable-runtime.md). As seções históricas abaixo tratam de etapas anteriores.
+**Próximo trabalho na issue #48:** fechar filtros e interpretação de intenção (IA opt-in com limites reais), retomar com revisão humana operações interrompidas, medir custos/tokens e homologar ao menos um provedor BYOK real. Só depois ligar a interface simplificada ao coordenador e avançar Desktop. Consulte [contrato das jornadas](agent-durable-runtime.md). As seções históricas abaixo tratam de etapas anteriores.
 
 ## Integrado na `main` — IA opt-in e plano revisável (23/10/2026)
 

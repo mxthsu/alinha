@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 
 import { useEffect, useState } from "react";
 import { AlertCircle, ArrowRight, CheckCircle2, Download, FilePenLine, RotateCcw, ShieldCheck } from "lucide-react";
@@ -35,7 +36,7 @@ export function AtsEditor({ apiUrl, sourceText, file }: Props) {
     if (!file) return () => { active = false; };
     const data = new FormData();
     data.append("file", file);
-    fetch(apiUrl + "/api/v1/ats/editor/import", { method: "POST", body: data })
+    apiFetch(apiUrl + "/api/v1/ats/editor/import", { method: "POST", body: data })
       .then(async response => {
         const payload: unknown = await response.json();
         if (!response.ok) throw new Error(errorDetail(payload));
@@ -59,7 +60,7 @@ export function AtsEditor({ apiUrl, sourceText, file }: Props) {
     setError("");
     setFeedback("");
     try {
-      const response = await fetch(apiUrl + "/api/v1/ats/check/text", {
+      const response = await apiFetch(apiUrl + "/api/v1/ats/check/text", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resume_text: draft }),
@@ -80,7 +81,7 @@ export function AtsEditor({ apiUrl, sourceText, file }: Props) {
     setAction("download");
     setError("");
     try {
-      const response = await fetch(apiUrl + "/api/v1/ats/editor/export/docx", {
+      const response = await apiFetch(apiUrl + "/api/v1/ats/editor/export/docx", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resume_text: draft }),

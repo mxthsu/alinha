@@ -1,6 +1,6 @@
 # Alinha Desktop — prova Tauri/Rust + Python (23/10/2026)
 
-> **Status: protótipo isolado, não instalador publicável e ainda sem UI conectada à API Python.** PR experimental empilhada sobre [#47](https://github.com/mxthsu/alinha/pull/47), para reutilizar a mesma exportação Next.js e o entrypoint Python de porta efêmera já usados pela prova Go/Wails.
+> **Status: protótipo isolado, não instalador publicável; transporte IPC codificado, ainda sem homologação na janela Tauri.** PR experimental empilhada sobre [#47](https://github.com/mxthsu/alinha/pull/47), para reutilizar a mesma exportação Next.js e o entrypoint Python de porta efêmera já usados pela prova Go/Wails.
 
 ## Decisão de responsabilidades, sem reescrita
 
@@ -26,9 +26,9 @@
 | React/TypeScript suíte e lint | **64/64 testes** e ESLint aprovado |
 | Rust host-core testado com toolchain Windows gnullvm portátil | **3/3 unitários** |
 | Rust inicia Python `desktop_entry`, aguarda readiness, autentica `/health`, encerra o processo filho | **1/1 integração real** |
-| Window Tauri compilada / aberta | **Não validada**: MSVC Build Tools e Windows SDK ausentes no PC |
+| Binário Windows Tauri compilado / janela aberta | **Binário gerado na CI Windows/MSVC**; janela em execução e smoke integrados ainda não validados |
 | Instalador Windows assinado | **Não implementado** |
-| UI React conectada à API por IPC autenticado | **Não implementado** |
+| UI React conectada à API por IPC autenticado | **Código implementado**, com testes JS/fallback; comportamento na WebView real ainda não homologado |
 
 **Importante:** os testes do Rust rodam via toolchain isolada `stable-x86_64-pc-windows-gnullvm` + `rust-lld`; isto não substitui os pré-requisitos oficiais MSVC/WebView2 para compilar o aplicativo Tauri Windows. Consulte a [documentação oficial de pré-requisitos](https://v2.tauri.app/start/prerequisites/).
 
@@ -38,15 +38,15 @@ A prova Go/Wails da PR #47 chegou a abrir uma janela nativa e medir memória do 
 
 - Token de 256 bits gerado pelo Rust, passado **somente ao ambiente do Python filho**. Não é retornado ao JS ou gravado em arquivos de preferências/logs.
 - Python só abre loopback e porta efêmera, exige o token em cada request; Rust valida readiness e `/health`. O token no ambiente do processo não protege contra malware já executado com privilégios equivalentes no sistema.
-- WebView não tem capacidades de shell nem filesystem irrestrito. O único acesso a CV oferecido nesta fase é seletor nativo explícito + **metadados limitados** (extensão/bytes/nome), com verificações contra symlink, diretório, zero bytes, formatos e tamanho.
+- WebView não tem capacidades de shell nem filesystem irrestrito. O seletor nativo explícito oferece somente **metadados limitados** (extensão/bytes/nome); o upload existente via interface web usa arquivos escolhidos pela pessoa e o transporte IPC. Tipos, tamanho, symlink e permissões continuam validados pelos componentes respectivos.
 - Preferências do Desktop ficam em `app_local_data_dir` e aceitam apenas `system/light/dark`. A gravação temporária com sincronização **ainda não garante substituição crash-atomic no Windows**. Não persistir estado crítico de candidatura nesse arquivo.
-- CSP restringe rede e scripts externos. Como a API Python exige segredo, a UI atual não pode chamar a API diretamente; falta um gateway IPC Rust autorizado por comando, com filtragem de destino, métodos, autorização e tamanho, sem entregar token à WebView.
+- CSP restringe rede e scripts externos. Foi codificado um gateway **IPC Rust → Python** com URL exclusivamente loopback, allowlist de método/rota, limite de corpo/resposta, timeout, sem redirects/proxies e com o token somente no host. A UI agora usa `apiFetch` para preservar o modo Web normal. **Ainda não houve smoke na janela Tauri** da jornada completa. O cancelamento da UI não interrompe a requisição Rust já encaminhada; ela permanece limitada a 35 s e sem submissão externa. OAuth ChatGPT por callback externo ainda não está adaptado.
 - O aplicativo ainda **não distribui a API Python**. Usar `ALINHA_DESKTOP_PYTHON` apontando para uma venv é **somente desenvolvimento local**, não empacotamento final.
 
 ## Próximos gates
 
 1. Compilar/abrir a janela Tauri no Windows com MSVC e WebView2 (ou runner CI Windows), registrar falhas/tempo de abertura.
-2. Criar ponte `invoke` Rust → Python com allowlist por método/rota, limite de payload e contexto de autorização, **sem token no JavaScript**. Testar importação real de CV fictício na WebView e todos os estados de erro.
+2. Homologar a ponte `invoke` Rust → Python já codificada: abrir Tauri de fato e testar CV fictício, permissões, busca, exportação, falhas de API, cancelamento e layout. Endurecer concorrência/cancelamento antes da release, **sem token no JavaScript**.
 3. Empacotar Python sidecar (por exemplo PyInstaller) com binário por plataforma, atualizar o supervisor para localizar o artefato empacotado, validar fechamento e atualização segura.
 4. Validar reinstalação e preservação de SQLite, backups, assinaturas e distribuição Windows/macOS/Linux.
 5. Comparar com Wails v2 na mesma fixture, p50/p95, RAM total inclusive WebView/Python, segurança, tamanho e custo de manutenção. Decidir um só shell.

@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {resolveApiOrigin} from "@/lib/api-origin";
 import {useEffect,useState} from "react";
 import Link from "next/link";
@@ -24,7 +25,7 @@ export default function MyAlinha(){
  const [error,setError]=useState("");
  useEffect(()=>{
   let active=true;
-  void fetch(API+"/api/v1/community/settings",{cache:"no-store"})
+  void apiFetch(API+"/api/v1/community/settings",{cache:"no-store"})
    .then(async response=>{
     if(!response.ok)throw new Error("As configurações locais não estão disponíveis.");
     return await response.json() as Settings;
@@ -40,7 +41,7 @@ export default function MyAlinha(){
   const next={...settings,connectors:{...settings.connectors,
    [source]:{enabled:!settings.connectors[source].enabled}}};
   try{
-   const response=await fetch(API+"/api/v1/community/settings",{
+   const response=await apiFetch(API+"/api/v1/community/settings",{
     method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(next),
    });
    if(!response.ok)throw new Error("Não foi possível atualizar o conector.");

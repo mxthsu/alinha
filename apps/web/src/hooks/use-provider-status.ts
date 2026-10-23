@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {resolveApiOrigin} from "@/lib/api-origin";
 
 import { useSyncExternalStore } from "react";
@@ -40,7 +41,7 @@ export function refreshProviderStatus(force = false) {
   inFlight = true;
   lastFetch = Date.now();
 
-  fetch(api + "/api/v1/providers/status", { cache: "no-store" })
+  apiFetch(api + "/api/v1/providers/status", { cache: "no-store" })
     .then(async response => {
       if (!response.ok) throw new Error("Provider status unavailable");
       return await response.json() as BackendStatus;

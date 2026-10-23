@@ -1,4 +1,6 @@
 //! Trusted Desktop primitives, independent of Tauri and React.
+pub mod api_bridge;
+pub use api_bridge::ApiResponse;
 use serde::{Deserialize, Serialize};
 use std::{
  fs::{self,File}, io::{BufRead,BufReader,Read,Write}, net::{SocketAddr,TcpStream},

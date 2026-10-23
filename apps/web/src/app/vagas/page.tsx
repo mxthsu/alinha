@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {resolveApiOrigin} from "@/lib/api-origin";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -34,7 +35,7 @@ export default function Jobs() {
   // Read-only hydration: unapproved preferences remain temporary and never persist implicitly.
   useEffect(()=>{
     let active=true;
-    void fetch(api+"/api/v1/community/settings",{cache:"no-store"})
+    void apiFetch(api+"/api/v1/community/settings",{cache:"no-store"})
       .then(async response=>{
         if(!response.ok)throw new Error("Configuração local indisponível.");
         return await response.json() as {job_preferences?:unknown};
@@ -63,10 +64,10 @@ export default function Jobs() {
       });
       if(!clear&&!choice)throw new Error("Revise a cidade e o salário antes de salvar.");
       // Read the latest settings so toggles and provider options are not replaced by stale UI state.
-      const response=await fetch(api+"/api/v1/community/settings",{cache:"no-store"});
+      const response=await apiFetch(api+"/api/v1/community/settings",{cache:"no-store"});
       if(!response.ok)throw new Error("Não foi possível acessar a configuração local.");
       const current=await response.json() as Record<string,unknown>;
-      const written=await fetch(api+"/api/v1/community/settings",{
+      const written=await apiFetch(api+"/api/v1/community/settings",{
         method:"PUT",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({...current,job_preferences:choice}),cache:"no-store",
       });
@@ -119,7 +120,7 @@ export default function Jobs() {
     const controller=new AbortController();abort.current=controller;
     try{
       const query=new URLSearchParams({q:keyword.trim(),page:String(pageNumber),remote_only:String(workMode==="remote"),source});
-      const response=await fetch(api+"/api/v1/jobs/search?"+query.toString(),
+      const response=await apiFetch(api+"/api/v1/jobs/search?"+query.toString(),
         {signal:controller.signal,cache:"no-store"});
       const json=await response.json();
       if(!response.ok)throw new Error(typeof json.detail==="string"?json.detail:"Não foi possível consultar vagas.");

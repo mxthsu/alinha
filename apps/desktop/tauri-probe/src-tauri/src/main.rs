@@ -2,7 +2,7 @@
 
 use std::{path::PathBuf, sync::Mutex};
 use alinha_desktop_host_core::{
-  Backend, Preferences, ResumeInfo, inspect_chosen_resume, load_preferences, save_preferences,
+  ApiResponse, Backend, Preferences, ResumeInfo, inspect_chosen_resume, load_preferences, save_preferences,
 };
 use serde::Serialize;
 use tauri::{Manager, State};
@@ -32,6 +32,20 @@ fn desktop_status(state: State<'_, DesktopState>) -> DesktopStatus {
     }
     Err(_) => DesktopStatus{api_ready:false,message:"Estado indisponível".into()},
   }
+}
+/// Only allowlisted API methods/paths can reach Python. The session secret never
+/// crosses IPC and is not readable from JavaScript.
+#[tauri::command]
+fn api_request(
+ state: State<'_,DesktopState>,
+ method: String,
+ path: String,
+ content_type: String,
+ body_base64: String,
+)->Result<ApiResponse,String> {
+ let guard=state.backend.lock().map_err(|_|"Estado Desktop indisponível")?;
+ let backend=guard.as_ref().ok_or("API Python não iniciada")?;
+ backend.request(&method,&path,&content_type,&body_base64)
 }
 #[tauri::command]
 fn get_desktop_preferences(state: State<'_,DesktopState>)->Result<Preferences,String> {
@@ -74,7 +88,7 @@ fn main() {
     Ok(())
   })
   .invoke_handler(tauri::generate_handler![
-    desktop_status, get_desktop_preferences, set_desktop_preferences, choose_resume
+    desktop_status, api_request, get_desktop_preferences, set_desktop_preferences, choose_resume
   ])
   .on_window_event(|window,event|{
     if let tauri::WindowEvent::Destroyed=event {

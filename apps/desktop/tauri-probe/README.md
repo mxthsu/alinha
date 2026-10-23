@@ -33,10 +33,14 @@ fluxos fictícios. Não fazer merge independente da base sem rebase/revisão.
 - **Não há pacote Python embutido no instalador** (PyInstaller/sidecar e ciclo de
   atualização ainda precisam ser implementados). Instalar Python/venv é requerido
   para a prova de integração no PC de desenvolvimento.
-- **Não há ponte completa de API autenticada para a WebView**: o backend exige
-  segredo, e a política CSP bloqueia chamadas diretas do frontend para outras
-  origens. A UI estática renderiza, mas busca, análise e importação ainda **não
-  funcionam em uma instalação Tauri isolada**. Não vazar o token no JS como atalho.
+- **A ponte autenticada via IPC foi codificada, mas ainda não homologada numa janela
+  Tauri em execução.** A UI compartilha o transporte `apiFetch` (fetch no
+  navegador, invoke com allowlist Rust no Tauri); o Rust injeta o token ao
+  encaminhar apenas rotas locais previstas, com limite de bytes, timeout,
+  redirects e proxies desativados. Não entrega o segredo ao JavaScript.
+  A exportação estática e testes de interface passaram, mas **não afirmar a
+  jornada Desktop completa** sem smoke real na janela com Python supervisionado.
+  OAuth ChatGPT no navegador externo/callback permanece fora desta prova.
 - Compilação Tauri no Windows exige Visual Studio C++ Build Tools/MSVC + Windows
   SDK e WebView2. O PC atual tem Rust portátil para testes de núcleo, mas não
   tinha linker/SDK MSVC no momento desta prova. **Não tratar fonte Tauri criada

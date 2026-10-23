@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {resolveApiOrigin} from "@/lib/api-origin";
 
 import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from "react";
@@ -191,7 +192,7 @@ export default function Studio() {
     try {
       if (file.size > 100000) throw new Error("O arquivo JSON é muito grande.");
       const data: unknown = JSON.parse(await file.text());
-      const response = await fetch(api+"/api/v1/resumes/structured/preview/text",{
+      const response = await apiFetch(api+"/api/v1/resumes/structured/preview/text",{
         method:"POST", headers:{"Content-Type":"application/json"},body:JSON.stringify(data),
       });
       if (!response.ok) throw new Error("Arquivo incompatível com o perfil Alinha versão 1.");
@@ -218,7 +219,7 @@ export default function Studio() {
       }
       const uploadData = new FormData();
       uploadData.append("file", file);
-      const response = await fetch(api + "/api/v1/resumes/structured/import/upload", { method:"POST", body: uploadData });
+      const response = await apiFetch(api + "/api/v1/resumes/structured/import/upload", { method:"POST", body: uploadData });
       const payload = await response.json();
       if (!response.ok) throw new Error(typeof payload.detail === "string" ? payload.detail : "Falha ao ler currículo.");
       const result = payload as ImportedDraft;
@@ -251,7 +252,7 @@ export default function Studio() {
   async function exportDocx() {
     messages(); setBusy("docx");
     try {
-      const r=await fetch(api+"/api/v1/resumes/structured/export/docx",{
+      const r=await apiFetch(api+"/api/v1/resumes/structured/export/docx",{
         method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({profile,template}),
       });
       if (!r.ok) { const body=await r.json(); throw new Error(typeof body.detail==="string"?body.detail:"Falha ao exportar."); }

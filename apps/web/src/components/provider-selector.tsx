@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -74,7 +75,7 @@ export function ProviderSelector({
   const [connectionError, setConnectionError] = useState(false);
 
   const refresh = useCallback(async (): Promise<ProviderStatus> => {
-    const response = await fetch(apiUrl + "/api/v1/providers/status", { cache: "no-store" });
+    const response = await apiFetch(apiUrl + "/api/v1/providers/status", { cache: "no-store" });
     const next = await readResponse(response) as ProviderStatus;
     setStatus(next);
     window.dispatchEvent(new Event("provider-connection-changed"));
@@ -90,7 +91,7 @@ export function ProviderSelector({
       const query = params.toString();
       window.history.replaceState({}, "", window.location.pathname + (query ? "?" + query : ""));
     }
-    fetch(apiUrl + "/api/v1/providers/status", { cache: "no-store" })
+    apiFetch(apiUrl + "/api/v1/providers/status", { cache: "no-store" })
       .then(readResponse)
       .then(data => {
         if (!alive) return;
@@ -118,7 +119,7 @@ export function ProviderSelector({
   useEffect(() => {
     if (!status?.chatgpt.connected) return;
     let alive = true;
-    fetch(apiUrl + "/api/v1/providers/chatgpt/models", { cache: "no-store" })
+    apiFetch(apiUrl + "/api/v1/providers/chatgpt/models", { cache: "no-store" })
       .then(readResponse)
       .then(data => {
         if (!alive) return;
@@ -158,7 +159,7 @@ export function ProviderSelector({
     setMessage("");
     setConnectionError(false);
     try {
-      await readResponse(await fetch(apiUrl + "/api/v1/providers/keys/connect", {
+      await readResponse(await apiFetch(apiUrl + "/api/v1/providers/keys/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ provider, api_key: keyInput }),
@@ -180,7 +181,7 @@ export function ProviderSelector({
     setBusy(true);
     setMessage("");
     try {
-      await readResponse(await fetch(apiUrl + "/api/v1/providers/keys/disconnect", {
+      await readResponse(await apiFetch(apiUrl + "/api/v1/providers/keys/disconnect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ provider }),
@@ -200,7 +201,7 @@ export function ProviderSelector({
     setConnectionError(false);
     setMessage("");
     try {
-      const data = await readResponse(await fetch(apiUrl + "/api/v1/providers/chatgpt/login", {
+      const data = await readResponse(await apiFetch(apiUrl + "/api/v1/providers/chatgpt/login", {
         method: "POST",
       })) as { authorization_url: string };
       const url = new URL(data.authorization_url);
@@ -217,7 +218,7 @@ export function ProviderSelector({
     setBusy(true);
     setMessage("");
     try {
-      const response = await readResponse(await fetch(apiUrl + "/api/v1/providers/chatgpt/logout", {
+      const response = await readResponse(await apiFetch(apiUrl + "/api/v1/providers/chatgpt/logout", {
         method: "POST",
       })) as { remote_revocation_confirmed: boolean };
       setModels([]);

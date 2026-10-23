@@ -1,3 +1,4 @@
+import {apiFetch} from "./api-fetch.ts";
 import {resolveApiOrigin} from "./api-origin.ts";
 /** Versioned local SQLite API, shared by Studio and opportunity tracking. */
 export type CommunityKind="resume"|"opportunities"|"resume_versions";
@@ -16,7 +17,7 @@ async function responseOrThrow(response:Response):Promise<Record<string,unknown>
  return body as Record<string,unknown>;
 }
 export async function readCommunityRecord(kind:CommunityKind):Promise<CommunityRecord>{
- const body=await responseOrThrow(await fetch(
+ const body=await responseOrThrow(await apiFetch(
   API+"/api/v1/community/data/"+kind,{cache:"no-store"},
  ));
  if(!Number.isInteger(body.revision)||typeof body.revision!=="number"||body.revision<0)
@@ -24,7 +25,7 @@ export async function readCommunityRecord(kind:CommunityKind):Promise<CommunityR
  return {value:body.value,revision:body.revision};
 }
 export async function saveCommunityRecord(kind:CommunityKind,value:unknown,expected_revision:number):Promise<number>{
- const body=await responseOrThrow(await fetch(API+"/api/v1/community/data/"+kind,{
+ const body=await responseOrThrow(await apiFetch(API+"/api/v1/community/data/"+kind,{
   method:"PUT",headers:{"Content-Type":"application/json"},
   body:JSON.stringify({expected_revision,value}),cache:"no-store",
  }));
@@ -32,7 +33,7 @@ export async function saveCommunityRecord(kind:CommunityKind,value:unknown,expec
  return body.revision;
 }
 export async function clearCommunityRecord(kind:CommunityKind,expected_revision:number):Promise<number>{
- const body=await responseOrThrow(await fetch(
+ const body=await responseOrThrow(await apiFetch(
   API+"/api/v1/community/data/"+kind+"?expected_revision="+expected_revision,{
    method:"DELETE",cache:"no-store",
   }));

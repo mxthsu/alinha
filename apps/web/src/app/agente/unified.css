@@ -118,3 +118,34 @@
 
 .unified-ai-step-list{margin:11px 0;padding:10px 14px 10px 31px;border:1px solid #e0e9db;border-radius:8px;background:#f9fcf8;display:grid;gap:7px;color:#375f45;font-size:12px}
 .unified-ai-step-list li small{display:block;margin-top:2px;font-size:11px;color:#748875}
+
+/* Simplified career agent: one primary task and progressive disclosure. */
+.unified-agent{max-width:940px;padding-block:36px 75px}
+.unified-heading{margin-bottom:20px}
+.unified-heading h1{font-size:clamp(29px,4vw,41px);margin-bottom:9px}
+.unified-heading p{max-width:610px;line-height:1.6}
+.unified-primary{padding:26px}
+.unified-understanding{background:transparent;padding:0;margin:10px 0 12px;border:0}
+.unified-understanding>summary{display:flex;align-items:center;gap:7px;cursor:pointer;
+  font-size:12px;color:#668472;font-weight:650;list-style:none}
+.unified-understanding>summary::-webkit-details-marker{display:none}
+.unified-understanding>summary svg{transition:transform .18s}
+.unified-understanding[open]>summary svg{transform:rotate(180deg)}
+.unified-understanding-body{margin-top:11px;padding:13px;border-radius:11px;background:#f5faf3}
+.unified-ai-assist{margin-top:9px;padding:11px 0;border:0;border-top:1px solid #e6eee4;border-radius:0;background:transparent}
+.unified-ai-assist summary{font-size:12px!important;color:#6b8b74!important;font-weight:650!important}
+.unified-ai-assist[open]{padding:14px 12px;background:#f7fbf5;border:1px solid #d7e7d2;border-radius:11px}
+.unified-working{display:flex;align-items:center;gap:10px;margin:15px 0 0;font-size:13px;
+  padding:15px 18px;background:#f2f8ef;border:1px solid #ddecdc;border-radius:12px;color:#43734f}
+.unified-working-dot{width:9px;height:9px;border-radius:100%;background:#438b58;flex-shrink:0;
+  animation:agent-pulse 1.4s ease-in-out infinite}
+@keyframes agent-pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.unified-more-jobs{background:transparent;border:0;padding:12px 4px;color:#4b7f59;
+  font-size:12px;font-weight:730;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.unified-more-jobs:hover{text-decoration:underline}
+.unified-more-jobs[aria-expanded="true"] svg{transform:rotate(180deg)}
+.unified-results:has(>.unified-more-jobs):not(:has(.unified-list)){padding:12px 22px}
+@media(max-width:520px){.unified-agent{padding-block:24px 48px}
+ .unified-primary{padding:17px}.unified-working{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.unified-working-dot{animation:none}
+ .unified-understanding>summary svg{transition:none}}

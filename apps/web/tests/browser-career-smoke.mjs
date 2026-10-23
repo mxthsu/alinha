@@ -84,6 +84,9 @@ try{
  await mkdir(output,{recursive:true});
  await page.goto(web+"/agente",{waitUntil:"networkidle",timeout:40000});
  assert.match(await page.locator("main h1").innerText(),/carreira/);
+ assert.equal(await page.locator(".unified-progress").count(),0,"No permanent five-step technical dashboard");
+ assert.equal(await page.locator(".unified-understanding").evaluate(el=>el.open),false,
+  "Technical filter details should be collapsed by default");
  await page.locator('input[type="file"]').setInputFiles({
   name:"curriculo-ficticio.txt",mimeType:"text/plain",buffer:Buffer.from(profile,"utf8"),
  });
@@ -108,6 +111,10 @@ try{
  await page.getByText("Cargo confirmado por você:").waitFor();
  await page.getByRole("checkbox").check();
  await page.getByRole("button",{name:/Encontrar e comparar vagas/}).click();
+ await page.getByRole("region",{name:"Candidaturas preparadas"}).waitFor({timeout:25000});
+ assert.equal(await page.locator(".unified-result").count(),0,
+  "Avoid duplicating the preview shortlist with a long list of job cards");
+ await page.getByRole("button",{name:/Ver as 2 vagas encontradas/}).click();
  await page.locator("#career-results").getByText("Empresa Horizonte (fictícia)").waitFor({timeout:25000});
  assert.equal(searchCalls.length,1,"Uma ação não deve repetir a consulta");
  assert.match(new URL(searchCalls[0]).searchParams.get("q"),/Engenheiro de IA/);

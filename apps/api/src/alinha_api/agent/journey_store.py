@@ -19,6 +19,7 @@ from uuid import UUID, uuid4
 
 from pydantic import UUID4, BaseModel, ConfigDict, Field, field_validator
 
+from alinha_api.agent.assessment import AssessmentReport
 from alinha_api.agent.discovery import JobSearchResult
 from alinha_api.services.community_storage import user_paths
 
@@ -26,6 +27,7 @@ RunState = Literal["ready", "running", "needs_review", "completed", "failed", "c
 Tool = Literal["job.search", "job.assess", "application.preview"]
 MAX_AGE_SECONDS = 14 * 86400
 MAX_RESULT_BYTES = 350_000
+MAX_ASSESSMENT_BYTES = 100_000
 
 
 class JourneyConflict(Exception):
@@ -48,6 +50,7 @@ class StartJourney(BaseModel):
     search_authorized: Literal[True]
     prepare_preview: bool = False
     max_jobs: int = Field(default=10, ge=1, le=15)
+    profile_revision: int | None = Field(default=None, ge=1, le=2**31)
 
     @field_validator("query")
     @classmethod
@@ -73,6 +76,7 @@ class JourneySnapshot(BaseModel):
     plan: list[Tool]
     events: list[JourneyEvent]
     result_count: int | None = None
+    profile_revision: int | None = None
     external_submission: Literal[False] = False
 
 
@@ -83,6 +87,7 @@ class StepLease(BaseModel):
     token: UUID
     max_jobs: int
     query: str
+    profile_revision: int | None = None
 
 
 class JourneyStore:
@@ -108,9 +113,14 @@ class JourneyStore:
                     next_step INTEGER NOT NULL DEFAULT 0,
                     max_jobs INTEGER NOT NULL, active_token TEXT,
                     step_started_at INTEGER, result_count INTEGER,
+                    profile_revision INTEGER,
                     created_at INTEGER NOT NULL
                 )
             """)
+            # Safe additive migration for databases created before the profile gate.
+            columns = {row[1] for row in connection.execute("PRAGMA table_info(agent_journeys)")}
+            if "profile_revision" not in columns:
+                connection.execute("ALTER TABLE agent_journeys ADD COLUMN profile_revision INTEGER")
             connection.execute("""
                 CREATE TABLE IF NOT EXISTS agent_journey_events (
                     run_id TEXT NOT NULL, sequence INTEGER NOT NULL,
@@ -122,6 +132,13 @@ class JourneyStore:
                 CREATE TABLE IF NOT EXISTS agent_journey_search_results (
                     run_id TEXT PRIMARY KEY, payload TEXT NOT NULL,
                     stored_at INTEGER NOT NULL,
+                    FOREIGN KEY(run_id) REFERENCES agent_journeys(run_id)
+                )
+            """)
+            connection.execute("""
+                CREATE TABLE IF NOT EXISTS agent_journey_assessments (
+                    run_id TEXT PRIMARY KEY, payload TEXT NOT NULL,
+                    profile_revision INTEGER NOT NULL, stored_at INTEGER NOT NULL,
                     FOREIGN KEY(run_id) REFERENCES agent_journeys(run_id)
                 )
             """)
@@ -174,6 +191,7 @@ class JourneyStore:
             plan=json.loads(row["plan"]),
             events=[JourneyEvent(**dict(e)) for e in events],
             result_count=row["result_count"],
+            profile_revision=row["profile_revision"],
         )
 
     def create(self, request: StartJourney) -> JourneySnapshot:
@@ -195,6 +213,12 @@ class JourneyStore:
                 return self._snapshot(conn, old)
             # Only expired terminal runs are pruned. Never erase active work automatically.
             cutoff = int(time.time()) - MAX_AGE_SECONDS
+            conn.execute(
+                "DELETE FROM agent_journey_assessments WHERE run_id IN "
+                "(SELECT run_id FROM agent_journeys WHERE created_at < ? "
+                "AND status IN ('completed','cancelled','failed'))",
+                (cutoff,),
+            )
             conn.execute(
                 "DELETE FROM agent_journey_search_results WHERE run_id IN "
                 "(SELECT run_id FROM agent_journeys WHERE created_at < ? "
@@ -221,8 +245,8 @@ class JourneyStore:
             conn.execute(
                 """
                 INSERT INTO agent_journeys
-                (run_id,request_id,signature,query,plan,status,max_jobs,created_at)
-                VALUES (?,?,?,?,?,'ready',?,?)
+                (run_id,request_id,signature,query,plan,status,max_jobs,profile_revision,created_at)
+                VALUES (?,?,?,?,?,'ready',?,?,?)
             """,
                 (
                     str(request.run_id),
@@ -231,6 +255,7 @@ class JourneyStore:
                     request.query,
                     json.dumps(plan),
                     request.max_jobs,
+                    request.profile_revision,
                     int(time.time()),
                 ),
             )
@@ -293,6 +318,7 @@ class JourneyStore:
                 token=token,
                 query=row["query"],
                 max_jobs=row["max_jobs"],
+                profile_revision=row["profile_revision"],
             )
 
     def finish_step(self, lease: StepLease, *, result_count: int | None = None) -> JourneySnapshot:
@@ -378,6 +404,65 @@ class JourneyStore:
             if stored is None or row["result_count"] is None:
                 raise JourneyConflict("Resultados ainda não disponíveis.")
             return JobSearchResult.model_validate_json(stored["payload"])
+
+    def finish_assessment(self, lease: StepLease, result: AssessmentReport) -> JourneySnapshot:
+        """Commit verified skill signals only; never persist the full résumé."""
+        if lease.index != 1 or lease.tool != "job.assess":
+            raise JourneyConflict("Somente a comparação autorizada pode salvar avaliações.")
+        result = AssessmentReport.model_validate(result)
+        if lease.profile_revision is None or result.profile_revision != lease.profile_revision:
+            raise JourneyConflict("A versão do currículo não corresponde à jornada.")
+        if len(result.jobs) > lease.max_jobs:
+            raise JourneyConflict("Avaliação excedeu o limite de vagas.")
+        payload = result.model_dump_json()
+        if len(payload.encode("utf-8")) > MAX_ASSESSMENT_BYTES:
+            raise JourneyConflict("Avaliação excedeu o tamanho permitido.")
+        with self._db() as conn:
+            row = self._row(conn, lease.run_id)
+            self._require_active_lease(row, lease)
+            stored = conn.execute(
+                "SELECT payload FROM agent_journey_search_results WHERE run_id=?",
+                (str(lease.run_id),),
+            ).fetchone()
+            if stored is None:
+                raise JourneyConflict("Não existem vagas persistidas para avaliar.")
+            listings = JobSearchResult.model_validate_json(stored["payload"])
+            expected = [(j.opportunity.source, j.opportunity.external_id) for j in listings.jobs]
+            actual = [(j.source, j.external_id) for j in result.jobs]
+            if actual != expected:
+                raise JourneyConflict("Avaliação não corresponde às vagas recuperadas.")
+            next_step = 2
+            plan = json.loads(row["plan"])
+            new_status = "needs_review" if next_step == len(plan) else "ready"
+            conn.execute(
+                "INSERT INTO agent_journey_assessments"
+                "(run_id,payload,profile_revision,stored_at) VALUES (?,?,?,?)",
+                (str(lease.run_id), payload, result.profile_revision, int(time.time())),
+            )
+            conn.execute(
+                "UPDATE agent_journeys SET status=?,next_step=?,active_token=NULL,"
+                "step_started_at=NULL WHERE run_id=?",
+                (new_status, next_step, str(lease.run_id)),
+            )
+            self._event(
+                conn,
+                str(lease.run_id),
+                "job.assess",
+                "completed",
+                "Coincidências literais registradas para revisão, sem usar IA.",
+            )
+            return self._snapshot(conn, self._row(conn, lease.run_id))
+
+    def get_assessment(self, run_id: UUID) -> AssessmentReport:
+        with self._db() as conn:
+            self._row(conn, run_id)
+            stored = conn.execute(
+                "SELECT payload FROM agent_journey_assessments WHERE run_id=?",
+                (str(run_id),),
+            ).fetchone()
+            if stored is None:
+                raise JourneyConflict("A comparação ainda não está disponível.")
+            return AssessmentReport.model_validate_json(stored["payload"])
 
     def fail_step(self, lease: StepLease) -> JourneySnapshot:
         """Record fixed, non-sensitive failure text; never store connector exceptions."""

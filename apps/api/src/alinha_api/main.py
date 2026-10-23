@@ -10,6 +10,7 @@ from fastapi.responses import RedirectResponse, Response
 from pydantic import BaseModel, Field, ValidationError
 from pypdf.errors import PdfReadError
 
+from alinha_api.agent.assessment import AssessmentReport
 from alinha_api.agent.ats_boards import search_ats_board
 from alinha_api.agent.call_budget import (
     CallBudgetExhausted,
@@ -38,6 +39,7 @@ from alinha_api.agent.journey_store import (
 from alinha_api.agent.lever import search_lever
 from alinha_api.agent.models import CandidateCriteria
 from alinha_api.agent.multisource import search_multi_source
+from alinha_api.agent.real_assessment import AssessmentUnavailable, execute_authorized_assessment
 from alinha_api.agent.real_search import SearchToolUnavailable, execute_authorized_search
 from alinha_api.agent.runtime import (
     AdvanceRun,
@@ -246,6 +248,40 @@ def get_agent_search_result(request: Request, response: Response, run_id: UUID) 
     response.headers["Cache-Control"] = "no-store"
     try:
         return journey_store.get_search_result(run_id)
+    except JourneyNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except JourneyConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except JourneyStorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.post("/api/v1/agent/runs/{run_id}/execute-assess", response_model=JourneySnapshot)
+def execute_agent_assessment(request: Request, response: Response, run_id: UUID) -> JourneySnapshot:
+    """Read a revision-pinned Community résumé and assess persisted public jobs."""
+    _community_api_only(request, mutation=True)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return execute_authorized_assessment(
+            journey_store, run_id, lambda: get_record("resume"),
+        )
+    except JourneyNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except JourneyConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except JourneyStorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except AssessmentUnavailable as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/api/v1/agent/runs/{run_id}/assessment", response_model=AssessmentReport)
+def get_agent_assessment(request: Request, response: Response, run_id: UUID) -> AssessmentReport:
+    """Read durable literal evidence without reprocessing personal data."""
+    _community_api_only(request)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return journey_store.get_assessment(run_id)
     except JourneyNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except JourneyConflict as exc:

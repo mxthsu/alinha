@@ -2,11 +2,13 @@
 
 > **Fonte principal de contexto do projeto, atualizada em 23/10/2026.** Leia este arquivo, [AGENTS.md](../AGENTS.md), o código real na branch escolhida e os documentos vinculados **antes** de decidir a próxima tarefa. O estado do GitHub pode mudar; confirme branches, CI e PRs ao começar. Este texto não prova que funcionalidades planejadas já funcionem.
 
-## Nova etapa do backend: busca de vagas com execução durável (23/10/2026)
+## Próxima camada do backend: comparação segura do currículo (23/10/2026)
 
-**Depois da PR #55**, o servidor já possui um controle transacional de jornadas com eventos persistentes, idempotência, cancelamento e lease por ferramenta. O próximo incremento conecta **somente a etapa `job.search`** aos conectores públicos já configurados na Community: `POST /api/v1/agent/runs/{run_id}/execute-search` e leitura durável em `GET /api/v1/agent/runs/{run_id}/jobs`. A API valida autorização já registrada, limita as vagas, grava os anúncios públicos com proveniência no mesmo commit do evento de conclusão e impede resultados tardios após cancelamento. **Nenhum envio externo** e nenhuma credencial/CV são gravados no registro da jornada.
+**PRs #55 e #56 já integradas na main:** persistência transacional das jornadas e execução real de `job.search` com fontes públicas configuradas, limites, eventos e resultados SQLite. A API não repete buscas após reinício e invalida resultados tardios de ações canceladas.
 
-**Ainda em aberto na issue #48:** conectar `job.assess` a um perfil local revisado, depois `application.preview`, medição real de tokens/custos e recuperação revisável. **Não conectar ao frontend** antes de concluir o fluxo real de backend; a tela /agente continua sendo a demonstração anterior. Consulte [backend das jornadas](agent-durable-runtime.md). As seções históricas abaixo podem se referir ao estado anterior à #55.
+**Nova implementação desta branch:** `job.assess` lê o currículo estruturado **dentro do registro versionado do próprio Community**, exige `profile_revision` autorizado na criação da jornada, compara somente termos de competências declaradas com o texto das vagas armazenadas e registra sinais para revisão. A operação é determinística: não inventa requisitos, não usa IA nem envia dados do currículo a fornecedores de vagas. Somente os termos coincidentes ficam nos registros da jornada; o currículo inteiro permanece no registro local original.
+
+**Ainda em aberto na issue #48:** executar `application.preview` no backend a partir da avaliação, validar custos/tokens de IA, consolidar filtros, recuperação revisável após falha e a jornada automática controlada. **Não conectar ao frontend** antes de concluir o fluxo de backend; a rota /agente atual continua sendo a experiência anterior. Consulte [contrato das jornadas](agent-durable-runtime.md). As seções históricas abaixo tratam de etapas anteriores.
 
 ## Integrado na `main` — IA opt-in e plano revisável (23/10/2026)
 

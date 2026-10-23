@@ -1,299 +1,319 @@
 "use client";
-import {resolveApiOrigin} from "@/lib/api-origin";
-import {useEffect,useMemo,useRef,useState,type ChangeEvent,type DragEvent} from "react";
+
+import {useEffect,useMemo,useRef,useState,type ChangeEvent,type FormEvent} from "react";
 import Link from "next/link";
-import {
- ArrowRight,ArrowUpRight,BookmarkPlus,BriefcaseBusiness,Check,CheckCircle2,
- CircleAlert,Clock3,FileCheck2,FileUp,LockKeyhole,Search,ShieldCheck,
- SlidersHorizontal,Sparkles,WandSparkles,
-} from "lucide-react";
+import dynamic from "next/dynamic";
+import {ArrowRight,ArrowUpRight,Check,CheckCircle2,ChevronDown,
+ CircleAlert,FileUp,LockKeyhole,Search,ShieldCheck,Square,X} from "lucide-react";
 import {PlatformNav} from "@/components/platform-nav";
-import {AgentDemoJourney} from "@/components/agent-demo-journey";
-import {useOpportunityTracker} from "@/hooks/use-opportunity-tracker";
+import {resolveApiOrigin} from "@/lib/api-origin";
 import {loadResumeDraft,saveResumeDraft,hasResumeContent,type ResumeProfile} from "@/lib/career-workspace";
 import {parseResumeImport,resumeFileProblem} from "@/lib/agent-import";
-import {selectOpportunity} from "@/lib/career-handoff";
-import {planCareerSearch,assessAgentJob,orderAgentJobs,
- COMMUNITY_AGENT_PERMISSIONS,type AgentJob,type AgentSearchPlan} from "@/lib/career-agent";
+import {
+ clearSelectedOpportunity,selectOpportunity,selectedOpportunity,type SelectedOpportunity,
+} from "@/lib/career-handoff";
+import type {AgentJob} from "@/lib/career-agent";
+import {planCareerSearch} from "@/lib/career-agent";
+import {
+ interpretCareerIntent,rankCareerJobs,judgeCareerJob,prepareCareerPreview,
+ type CareerIntent,type JobJudgement,
+} from "@/lib/agent-journey";
 import "./agente.css";
+import "./unified.css";
 
-type RemoteResult={jobs:(AgentJob&{employment_label:string|null;salary_label:string|null})[];
- source_name:string;limitations:string[]};
-type RunState="ready"|"searching"|"completed"|"failed";
+const PreparationJourney=dynamic(
+ ()=>import("@/app/preparar/page").then(mod=>mod.PreparationJourney),{ssr:false},
+);
 const API=resolveApiOrigin();
-const emptyPlan:AgentSearchPlan={roleQueries:[],evidence:[],warnings:[]};
+const DEFAULT_INTENT="Encontre vagas de Engenharia de IA remotas no Brasil, compare com meu currículo e prepare candidaturas";
+type RemoteResult={jobs:AgentJob[];source_name:string;limitations:string[]};
+type RunStatus="idle"|"searching"|"review"|"cancelled"|"failed";
+
+function buildStoredJob(selected:SelectedOpportunity):AgentJob{
+ return {
+  opportunity:{source:selected.source,external_id:selected.url,title:selected.title,
+   company:selected.company,work_mode:"unspecified",contract_type:"unspecified",
+   source_url:selected.url},
+  excerpt:selected.excerpt,description:selected.description,
+  missing_information:[],
+ };
+}
 
 export default function CareerAgent(){
  const [profile,setProfile]=useState<ResumeProfile|null>(null);
- const [plan,setPlan]=useState<AgentSearchPlan>(emptyPlan);
  const [loadingProfile,setLoadingProfile]=useState(true);
  const [profileError,setProfileError]=useState("");
  const [importing,setImporting]=useState(false);
- const [importNotice,setImportNotice]=useState("");
- const [reviewNotice,setReviewNotice]=useState("");
- const [dragged,setDragged]=useState(false);
- const fileInput=useRef<HTMLInputElement|null>(null);
- const [query,setQuery]=useState("");
- const [searchedQuery,setSearchedQuery]=useState("");
- const [run,setRun]=useState<RunState>("ready");
- const [jobs,setJobs]=useState<RemoteResult|null>(null);
+ const [intentText,setIntentText]=useState(DEFAULT_INTENT);
+ const [authorized,setAuthorized]=useState(false);
+ const [status,setStatus]=useState<RunStatus>("idle");
  const [error,setError]=useState("");
+ const [results,setResults]=useState<RemoteResult|null>(null);
+ const [runIntent,setRunIntent]=useState<CareerIntent|null>(null);
+ const [runPlanRole,setRunPlanRole]=useState("");
+ const [selected,setSelected]=useState<SelectedOpportunity|null>(null);
+ const [reviewing,setReviewing]=useState(false);
+ const [advanced,setAdvanced]=useState(false);
+ const [draft,setDraft]=useState("");
+ const [reviewed,setReviewed]=useState(false);
  const [notice,setNotice]=useState("");
+ const fileInput=useRef<HTMLInputElement|null>(null);
  const abort=useRef<AbortController|null>(null);
- const {items:tracked,save:saveOpportunity}=useOpportunityTracker();
+ const generation=useRef(0);
+ const intentEdited=useRef(false);
+ const isMounted=useRef(true);
+ const parsed=useMemo(()=>interpretCareerIntent(intentText),[intentText]);
+ const ranked=useMemo(()=>profile&&runIntent&&results?
+  rankCareerJobs(results.jobs,profile,runIntent):[],[results,profile,runIntent]);
+ const chosen=useMemo(()=>{
+  if(!selected||!profile)return null;
+  const item=ranked.find(i=>i.job.opportunity.source_url===selected.url);
+  return item??judgeCareerJob(buildStoredJob(selected),profile,
+   runIntent??interpretCareerIntent(selected.title,selected.title));
+ },[profile,ranked,runIntent,selected]);
 
  useEffect(()=>{
-  let active=true;
+  isMounted.current=true;
+  let alive=true;
   const frame=requestAnimationFrame(()=>{
-   void loadResumeDraft().then(draft=>{
-    if(!active)return;
-    if(draft&&hasResumeContent(draft.profile)){
-     const next=planCareerSearch(draft.profile);
-     setProfile(draft.profile);setPlan(next);setQuery(next.roleQueries[0]||"");
+   setSelected(selectedOpportunity());
+   void loadResumeDraft().then(data=>{
+    if(!alive)return;
+    if(data&&hasResumeContent(data.profile)){
+     setProfile(data.profile);
+     const suggestion=planCareerSearch(data.profile).roleQueries[0];
+     if(suggestion&&!intentEdited.current)setIntentText("Encontre vagas de "+suggestion+" remotas no Brasil, compare com meu currículo e prepare candidaturas");
     }
-   }).catch(()=>{
-    if(active)setProfileError("Não foi possível acessar o currículo salvo neste dispositivo.");
-   }).finally(()=>{if(active)setLoadingProfile(false);});
+   }).catch(()=>{if(alive)setProfileError("Falha ao ler o currículo local. Verifique a conexão com a API.");})
+     .finally(()=>{if(alive)setLoadingProfile(false);});
   });
-  return ()=>{active=false;cancelAnimationFrame(frame);abort.current?.abort();};
+  return ()=>{alive=false;isMounted.current=false;cancelAnimationFrame(frame);abort.current?.abort();};
  },[]);
 
- const ordered=useMemo(()=>jobs?orderAgentJobs(jobs.jobs,plan,searchedQuery):[],[jobs,plan,searchedQuery]);
- const firstName=profile?.contact.name.trim().split(/\s+/)[0]||"";
- const canRun=query.trim().length>=2&&query.trim().length<=80&&run!=="searching"&&!importing;
+ async function importResume(event:ChangeEvent<HTMLInputElement>){
+  const file=event.target.files?.[0];event.target.value="";
+  if(!file||importing||status==="searching")return;
+  const issue=resumeFileProblem(file);
+  if(issue){setProfileError(issue);return;}
+  if(profile&&!window.confirm("Substituir o currículo salvo? A importação criará um perfil editável e não altera versões aprovadas."))return;
+  setImporting(true);setProfileError("");setNotice("");
+  try{
+   const body=new FormData();body.append("file",file);
+   const response=await fetch(API+"/api/v1/resumes/structured/import/upload",{method:"POST",body});
+   if(!response.ok)throw new Error("Falha ao importar currículo. Confira o formato do arquivo.");
+   const imported=parseResumeImport(await response.json());
+   await saveResumeDraft(imported.profile,"classico");
+   setProfile(imported.profile);
+   setResults(null);setRunIntent(null);setStatus("idle");
+   const roles=planCareerSearch(imported.profile).roleQueries;
+   if(roles[0]&&!intentEdited.current)setIntentText("Encontre vagas de "+roles[0]+" remotas no Brasil, compare com meu currículo e prepare candidaturas");
+   setNotice(imported.unassigned_lines.length||imported.warnings.length?
+    "Perfil importado com trechos que exigem revisão. Confira no Studio antes de preparar candidaturas.":
+    "Perfil importado e editável. Confira os dados no Studio antes de começar.");
+  }catch(e){setProfileError(e instanceof Error?e.message:"Falha na importação.");}
+  finally{setImporting(false);}
+ }
 
- async function execute(roleOverride?:string):Promise<boolean>{
-  const term=(roleOverride??query).trim();
-  if(term.length<2||term.length>80||run==="searching"||
-    COMMUNITY_AGENT_PERMISSIONS.search_public_jobs!=="ask")return false;
-  abort.current?.abort();
-  const controller=new AbortController();abort.current=controller;
-  setRun("searching");setError("");setNotice("");setJobs(null);
+ async function search(event:FormEvent<HTMLFormElement>){
+  event.preventDefault();
+  if(!authorized||!profile||loadingProfile||status==="searching"||parsed.role.length<2)return;
+  const controller=new AbortController();
+  abort.current?.abort();abort.current=controller;
+  const current=++generation.current;
+  setStatus("searching");setResults(null);setRunIntent(null);setError("");setReviewed(false);
+  setRunPlanRole(parsed.role);
   try{
-   const search=new URLSearchParams({q:term,page:"1",remote_only:"false",source:"all"});
-   const response=await fetch(API+"/api/v1/jobs/search?"+search,{signal:controller.signal,cache:"no-store"});
-   const data=await response.json();
-   if(!response.ok)throw new Error(typeof data.detail==="string"?data.detail:"Falha na consulta à fonte de vagas.");
-   if(!controller.signal.aborted){setSearchedQuery(term);setJobs(data as RemoteResult);setRun("completed");return true;}
-   return false;
-  }catch(cause){
-   if(!controller.signal.aborted){
-    setError(cause instanceof Error?cause.message:"Não foi possível concluir a pesquisa.");
-    setRun("failed");
+   // Source adapters, settings and rate limits are enforced by the existing local API.
+   const qs=new URLSearchParams({q:parsed.role,source:"all",page:"1",remote_only:String(parsed.remoteOnly)});
+   const response=await fetch(API+"/api/v1/jobs/search?"+qs.toString(),{signal:controller.signal,cache:"no-store"});
+   if(!response.ok){
+    let detail="Não foi possível consultar as fontes públicas autorizadas.";
+    try{const body=await response.json() as {detail?:unknown};if(typeof body.detail==="string")detail=body.detail;}catch{}
+    throw new Error(detail);
    }
-   return false;
+   const data=await response.json() as RemoteResult;
+   if(!Array.isArray(data.jobs))throw new Error("A fonte não retornou uma lista válida de oportunidades.");
+   if(controller.signal.aborted||current!==generation.current)return;
+   setResults({...data,jobs:data.jobs.slice(0,30)});
+   setRunIntent(parsed);setStatus("review");
+  }catch(e){
+   if(!controller.signal.aborted&&current===generation.current){
+    setStatus("failed");setError(e instanceof Error?e.message:"Erro desconhecido na busca.");
+   }
   }
  }
- async function uploadResume(file:File){
-  if(importing||run==="searching")return;
-  if(profile&&!window.confirm("Substituir o currículo salvo por este novo documento? Seu perfil anterior será trocado após a importação."))return;
-  const problem=resumeFileProblem(file);
-  if(problem){setProfileError(problem);return;}
-  setImporting(true);setProfileError("");setImportNotice("");setReviewNotice("");
-  try{
-    const data=new FormData();
-    data.append("file",file);
-    const response=await fetch(API+"/api/v1/resumes/structured/import/upload",{
-      method:"POST",body:data,
-    });
-    const payload:unknown=await response.json();
-    if(!response.ok){
-      const detail=payload&&typeof payload==="object"&&"detail" in payload
-        ?(payload as {detail:unknown}).detail:null;
-      throw new Error(typeof detail==="string"?detail:"Não foi possível ler o currículo.");
-    }
-    const imported=parseResumeImport(payload);
-    // Save only the structured profile, not the raw PDF, text or parser metadata.
-    await saveResumeDraft(imported.profile,"classico");
-    const nextPlan=planCareerSearch(imported.profile);
-    setProfile(imported.profile);setPlan(nextPlan);setQuery(nextPlan.roleQueries[0]||"");
-    const needsReview=imported.unassigned_lines.length>0||imported.warnings.length>0;
-    setReviewNotice(needsReview
-      ?"Algumas informações não foram classificadas com segurança. Você pode conferir no Studio quando quiser."
-      :"");
-    if(nextPlan.roleQueries[0]){
-      setImportNotice("Currículo organizado. Procurando oportunidades para seu perfil…");
-      const found=await execute(nextPlan.roleQueries[0]);
-      setImportNotice(found?"Currículo salvo. Confira as oportunidades encontradas.":
-        "Currículo salvo. A busca não foi concluída; você pode tentar novamente.");
-    }else{
-      setImportNotice("Currículo organizado. Informe o cargo desejado para encontrar vagas.");
-    }
-  }catch(cause){
-    setProfileError(cause instanceof Error?cause.message:"Não foi possível processar o currículo.");
-  }finally{setImporting(false);}
+
+ function cancel(){
+  if(status!=="searching")return;
+  generation.current++;
+  abort.current?.abort();
+  setStatus("cancelled");setError("");
  }
- function acceptFile(event:ChangeEvent<HTMLInputElement>){
-  const selected=event.target.files?.[0];
-  event.target.value="";
-  if(selected)void uploadResume(selected);
+
+ function choose(item:JobJudgement){
+  if(!profile||!item.job.opportunity.source_url||item.status==="excluded")return;
+  const opp=item.job.opportunity;
+  const url=opp.source_url;
+  if(!url)return;
+  const next:SelectedOpportunity={
+   title:opp.title,company:opp.company,url,source:opp.source,
+   excerpt:item.job.excerpt,description:item.job.description??undefined,
+  };
+  if(!selectOpportunity(next)){setError("A vaga não pôde ser guardada com segurança no dispositivo.");return;}
+  setSelected(next);setReviewing(true);setAdvanced(false);setReviewed(false);
+  setDraft(prepareCareerPreview(item,profile).draft);
+  window.requestAnimationFrame(()=>document.getElementById("career-preview")?.scrollIntoView({behavior:"smooth",block:"start"}));
  }
- function dropFile(event:DragEvent<HTMLDivElement>){
-  event.preventDefault();setDragged(false);
-  if(event.dataTransfer.files.length!==1){
-    setProfileError("Envie apenas um currículo por vez.");return;
-  }
-  void uploadResume(event.dataTransfer.files[0]);
+ function resumeSelected(){
+  if(!selected||!chosen||!profile)return;
+  setReviewing(true);setAdvanced(false);setReviewed(false);
+  setDraft(prepareCareerPreview(chosen,profile).draft);
  }
- const progress=[
-  {name:"Perfil profissional",detail:profile?"Lido no seu dispositivo":"Aguardando currículo",done:Boolean(profile)},
-  {name:"Planejamento da busca",detail:query.trim()?"Cargo: "+query.trim():"Defina um cargo para pesquisar",done:Boolean(query.trim())},
-  {name:"Consulta à fonte",detail:run==="searching"?"Consultando vagas autorizadas":run==="completed"?"Consulta concluída":"Requer sua confirmação",done:run==="completed"},
-  {name:"Verificação de evidências",detail:run==="completed"?"Sinais organizados para revisão":"Sem pontuação artificial",done:run==="completed"},
+ function clear(){
+  if(status==="searching")cancel();
+  clearSelectedOpportunity();setSelected(null);setReviewing(false);setAdvanced(false);
+  setDraft("");setReviewed(false);
+ }
+ const steps=[
+  {label:"Ler currículo",detail:profile?"Perfil disponível":"Currículo pendente"},
+  {label:"Entender objetivo",detail:runPlanRole||parsed.role||"Cargo não informado"},
+  {label:"Consultar vagas",detail:status==="searching"?"Buscando nas fontes autorizadas":results?"Consulta realizada":"Aguardando autorização"},
+  {label:"Conferir requisitos",detail:results?"Evidências e critérios organizados":"Sem suposições"},
+  {label:"Revisar candidatura",detail:reviewing?"Prévia local disponível":"Nenhum envio externo"},
  ];
 
  return <div className="platform-shell"><PlatformNav/>
-  <main className="platform-container agent-page">
-   <input ref={fileInput} type="file" className="agent-file-input"
-     accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-     aria-label="Selecionar currículo PDF, DOCX ou TXT" onChange={acceptFile} disabled={importing}/>
+  <main className="platform-container unified-agent">
+   <div className="unified-topline"><span><ShieldCheck size={16}/> ALINHA · AGENTE DE CARREIRA</span>
+    <span><LockKeyhole size={14}/> Modo assistido · sem envio automático</span></div>
+   <div className="unified-heading">
+    <div><h1>O que vamos fazer pela sua carreira?</h1>
+     <p>Descreva seu objetivo. O Alinha busca vagas, confere o que consta no seu perfil e prepara uma prévia para você revisar, tudo aqui.</p></div>
+    <Link href="/conexoes">Gerenciar IA <ArrowUpRight size={15}/></Link>
+   </div>
 
-   <div className="agent-topline"><span><Sparkles size={15}/> SEU AGENTE DE CARREIRA</span>
-    <span className="agent-privacy"><LockKeyhole size={14}/> Currículo preservado no dispositivo</span></div>
-   <section className="agent-hero">
-    <div className="agent-hero-copy"><span className="agent-hero-eyebrow"><span className="agent-live-dot"/> Experiência integrada</span>
-     <h1>{firstName?"Vamos encontrar seu próximo passo, "+firstName+".":"Sua carreira, com menos trabalho repetitivo."}</h1>
-     <p>O Alinha parte do seu currículo para sugerir buscas, encontrar oportunidades e ajudar a preparar candidaturas. Você acompanha as etapas e mantém o controle.</p>
-     <div className="agent-hero-actions">
-      <a href="#agent-demo" className="agent-hero-primary">
-        Experimentar jornada do agente <ArrowRight size={17}/>
-      </a>
-      <Link href="/studio">Editar meu currículo <ArrowUpRight size={17}/></Link>
-     </div></div>
-    <div className="agent-hero-art" aria-hidden="true">
-     <div className="agent-orbit agent-orbit-one"/><div className="agent-orbit agent-orbit-two"/>
-     <div className="agent-center-mark"><WandSparkles size={34}/></div>
-     <div className="agent-orbit-label agent-orbit-label-top"><FileCheck2 size={15}/> Currículo</div>
-     <div className="agent-orbit-label agent-orbit-label-left"><Search size={15}/> Oportunidades</div>
-     <div className="agent-orbit-label agent-orbit-label-bottom"><ShieldCheck size={15}/> Você decide</div>
+   <section className="unified-primary" aria-label="Sua jornada">
+    <div className="unified-profile-line">
+     <div><span className="unified-profile-icon"><FileUp size={19}/></span>
+      <div><strong>{loadingProfile?"Carregando currículo…":profile?(profile.contact.headline||profile.contact.name||"Currículo salvo"):"Comece com seu currículo"}</strong>
+       <small>{profile?"Perfil local editável · "+profile.skills.length+" competências declaradas":"PDF, DOCX ou TXT · até 3 MB"}</small></div></div>
+     <div className="unified-profile-actions">
+      <input ref={fileInput} type="file" accept=".pdf,.docx,.txt" aria-label="Importar currículo"
+       className="agent-file-input" onChange={e=>void importResume(e)} disabled={importing||status==="searching"}/>
+      <button type="button" onClick={()=>fileInput.current?.click()} disabled={importing||status==="searching"}>
+       {importing?"Importando…":profile?"Trocar currículo":"Importar currículo"}</button>
+      {profile&&<Link href="/studio">Revisar perfil <ArrowRight size={14}/></Link>}
+     </div>
     </div>
+    {profileError&&<p role="alert" className="unified-error">{profileError}</p>}
+    {notice&&<p role="status" className="unified-notice">{notice}</p>}
+    <form onSubmit={e=>void search(e)} className="unified-intent-form">
+     <label htmlFor="career-intent">Seu objetivo</label>
+     <textarea id="career-intent" rows={3} maxLength={400} value={intentText}
+      onChange={e=>{intentEdited.current=true;setIntentText(e.target.value);}} disabled={status==="searching"}
+      placeholder="Ex.: Encontre vagas de Engenheiro de IA remoto no Brasil, com salário a partir de R$ 8.000…"/>
+     <div className="unified-understanding">
+      <strong>Entendi o seguinte:</strong>
+      <div className="unified-chips">
+       <span>Cargo: {parsed.role||"precisa informar"}</span>
+       {parsed.workMode&&<span>{parsed.workMode==="remote"?"Remoto":parsed.workMode==="hybrid"?"Híbrido":"Presencial"}</span>}
+       {parsed.city&&<span>Cidade: {parsed.city}</span>}
+       {parsed.brazilOnly&&<span>Brasil</span>}
+       {parsed.minSalaryBrl!==null&&<span>A partir de {parsed.minSalaryBrl.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</span>}
+      </div>
+      {parsed.needsConfirmation.length>0&&<details className="unified-uncertainties">
+       <summary><CircleAlert size={15}/> {parsed.needsConfirmation.length} condição(ões) que precisam de confirmação <ChevronDown size={14}/></summary>
+       <ul>{parsed.needsConfirmation.map(text=><li key={text}>{text}</li>)}</ul>
+      </details>}
+     </div>
+     <label className="unified-consent"><input type="checkbox" checked={authorized}
+      disabled={status==="searching"} onChange={e=>setAuthorized(e.target.checked)}/>
+      <span>Autorizo consultar as fontes públicas de vagas habilitadas. Apenas o cargo e o filtro de modalidade são enviados à busca; meu currículo não é transmitido às fontes.</span>
+     </label>
+     <div className="unified-submit-row"><button type="submit" className="unified-cta"
+      disabled={!authorized||!profile||parsed.role.length<2||status==="searching"||importing}>
+      <Search size={17}/>{status==="searching"?"Buscando oportunidades…":"Encontrar e comparar vagas"}
+      <ArrowRight size={16}/></button>
+      {status==="searching"&&<button type="button" className="unified-cancel" onClick={cancel}><Square size={13}/> Cancelar</button>}
+     </div>
+    </form>
    </section>
 
-   <AgentDemoJourney/>
+   <section className="unified-progress" aria-label="Progresso do agente">
+    <div className="unified-section-head"><h2>Progresso</h2>
+     <span role="status" aria-live="polite">{status==="searching"?"Consultando fontes…":
+      status==="review"?"Oportunidades prontas para revisão":
+      status==="failed"?"Consulta interrompida por erro":
+      status==="cancelled"?"Busca cancelada": "Aguardando seu pedido"}</span></div>
+    <ol>{steps.map((step,index)=>{const done=index===0?Boolean(profile):index===1?Boolean(runPlanRole):
+     index===2?Boolean(results):index===3?Boolean(results&&runIntent):Boolean(reviewing&&chosen);
+     return <li key={step.label} className={done?"done":""}>
+     <span>{done?<Check size={13}/>:index+1}</span><div><strong>{step.label}</strong><small>{step.detail}</small></div></li>;})}</ol>
+   </section>
+   {(status==="failed"||status==="cancelled")&&<p role="alert" className="unified-error">
+    {status==="failed"?error:"A busca foi cancelada. Nenhuma candidatura foi enviada; você pode começar outra quando quiser."}</p>}
+   {results&&runIntent&&<section className="unified-results" id="career-results">
+    <div className="unified-section-head"><div><h2>Oportunidades encontradas</h2>
+     <p>{results.jobs.length} vagas · {results.source_name}. A ordem considera sinais literais e incertezas; não é pontuação ATS.</p></div></div>
+    {ranked.length===0&&<p>Nenhuma vaga encontrada. Revise o objetivo ou tente outra busca.</p>}
+    <div className="unified-list">{ranked.map(item=>{
+     const job=item.job.opportunity;
+     return <article key={job.source+":"+job.external_id} className={"unified-result "+(item.status==="excluded"?"muted":"")}>
+      <div className="unified-result-head"><div><small>{job.company} · {job.source}</small>
+       <h3>{job.title}</h3><p>{job.city||"Local não informado"} · {job.work_mode==="unspecified"?"Modalidade não confirmada":job.work_mode}</p></div>
+       <span>{item.status==="excluded"?"Fora do filtro":item.status==="verify"?"Precisa conferir":"Sinais relevantes"}</span></div>
+      {item.job.description&&<p className="unified-excerpt">{item.job.description.slice(0,300)}{item.job.description.length>300?"…":""}</p>}
+      <div className="unified-tags">{item.matches.map(term=><small key={term}><Check size={12}/>{term} no currículo</small>)}</div>
+      {(item.unknown.length>0||item.missingSkills.length>0||item.excluded.length>0)&&
+       <details className="unified-uncertainties"><summary><CircleAlert size={14}/>
+        {item.unknown.length+item.missingSkills.length+item.excluded.length} ponto(s) para verificar <ChevronDown size={13}/></summary>
+        <ul>{item.excluded.concat(item.unknown,item.missingSkills.map(s=>"Competência não comprovada: "+s)).map(s=><li key={s}>{s}</li>)}</ul>
+       </details>}
+      <div className="unified-result-actions">
+       <button type="button" disabled={!job.source_url||item.status==="excluded"} onClick={()=>choose(item)}>
+        Preparar prévia <ArrowRight size={15}/></button>
+       {job.source_url&&<a href={job.source_url} target="_blank" rel="noopener noreferrer">Ver anúncio <ArrowUpRight size={14}/></a>}
+      </div>
+     </article>;
+    })}</div>
+    {results.limitations.length>0&&<p className="unified-limitation">{results.limitations.join(" ")}</p>}
+   </section>}
 
-   <section className="agent-workspace" id="agent-workspace">
-    <div className="agent-workspace-header"><div><span className="agent-section-eyebrow">SEU ESPAÇO DE TRABALHO</span>
-     <h2>Buscar com meu currículo</h2><p>Opção manual com fontes públicas autorizadas. A jornada fictícia do agente está acima.</p></div>
-     <span className="agent-mode"><ShieldCheck size={15}/> Modo assistido</span></div>
-    <div className="agent-columns"><div className="agent-main">
-     <div className="agent-profile-card">
-      <div className="agent-card-heading"><span className="agent-number">01</span><div>
-       <h3>Seu perfil profissional</h3><p>Informações já confirmadas no Studio.</p></div></div>
-      {loadingProfile?<div className="agent-profile-wait">Recuperando seu currículo…</div>:
-       profileError?<div role="alert" className="agent-error">{profileError} <Link href="/studio">Abrir Studio</Link></div>:
-       !profile?<div className={"agent-onboarding agent-dropzone"+(dragged?" agent-dropzone-active":"")}
-         onDragOver={event=>{event.preventDefault();if(!importing)setDragged(true);}}
-         onDragLeave={()=>setDragged(false)}
-         onDrop={dropFile}>
-        <div className="agent-onboarding-icon"><FileUp size={27}/></div>
-        <strong>{importing?"Organizando seu perfil…":"Seu currículo é o ponto de partida."}</strong>
-        <p>Envie seu arquivo e deixe o Alinha organizar as informações e procurar vagas relacionadas.</p>
-        <button type="button" disabled={importing} onClick={()=>fileInput.current?.click()}>
-          {importing?"Importando currículo…":"Enviar currículo e encontrar vagas"} <ArrowRight size={16}/>
-        </button>
-        <small>PDF, DOCX ou TXT, até 3 MB. Você também pode arrastar o arquivo aqui.</small>
-        <Link href="/studio">Prefiro criar ou editar meu currículo</Link>
-       </div>:
-       <div className="agent-profile-ready">
-        <div className="agent-profile-status"><CheckCircle2 size={17}/><strong>Currículo conectado</strong><span>Salvo neste dispositivo</span></div>
-        <p>{profile.contact.headline||"Perfil profissional cadastrado"}</p>
-        <div className="agent-profile-facts">
-         <span><BriefcaseBusiness size={14}/>{profile.experiences.length} experiências</span>
-         <span><FileCheck2 size={14}/>{profile.skills.length} competências declaradas</span></div>
-        <div className="agent-profile-actions">
-          <button type="button" disabled={importing||run==="searching"} onClick={()=>fileInput.current?.click()}>
-            <FileUp size={14}/>{importing?"Importando…":"Trocar currículo"}
-          </button>
-          <Link href="/studio">Editar informações <ArrowRight size={14}/></Link>
-        </div>
-       </div>}
+   {selected&&!reviewing&&<section className="unified-resume" aria-label="Preparação salva">
+    <div><small>CONTINUAR PREPARAÇÃO</small><h2>{selected.title}</h2>
+     <p>{selected.company}. A vaga e a descrição revisada foram recuperadas do dispositivo. Uma análise anterior com IA não é reaproveitada automaticamente.</p></div>
+    <div><button type="button" onClick={resumeSelected} disabled={!profile}>Retomar nesta tela <ArrowRight size={15}/></button>
+     <button type="button" className="unified-light-button" onClick={clear}>Descartar seleção</button></div>
+   </section>}
+   {selected&&reviewing&&chosen&&profile&&<section className="unified-preview" id="career-preview">
+    <div className="unified-section-head"><div><span className="unified-eyebrow">RASCUNHO · NÃO ENVIADO</span>
+     <h2>Prepare sua candidatura</h2><p>{selected.title} — {selected.company}</p></div>
+     <button type="button" className="unified-light-button" onClick={()=>{setReviewing(false);setAdvanced(false);}}>
+      <X size={15}/> Pausar</button></div>
+    <div className="unified-preview-content">
+     <label htmlFor="career-draft">Texto inicial baseado no currículo</label>
+     <textarea id="career-draft" rows={5} value={draft} maxLength={3000}
+      onChange={e=>{setDraft(e.target.value);setReviewed(false);}}/>
+     <div className="unified-unknown"><strong><CircleAlert size={16}/> Revise antes de usar</strong>
+      <ul>{prepareCareerPreview(chosen,profile).unknownQuestions.map(question=><li key={question}>{question}</li>)}</ul>
+      <p>O texto é uma sugestão editável. O Alinha não confirma respostas desconhecidas nem envia esta candidatura.</p>
      </div>
-     {importNotice&&<div className="agent-import-notice" role="status"><CheckCircle2 size={16}/>{importNotice}</div>}
-     {reviewNotice&&<div className="agent-review-notice"><CircleAlert size={16}/><span>{reviewNotice} <Link href="/studio">Revisar currículo</Link></span></div>}
-     <div className="agent-search-card">
-      <div className="agent-card-heading"><span className="agent-number">02</span><div>
-       <h3>O que você quer encontrar?</h3><p>Revise a sugestão baseada no seu perfil antes de pesquisar.</p></div></div>
-      <label className="agent-query-label" htmlFor="agent-role">Cargo desejado</label>
-      <form className="agent-query-row" onSubmit={event=>{
-        event.preventDefault();if(run!=="searching")void execute();
-       }}><Search size={18} aria-hidden="true"/>
-       <input id="agent-role" name="role" autoComplete="off" type="search" maxLength={80} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Ex.: Engenharia de IA"/>
-       <button type={run==="searching"?"button":"submit"} disabled={run!=="searching"&&!canRun}
-        onClick={run==="searching"?()=>{abort.current?.abort();setRun("ready");}:undefined}>
-        {run==="searching"?"Parar busca":"Encontrar vagas"} <ArrowRight size={17} aria-hidden="true"/></button></form>
-      {profile&&plan.roleQueries.length>0&&<div className="agent-role-suggestions">
-       <span>SUGESTÕES DO SEU CURRÍCULO</span>
-       <div>{plan.roleQueries.map(role=><button key={role} type="button"
-        className={query===role?"active":""} onClick={()=>setQuery(role)}>{role}</button>)}</div></div>}
-      {profile&&plan.evidence.length>0&&<div className="agent-evidence">
-       <span>COMPETÊNCIAS DECLARADAS</span>
-       <div>{plan.evidence.slice(0,7).map(e=><small key={e.term}>{e.term}</small>)}</div></div>}
-      <p className="agent-search-privacy"><LockKeyhole size={15}/>
-       Apenas o cargo digitado é enviado à fonte pública. Seu currículo e contatos não são compartilhados.</p>
-      {!profile&&<p className="agent-search-hint"><CircleAlert size={15}/>
-       Você pode pesquisar manualmente, mas precisará importar o currículo para sugestões personalizadas.</p>}
-     </div>
-
-     {run==="failed"&&<div role="alert" className="agent-error">{error}</div>}
-     {run==="completed"&&<section className="agent-matches">
-      <div className="agent-results-heading"><div><span className="agent-section-eyebrow">RESULTADOS DA BUSCA</span>
-       <h3>{ordered.length} {ordered.length===1?"oportunidade":"oportunidades"} para conferir</h3>
-       <p>Busca: {searchedQuery}. Ordenação por sinais literais no anúncio, não por nota ATS.</p></div>
-       <span className="agent-source-tag">Fontes: {jobs?.source_name||"selecionadas"}</span></div>
-      {ordered.length===0&&<div className="agent-no-results"><Search size={28}/>
-       <strong>Nenhum resultado nesta busca.</strong><p>Tente outro cargo ou confira as fontes habilitadas em Meu Alinha.</p></div>}
-      {ordered.map(item=>{
-       const job=item.opportunity,match=assessAgentJob(item,plan,searchedQuery);
-       const alreadySaved=tracked.some(saved=>saved.source===job.source&&saved.sourceId===job.external_id);
-       return <article className="agent-job-card" key={job.source+":"+job.external_id}>
-        <div className="agent-job-top"><div><span>{job.company}</span><h4>{job.title}</h4></div>
-         <span className={"agent-match-tag "+match.kind}>{match.label}</span></div>
-        {item.excerpt&&<p className="agent-job-excerpt">{item.excerpt}</p>}
-        <div className="agent-match-details">
-         {match.matched.length>0?<><strong>Sinais encontrados no anúncio</strong>
-          <div>{match.matched.map(term=><span key={term}><Check size={12}/>{term}</span>)}</div></>:
-          <p>Não encontramos correspondências suficientes neste resumo.</p>}
-         <small>{match.note}</small>
-        </div>
-        <div className="agent-job-actions">
-         {job.source_url&&<Link href="/preparar" onClick={()=>selectOpportunity({
-          title:job.title,company:job.company,url:job.source_url!,source:job.source,excerpt:item.excerpt,
-          description:item.description??undefined,
-         })}>Preparar para esta vaga <ArrowRight size={15}/></Link>}
-         {job.source_url&&<button type="button" disabled={alreadySaved}
-          onClick={async()=>{const response=await saveOpportunity({title:job.title,company:job.company,
-           url:job.source_url!,source:job.source,sourceId:job.external_id});setNotice(response.message);}}>
-          <BookmarkPlus size={15}/>{alreadySaved?"Salva":"Salvar"}</button>}
-         {job.source_url&&<a href={job.source_url} target="_blank" rel="noopener noreferrer">
-          Ver anúncio <ArrowUpRight size={14}/></a>}
-        </div></article>;
-      })}
-      {notice&&<p className="agent-notice" role="status">{notice}</p>}
-      {jobs&&<p className="agent-results-limitations">{jobs.limitations.join(" ")}</p>}
-     </section>}
+     <div className="unified-result-actions"><button type="button" onClick={()=>{
+       if(!draft.trim())return;void navigator.clipboard.writeText(draft).then(()=>setReviewed(true))
+        .catch(()=>setError("Não foi possível copiar. Selecione o texto manualmente."));
+      }}>Copiar rascunho para revisar</button>
+      {reviewed&&<span role="status"><CheckCircle2 size={15}/> Texto copiado. Não enviado.</span>}</div>
     </div>
-
-    <aside className="agent-sidebar">
-     <div className="agent-steps-card">
-      <div className="agent-sidebar-heading"><div className="agent-sidebar-icon"><SlidersHorizontal size={18}/></div>
-       <div><strong>Plano de execução</strong><span>Visível e sob seu controle</span></div></div>
-      <ol>{progress.map((step,i)=><li key={step.name} className={step.done?"done":""}>
-       <div className="agent-step-dot">{step.done?<Check size={13}/>:String(i+1).padStart(2,"0")}</div>
-       <div><strong>{step.name}</strong><small>{step.detail}</small></div></li>)}</ol>
-      <div className="agent-execution-status" role="status" aria-live="polite"><Clock3 size={15} aria-hidden="true"/>
-       {run==="searching"?"Executando uma consulta…":run==="completed"?"Busca concluída":"Aguardando sua decisão para pesquisar"}</div>
-     </div>
-     <div className="agent-safety-card"><ShieldCheck size={22}/><strong>Você mantém o controle.</strong>
-      <p>O agente pode ler seu perfil local e organizar resultados. A pesquisa exige sua ação, e candidaturas automáticas permanecem desativadas.</p>
-      <div><span>Buscar vagas</span><strong>Você autoriza</strong></div>
-      <div><span>Adaptar currículo</span><strong>Você revisa</strong></div>
-      <div><span>Enviar candidatura</span><strong>Desativado</strong></div></div>
-     <div className="agent-next-card"><span>DEPOIS DA BUSCA</span>
-      <strong>Uma candidatura melhor começa com contexto.</strong>
-      <p>Abra uma vaga, confira os requisitos completos e adapte seu currículo sem inventar experiências.</p>
-      <Link href="/candidaturas">Ver meu acompanhamento <ArrowRight size={14}/></Link></div>
-    </aside>
-   </div>
-  </section>
+    <details className="unified-advanced" open={advanced} onToggle={e=>setAdvanced(e.currentTarget.open)}>
+     <summary>Analisar com IA conectada, verificar ATS e adaptar currículo <ChevronDown size={16}/></summary>
+     {advanced&&<PreparationJourney key={selected.url} embedded opportunity={selected}
+      onClose={()=>setAdvanced(false)}
+      onClearSelection={()=>{setSelected(null);setReviewing(false);setAdvanced(false);}}/>}
+    </details>
+   </section>}
+   {error&&status!=="failed"&&<p className="unified-error" role="alert">{error}</p>}
+   <footer className="unified-footer"><ShieldCheck size={16}/>
+    <span>Você decide cada etapa. Nenhuma ação de candidatura externa está habilitada.</span>
+    <Link href="/vagas">Busca manual</Link><Link href="/studio">Editar currículo</Link></footer>
   </main></div>;
 }

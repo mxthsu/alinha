@@ -7,7 +7,8 @@ export type AgentSignal={term:string;source:"competencia"|"experiencia"|"projeto
 export type AgentSearchPlan={roleQueries:string[];evidence:AgentSignal[];warnings:string[]};
 export type AgentJob={
   opportunity:{source:string;external_id:string;title:string;company:string;
-    work_mode:string;contract_type:string;source_url:string|null};
+    work_mode:string;contract_type:string;source_url:string|null;
+    city?:string|null;advertised_min_salary_brl?:number|null};
   excerpt:string;description?:string|null;missing_information:string[];
 };
 export type AgentAssessment={

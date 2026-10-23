@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, FileCheck2, FilePenLine, FileSearch, Info, LoaderCircle, ShieldCheck, Sparkles, AlertCircle } from "lucide-react";
 import { PlatformNav } from "@/components/platform-nav";
-import { clearSelectedOpportunity, selectedOpportunity, type SelectedOpportunity } from "@/lib/career-handoff";
+import { clearSelectedOpportunity, selectedOpportunity, updateSelectedOpportunityDescription, type SelectedOpportunity } from "@/lib/career-handoff";
 import { hasResumeContent, loadResumeDraft, type ResumeProfile, type ResumeTemplate } from "@/lib/career-workspace";
 import { proposeTailoredResume, type TailoredProposal } from "@/lib/tailored-resume";
 import { approveResumeVersion, loadApprovedResume, type ApprovedResumeVersion } from "@/lib/approved-resume";
@@ -25,7 +25,9 @@ type AtsReport = { document_type:string;assessment:"review_needed"|"basic_readab
 const severity: Record<Finding["severity"], string> = {important:"Importante",attention:"Atenção",suggestion:"Sugestão"};
 const api=resolveApiOrigin();
 
-export default function PrepareApplication() {
+type PreparationJourneyProps={embedded?:boolean;opportunity?:SelectedOpportunity;onClose?:()=>void;onClearSelection?:()=>void};
+
+export function PreparationJourney({embedded=false,opportunity,onClose,onClearSelection}:PreparationJourneyProps) {
   const [mode, setMode] = useState<"file"|"text">("file");
   const [file, setFile] = useState<File|null>(null);
   const [resume, setResume] = useState("");
@@ -46,13 +48,14 @@ export default function PrepareApplication() {
   const [approvedVersion,setApprovedVersion]=useState<ApprovedResumeVersion|null>(null);
   const [savingVersion,setSavingVersion]=useState(false);
   const [versionNotice,setVersionNotice]=useState("");
+  const [draftNotice,setDraftNotice]=useState("");
   const [busy, setBusy] = useState<"ats"|"job"|null>(null);
   const [error, setError] = useState("");
   const abort = useRef<AbortController|null>(null);
   const hasResume = mode === "file" ? Boolean(file) : resume.trim().length >= 50;
 
   useEffect(()=>{
-    const selected=selectedOpportunity();
+    const selected=opportunity??selectedOpportunity();
     const selectionFrame=window.requestAnimationFrame(()=>{
       if(selected){setSelectedJob(selected);if(selected.description?.trim())setJob(selected.description);}
       if(selected)void loadApprovedResume(selected).then(version=>{if(active)setApprovedVersion(version);})
@@ -80,8 +83,8 @@ export default function PrepareApplication() {
     }).catch(()=>{
       if(active)setStudioMessage("Não foi possível recuperar o rascunho do Studio. Você ainda pode enviar outro currículo.");
     });
-    return ()=>{active=false;window.cancelAnimationFrame(selectionFrame);};
-  },[]);
+    return ()=>{active=false;abort.current?.abort();window.cancelAnimationFrame(selectionFrame);};
+  },[opportunity]);
 
   async function loadStudioResume(){
     if(loadingStudio||busy)return;
@@ -106,6 +109,7 @@ export default function PrepareApplication() {
   function clearJobSelection(){
     clearSelectedOpportunity();setSelectedJob(null);setJob("");setResult(null);
     setProposal(null);setApprovedVersion(null);
+    onClearSelection?.();
   }
 
 
@@ -201,9 +205,15 @@ export default function PrepareApplication() {
     finally{setSavingVersion(false);}
   }
 
-  return <div className="platform-shell journey-shell">
-    <PlatformNav/>
-    <main className="platform-container journey-main">
+  const JourneyContainer=embedded?"section":"main";
+  return <div className={embedded?"journey-shell journey-embedded":"platform-shell journey-shell"}>
+    {!embedded&&<PlatformNav/>}
+    <JourneyContainer className={embedded?"journey-main":"platform-container journey-main"}>
+      {embedded&&<div className="journey-embedded-heading">
+        <div><span>CONTINUE SEM SAIR DA JORNADA</span><h2>Prepare esta candidatura.</h2>
+          <p>Verifique, compare e aprove uma versão do currículo para a vaga selecionada.</p></div>
+        {onClose&&<button type="button" onClick={onClose}>Pausar e voltar às oportunidades</button>}
+      </div>}
       <div className="platform-kicker"><ShieldCheck size={16}/> UMA JORNADA · DUAS VERIFICAÇÕES</div>
       <h1>Prepare sua candidatura.</h1>
       <p className="platform-lead">Comece verificando se o currículo pode ser lido. Depois, se quiser, compare-o com uma vaga usando a IA escolhida. Sem notas ou promessas de aprovação.</p>
@@ -272,8 +282,15 @@ export default function PrepareApplication() {
               <ConnectedProviderPicker provider={provider} onProviderChange={setProvider} model={model}
                 onModelChange={setModel} onReadyChange={setProviderReady}/>
               <label className="journey-label" htmlFor="journey-job-description">Descrição da vaga</label>
-              <textarea id="journey-job-description" rows={8} maxLength={14000} value={job} onChange={event=>{setJob(event.target.value);setResult(null);setProposal(null);}}
+              <textarea id="journey-job-description" rows={8} maxLength={14000} value={job} onChange={event=>{
+                const description=event.target.value;
+                setJob(description);setResult(null);setProposal(null);
+                if(selectedJob&&!updateSelectedOpportunityDescription(selectedJob.url,description))
+                  setDraftNotice("Não foi possível guardar esta edição no navegador. Copie o texto antes de sair.");
+                else setDraftNotice("");
+              }}
                 placeholder="Cole os requisitos e responsabilidades da oportunidade…"/>
+              {draftNotice&&<p role="alert" className="journey-error">{draftNotice}</p>}
               <div className="journey-counter">{job.length.toLocaleString("pt-BR")} / 14.000 caracteres · mínimo de 60</div>
               <p className="journey-privacy"><ShieldCheck size={16}/> O currículo e a vaga serão enviados apenas ao provedor selecionado nesta etapa.</p>
               {error&&<p className="journey-error" role="alert"><AlertCircle size={16}/>{error}</p>}
@@ -307,6 +324,10 @@ export default function PrepareApplication() {
         <Link href="/studio" className="journey-finish-button"><FilePenLine size={17}/> Abrir Studio <ArrowRight size={17}/></Link>
       </section>
       <p className="journey-disclaimer"><Info size={17}/> Esta jornada não garante classificação, entrevista ou contratação. As decisões dependem dos critérios de cada empresa.</p>
-    </main>
+    </JourneyContainer>
   </div>;
+}
+
+export default function PrepareApplication(){
+  return <PreparationJourney/>;
 }

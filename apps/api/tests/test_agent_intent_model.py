@@ -147,5 +147,10 @@ def test_api_adapters_use_output_cap_and_no_retention(monkeypatch):
     assert OpenAIIntentModel().propose("Busco IA").role=="Engenheiro de IA"
     assert seen["request"]["store"] is False
     assert seen["request"]["max_output_tokens"] == 260
+    fmt = seen["request"]["text"]["format"]
+    assert fmt["strict"] is True
+    assert fmt["schema"]["additionalProperties"] is False
+    assert set(fmt["schema"]["required"]) == {"role", "reason"}
+    assert "maxLength" not in str(fmt["schema"])
     assert AnthropicIntentModel().propose("Busco IA").role=="Engenheiro de IA"
     assert seen["request"]["max_tokens"] == 260

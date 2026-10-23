@@ -2,6 +2,12 @@
 
 > **Fonte principal de contexto do projeto, atualizada em 23/10/2026.** Leia este arquivo, [AGENTS.md](../AGENTS.md), o código real na branch escolhida e os documentos vinculados **antes** de decidir a próxima tarefa. O estado do GitHub pode mudar; confirme branches, CI e PRs ao começar. Este texto não prova que funcionalidades planejadas já funcionem.
 
+## Nova etapa: proposta de IA vinculada à execução (23/10/2026)
+
+Depois das PRs #55 a #59, o backend consegue buscar, comparar e preparar rascunhos com um comando e checkpoints SQLite. Nesta branch, a interpretação opcional por IA grava somente o cargo proposto, com validade de uma hora. Um segundo endpoint exige que o usuário confirme esse mesmo cargo, a versão do CV e a autorização de busca antes de criar a jornada. Nenhuma ação é iniciada na interpretação ou na confirmação.
+
+Veja [Ponte entre IA e agente](ai-proposal-to-runtime.md). A UI ainda não utiliza esta nova ligação. Continuam pendentes filtros completos, medição de tokens/custos, testes de provedor real e retomada supervisionada de operações interrompidas.
+
 ## Backend: três ferramentas + comando único (23/10/2026)
 
 **PRs #55, #56, #57 e #58 integradas à main:** jornadas SQLite duráveis e ferramentas `job.search → job.assess → application.preview` operantes sob chamadas autorizadas. A busca usa conectores públicos habilitados, até 15 anúncios com proveniência; avaliação consulta a versão pinada de currículo do registro Community e calcula apenas sinais literais; preview prepara até três textos locais revisáveis, sem contato pessoal ou experiências inventadas. **Nenhuma candidatura é enviada.**

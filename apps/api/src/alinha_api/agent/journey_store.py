@@ -30,6 +30,7 @@ MAX_AGE_SECONDS = 14 * 86400
 MAX_RESULT_BYTES = 350_000
 MAX_ASSESSMENT_BYTES = 100_000
 MAX_PREVIEW_BYTES = 60_000
+INTENT_PROPOSAL_SECONDS = 3600
 
 
 class JourneyConflict(Exception):
@@ -60,6 +61,29 @@ class StartJourney(BaseModel):
         if re.search(r"https?://|[<>\r\n{}]|@", value, flags=re.IGNORECASE):
             raise ValueError("Cargo de pesquisa inválido.")
         return value
+
+
+class ConfirmIntentJourney(BaseModel):
+    """Explicit confirmation of a server-saved role."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    run_id: UUID4
+    request_id: UUID4
+    confirmed_role: str = Field(min_length=2, max_length=80)
+    search_authorized: Literal[True]
+    profile_revision: int = Field(ge=1, le=2**31)
+    max_jobs: int = Field(default=10, ge=1, le=15)
+
+
+class IntentReceipt(BaseModel):
+    run_id: UUID
+    role: str
+    preview_requested: bool
+    calls_used: int = Field(ge=1, le=2)
+    expires_at: int
+    needs_confirmation: Literal[True] = True
+    executed: Literal[False] = False
+    external_submission: Literal[False] = False
 
 
 class JourneyEvent(BaseModel):
@@ -151,6 +175,16 @@ class JourneyStore:
                     FOREIGN KEY(run_id) REFERENCES agent_journeys(run_id)
                 )
             """)
+            connection.execute("""
+                CREATE TABLE IF NOT EXISTS agent_intent_proposals (
+                    run_id TEXT PRIMARY KEY,
+                    intent_request_id TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    preview_requested INTEGER NOT NULL,
+                    calls_used INTEGER NOT NULL,
+                    expires_at INTEGER NOT NULL
+                )
+            """)
             yield connection
             connection.execute("COMMIT")
         except (sqlite3.Error, OSError) as exc:
@@ -207,6 +241,153 @@ class JourneyStore:
             raise JourneyConflict(
                 "Plano ou eventos persistidos inválidos; execução bloqueada."
             ) from exc
+
+    @staticmethod
+    def _receipt(row: sqlite3.Row) -> IntentReceipt:
+        return IntentReceipt(
+            run_id=row["run_id"],
+            role=row["role"],
+            preview_requested=bool(row["preview_requested"]),
+            calls_used=row["calls_used"],
+            expires_at=row["expires_at"],
+        )
+
+    def save_intent_proposal(
+        self,
+        *,
+        run_id: UUID,
+        request_id: UUID,
+        role: str,
+        preview_requested: bool,
+        calls_used: int,
+    ) -> IntentReceipt:
+        """Persist only the validated title, never the raw objective or provider key."""
+        # Reject model text that is not also a valid executable job search title.
+        candidate = StartJourney(
+            run_id=run_id,
+            request_id=request_id,
+            query=role,
+            search_authorized=True,
+        )
+        if not 1 <= calls_used <= 2:
+            raise JourneyConflict("Número inválido de chamadas da IA.")
+        now = int(time.time())
+        with self._db() as conn:
+            if conn.execute(
+                "SELECT 1 FROM agent_journeys WHERE run_id=?", (str(run_id),)
+            ).fetchone():
+                raise JourneyConflict("Esta jornada já foi confirmada.")
+            conn.execute(
+                "DELETE FROM agent_intent_proposals WHERE expires_at < ?",
+                (now,),
+            )
+            conn.execute(
+                """
+                INSERT INTO agent_intent_proposals
+                (run_id,intent_request_id,role,preview_requested,calls_used,expires_at)
+                VALUES (?,?,?,?,?,?)
+                ON CONFLICT(run_id) DO UPDATE SET
+                intent_request_id=excluded.intent_request_id,
+                role=excluded.role,
+                preview_requested=excluded.preview_requested,
+                calls_used=excluded.calls_used,
+                expires_at=excluded.expires_at
+            """,
+                (
+                    str(run_id),
+                    str(request_id),
+                    candidate.query,
+                    int(preview_requested),
+                    calls_used,
+                    now + INTENT_PROPOSAL_SECONDS,
+                ),
+            )
+            row = conn.execute(
+                "SELECT * FROM agent_intent_proposals WHERE run_id=?",
+                (str(run_id),),
+            ).fetchone()
+            return self._receipt(row)
+
+    def get_intent_proposal(self, run_id: UUID) -> IntentReceipt:
+        """Resume a saved review proposal without any additional model call."""
+        with self._db() as conn:
+            row = conn.execute(
+                "SELECT * FROM agent_intent_proposals WHERE run_id=?",
+                (str(run_id),),
+            ).fetchone()
+            if row is None or row["expires_at"] < int(time.time()):
+                raise JourneyNotFound("Proposta expirada ou não encontrada.")
+            return self._receipt(row)
+
+    def confirm_intent(self, body: ConfirmIntentJourney) -> JourneySnapshot:
+        """Atomic confirmation: model proposals cannot become search authorization."""
+        with self._db() as conn:
+            proposed = conn.execute(
+                "SELECT * FROM agent_intent_proposals WHERE run_id=?",
+                (str(body.run_id),),
+            ).fetchone()
+            if proposed is None:
+                raise JourneyConflict("Interpretação por IA não encontrada para a jornada.")
+            if body.confirmed_role.casefold() != proposed["role"].casefold():
+                raise JourneyConflict("O cargo confirmado difere da sugestão registrada.")
+            request = StartJourney(
+                run_id=body.run_id,
+                request_id=body.request_id,
+                query=proposed["role"],
+                search_authorized=True,
+                prepare_preview=bool(proposed["preview_requested"]),
+                max_jobs=body.max_jobs,
+                profile_revision=body.profile_revision,
+            )
+            serialized = request.model_dump(mode="json")
+            signature = hashlib.sha256(
+                json.dumps(serialized, sort_keys=True, separators=(",", ":")).encode()
+            ).hexdigest()
+            existing = conn.execute(
+                "SELECT * FROM agent_journeys WHERE run_id=? OR request_id=?",
+                (str(body.run_id), str(body.request_id)),
+            ).fetchone()
+            if existing is not None:
+                if existing["signature"] != signature:
+                    raise JourneyConflict("Identificador já utilizado em outra jornada.")
+                return self._snapshot(conn, existing)
+            if proposed["expires_at"] < int(time.time()):
+                raise JourneyConflict("Sugestão expirada. Interprete novamente o objetivo.")
+            active = conn.execute(
+                "SELECT COUNT(*) FROM agent_journeys WHERE status NOT IN "
+                "('completed','cancelled','failed')"
+            ).fetchone()[0]
+            if active >= 200:
+                raise JourneyConflict("Limite de jornadas locais ativas atingido.")
+            plan: list[Tool] = ["job.search", "job.assess"]
+            if request.prepare_preview:
+                plan.append("application.preview")
+            conn.execute(
+                """
+                INSERT INTO agent_journeys
+                (run_id,request_id,signature,query,plan,status,
+                 max_jobs,profile_revision,created_at)
+                VALUES (?,?,?,?,?,'ready',?,?,?)
+            """,
+                (
+                    str(request.run_id),
+                    str(request.request_id),
+                    signature,
+                    request.query,
+                    json.dumps(plan),
+                    request.max_jobs,
+                    request.profile_revision,
+                    int(time.time()),
+                ),
+            )
+            self._event(
+                conn,
+                str(request.run_id),
+                "plan",
+                "created",
+                "Cargo sugerido por IA confirmado pelo usuário; pesquisa autorizada.",
+            )
+            return self._snapshot(conn, self._row(conn, body.run_id))
 
     def create(self, request: StartJourney) -> JourneySnapshot:
         data = request.model_dump(mode="json")

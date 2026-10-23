@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {resolveApiOrigin} from "@/lib/api-origin";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -64,7 +65,7 @@ export function PreparationJourney({embedded=false,opportunity,onClose,onClearSe
     let active=true;
     void loadResumeDraft().then(async draft=>{
       if(!active||!draft||!hasResumeContent(draft.profile)||userSelectedSource.current)return;
-      const response=await fetch(api+"/api/v1/resumes/structured/preview/text",{
+      const response=await apiFetch(api+"/api/v1/resumes/structured/preview/text",{
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify(draft.profile),
       });
@@ -74,7 +75,7 @@ export function PreparationJourney({embedded=false,opportunity,onClose,onClearSe
       setMode("text");setResume(data.resume_text);setFile(null);
       setStructuredProfile(draft.profile);setCurrentTemplate(draft.template);
       setStudioMessage("Seu currículo já está pronto. Confira a vaga e continue.");
-      const check=await fetch(api+"/api/v1/ats/check/text",{
+      const check=await apiFetch(api+"/api/v1/ats/check/text",{
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({resume_text:data.resume_text}),
       });
@@ -92,7 +93,7 @@ export function PreparationJourney({embedded=false,opportunity,onClose,onClearSe
     try{
       const draft=await loadResumeDraft();
       if(!draft||!hasResumeContent(draft.profile))throw new Error("Nenhum currículo salvo no Studio.");
-      const response=await fetch(api+"/api/v1/resumes/structured/preview/text",{
+      const response=await apiFetch(api+"/api/v1/resumes/structured/preview/text",{
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify(draft.profile),
       });
@@ -126,9 +127,9 @@ export function PreparationJourney({embedded=false,opportunity,onClose,onClearSe
       let response:Response;
       if (mode === "file" && file) {
         const data = new FormData(); data.append("file",file);
-        response = await fetch(api+"/api/v1/ats/check/upload",{method:"POST",body:data});
+        response = await apiFetch(api+"/api/v1/ats/check/upload",{method:"POST",body:data});
       } else {
-        response = await fetch(api+"/api/v1/ats/check/text",{
+        response = await apiFetch(api+"/api/v1/ats/check/text",{
           method:"POST",headers:{"Content-Type":"application/json"},
           body:JSON.stringify({resume_text:resume}),
         });
@@ -150,9 +151,9 @@ export function PreparationJourney({embedded=false,opportunity,onClose,onClearSe
         const data=new FormData();data.append("file",file);
         data.append("job_description",job);data.append("provider",provider);
         if(provider==="chatgpt" && model)data.append("model",model);
-        response=await fetch(api+"/api/v1/analyses/upload",{method:"POST",body:data,signal:controller.signal});
+        response=await apiFetch(api+"/api/v1/analyses/upload",{method:"POST",body:data,signal:controller.signal});
       } else {
-        response=await fetch(api+"/api/v1/analyses/text",{
+        response=await apiFetch(api+"/api/v1/analyses/text",{
           method:"POST",signal:controller.signal,
           headers:{"Content-Type":"application/json"},
           body:JSON.stringify({resume_text:resume,job_description:job,provider,model:provider==="chatgpt"?model||null:null}),
@@ -174,7 +175,7 @@ export function PreparationJourney({embedded=false,opportunity,onClose,onClearSe
   }
 
   async function downloadVersion(profile:ResumeProfile,template:ResumeTemplate){
-    const response=await fetch(api+"/api/v1/resumes/structured/export/docx",{
+    const response=await apiFetch(api+"/api/v1/resumes/structured/export/docx",{
       method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({profile,template}),
     });

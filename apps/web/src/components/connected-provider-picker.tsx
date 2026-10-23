@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {resolveApiOrigin} from "@/lib/api-origin";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -25,7 +26,7 @@ export function ConnectedProviderPicker({ provider, onProviderChange, model, onM
   const [error, setError] = useState("");
   useEffect(() => {
     let alive = true;
-    fetch(api + "/api/v1/providers/status", { cache: "no-store" })
+    apiFetch(api + "/api/v1/providers/status", { cache: "no-store" })
       .then(res => { if (!res.ok) throw new Error("API indisponível"); return res.json() as Promise<Status>; })
       .then(status => {
         if (!alive) return;
@@ -40,7 +41,7 @@ export function ConnectedProviderPicker({ provider, onProviderChange, model, onM
   useEffect(() => {
     let alive = true;
     if (provider !== "chatgpt" || !available.includes("chatgpt")) return;
-    fetch(api + "/api/v1/providers/chatgpt/models")
+    apiFetch(api + "/api/v1/providers/chatgpt/models")
       .then(res => res.json()).then(payload => { if (alive) {
         const next = (payload.models || []) as {id:string;name:string}[];
         setModels(next);

@@ -1,0 +1,19 @@
+[package]
+name = "alinha-tauri-probe"
+version = "0.1.0"
+description = "Experimento Tauri/Rust — Alinha Desktop"
+edition = "2021"
+publish = false
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+alinha-desktop-host-core = { path = "../host-core" }
+serde = { version = "1", features = ["derive"] }
+
+[profile.release]
+strip = true
+lto = "thin"

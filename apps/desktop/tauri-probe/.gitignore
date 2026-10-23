@@ -1,0 +1,6 @@
+/src-tauri/target/
+/src-tauri/gen/
+/host-core/target/
+*.exe
+*.msi
+*.log

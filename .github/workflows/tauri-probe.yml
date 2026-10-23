@@ -1,0 +1,64 @@
+name: Tauri Rust Desktop Proof (Windows)
+
+on:
+  pull_request:
+    paths:
+      - 'apps/desktop/tauri-probe/**'
+      - 'apps/web/**'
+      - '.github/workflows/tauri-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tauri-source-check:
+    name: Tauri shell / Windows MSVC
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      CARGO_INCREMENTAL: '0'
+      CARGO_BUILD_JOBS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci --no-audit --no-fund
+      - name: Export the existing React application
+        working-directory: apps/web
+        env:
+          ALINHA_DESKTOP_EXPORT: '1'
+        run: npm run build
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated Python API for authenticated loopback test
+        run: |
+          python -m pip install -e ./apps/api
+          $python = python -c "import sys; print(sys.executable)"
+          "ALINHA_TEST_PYTHON=$python" >> $env:GITHUB_ENV
+      - name: Test Rust host including live Python startup, authentication and shutdown
+        run: cargo test --manifest-path apps/desktop/tauri-probe/host-core/Cargo.toml -- --nocapture
+      - name: Build Tauri Windows executable (development proof only)
+        run: cargo build --manifest-path apps/desktop/tauri-probe/src-tauri/Cargo.toml
+      - name: Verify Tauri Windows binary exists
+        run: |
+          $exe = "apps/desktop/tauri-probe/src-tauri/target/debug/alinha-tauri-probe.exe"
+          if (-not (Test-Path $exe)) { throw "Missing compiled Windows executable: $exe" }
+          Get-Item $exe | Select-Object Name, Length
+
+      - name: Upload Windows executable for interactive Desktop smoke test
+        uses: actions/upload-artifact@v4
+        with:
+          name: alinha-tauri-windows-smoke
+          path: apps/desktop/tauri-probe/src-tauri/target/debug/alinha-tauri-probe.exe
+          if-no-files-found: error
+          retention-days: 3

@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 import {resolveApiOrigin} from "@/lib/api-origin";
 import {useRef,useState,type ChangeEvent} from "react";
 import {loadLegacyResumeDraft,hasResumeContent} from "@/lib/career-workspace";
@@ -9,12 +10,12 @@ import {planCommunityMigration,hasMigratableData,
 const API=resolveApiOrigin();
 
 async function localRecord(kind:"resume"|"opportunities"|"resume_versions"):Promise<Snapshot>{
- const response=await fetch(API+"/api/v1/community/data/"+kind,{cache:"no-store"});
+ const response=await apiFetch(API+"/api/v1/community/data/"+kind,{cache:"no-store"});
  if(!response.ok)throw new Error("Não foi possível consultar os dados locais no SQLite.");
  return await response.json() as Snapshot;
 }
 async function send<T>(route:string,payload:unknown):Promise<T>{
- const response=await fetch(API+route,{
+ const response=await apiFetch(API+route,{
   method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),
  });
  const data=await response.json();
@@ -96,7 +97,7 @@ export function CommunityDataActions(){
  async function exportBackup(){
   setBusy(true);setError("");setMessage("");
   try{
-   const response=await fetch(API+"/api/v1/community/backup",{cache:"no-store"});
+   const response=await apiFetch(API+"/api/v1/community/backup",{cache:"no-store"});
    if(!response.ok)throw new Error("Não foi possível exportar o backup do SQLite.");
    const backup=await response.json();
    const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});

@@ -1,4 +1,5 @@
 "use client";
+import {apiFetch} from "@/lib/api-fetch";
 
 import {useEffect,useMemo,useRef,useState,type ChangeEvent,type FormEvent} from "react";
 import Link from "next/link";
@@ -103,7 +104,7 @@ export default function CareerAgent(){
   setImporting(true);setProfileError("");setNotice("");
   try{
    const body=new FormData();body.append("file",file);
-   const response=await fetch(API+"/api/v1/resumes/structured/import/upload",{method:"POST",body});
+   const response=await apiFetch(API+"/api/v1/resumes/structured/import/upload",{method:"POST",body});
    if(!response.ok)throw new Error("Falha ao importar currículo. Confira o formato do arquivo.");
    const imported=parseResumeImport(await response.json());
    await saveResumeDraft(imported.profile,"classico");
@@ -132,7 +133,7 @@ export default function CareerAgent(){
   try{
    // Source adapters, settings and rate limits are enforced by the existing local API.
    const qs=new URLSearchParams({q:parsed.role,source:"all",page:"1",remote_only:String(parsed.remoteOnly)});
-   const response=await fetch(API+"/api/v1/jobs/search?"+qs.toString(),{signal:controller.signal,cache:"no-store"});
+   const response=await apiFetch(API+"/api/v1/jobs/search?"+qs.toString(),{signal:controller.signal,cache:"no-store"});
    if(!response.ok){
     let detail="Não foi possível consultar as fontes públicas autorizadas.";
     try{const body=await response.json() as {detail?:unknown};if(typeof body.detail==="string")detail=body.detail;}catch{}

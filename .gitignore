@@ -27,6 +27,13 @@ user_data/
 community.sqlite3*
 config.jsonc
 
+# Uncommitted native toolchains, binaries and synthetic desktop data
+.desktop-tools/
+.desktop-poc-data/
+apps/desktop/wails-probe/bin/
+apps/desktop/wails-probe/frontend/dist/*
+!apps/desktop/wails-probe/frontend/dist/.gitkeep
+
 # Isolated synthetic browser smoke and test-generated data
 .browser-smoke/
 .browser-smoke-data/

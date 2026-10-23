@@ -1,5 +1,6 @@
 """HTTP interface with local-only provider OAuth and evidence-checked analysis."""
 import os
+import secrets
 import sqlite3
 from typing import Annotated
 
@@ -85,6 +86,27 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Content-Type"],
 )
+
+
+@app.middleware("http")
+async def require_desktop_session(request: Request, call_next):
+    """Protect Desktop loopback API even against other processes on this PC.
+
+    Without ALINHA_DESKTOP_SESSION_TOKEN the regular Community behavior is unchanged.
+    Only the native host knows this value; it must never go to browser JavaScript.
+    """
+    expected = os.getenv("ALINHA_DESKTOP_SESSION_TOKEN")
+    if expected is not None:
+        client_ip = request.client.host if request.client else ""
+        received = request.headers.get("x-alinha-desktop-session", "")
+        if (
+            len(expected) < 48
+            or len(expected) > 256
+            or client_ip not in ("127.0.0.1", "::1")
+            or not secrets.compare_digest(received, expected)
+        ):
+            return Response(status_code=403, content="Desktop session not authorized")
+    return await call_next(request)
 
 
 @app.get("/health")

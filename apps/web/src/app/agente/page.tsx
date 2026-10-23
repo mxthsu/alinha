@@ -4,7 +4,7 @@ import {useEffect,useMemo,useRef,useState,type ChangeEvent,type FormEvent} from 
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {ArrowRight,ArrowUpRight,Check,CheckCircle2,ChevronDown,
- CircleAlert,FileUp,LockKeyhole,Search,ShieldCheck,Square,X} from "lucide-react";
+ CircleAlert,FileUp,Search,Square,X} from "lucide-react";
 import {PlatformNav} from "@/components/platform-nav";
 import {resolveApiOrigin} from "@/lib/api-origin";
 import {loadResumeDraft,saveResumeDraft,hasResumeContent,type ResumeProfile} from "@/lib/career-workspace";
@@ -69,8 +69,9 @@ export default function CareerAgent(){
  const [status,setStatus]=useState<RunStatus>("idle");
  const [error,setError]=useState("");
  const [results,setResults]=useState<RemoteResult|null>(null);
+ const [showAllJobs,setShowAllJobs]=useState(false);
+ const [showAllResults,setShowAllResults]=useState(false);
  const [runIntent,setRunIntent]=useState<CareerIntent|null>(null);
- const [runPlanRole,setRunPlanRole]=useState("");
  const [runRequestedDrafts,setRunRequestedDrafts]=useState(false);
  const [selected,setSelected]=useState<SelectedOpportunity|null>(null);
  const [reviewing,setReviewing]=useState(false);
@@ -204,7 +205,7 @@ export default function CareerAgent(){
   abort.current?.abort();abort.current=controller;
   const current=++generation.current;
   setStatus("searching");setResults(null);setRunIntent(null);setError("");setReviewed(false);
-  setRunPlanRole(activeRole);
+  setShowAllJobs(false);setShowAllResults(false);
   setRunRequestedDrafts(wantsApplicationDrafts(intentText));
   let timedOut=false;
   const deadline=window.setTimeout(()=>{timedOut=true;controller.abort();},30000);
@@ -261,22 +262,11 @@ export default function CareerAgent(){
   clearSelectedOpportunity();setSelected(null);setReviewing(false);setAdvanced(false);
   setDraft("");setReviewed(false);
  }
- const steps=[
-  {label:"Ler currículo",detail:profile?"Perfil disponível":"Currículo pendente"},
-  {label:"Entender objetivo",detail:runPlanRole||parsed.role||"Cargo não informado"},
-  {label:"Consultar vagas",detail:status==="searching"?"Buscando nas fontes autorizadas":results?"Consulta realizada":"Aguardando autorização"},
-  {label:"Conferir requisitos",detail:results?"Evidências e critérios organizados":"Sem suposições"},
-  {label:"Preparar prévias",detail:prepared.length>0?prepared.length+" rascunho(s) locais; revisão pendente":reviewing?"Prévia local para revisar":"Nenhum envio externo"},
- ];
-
  return <div className="platform-shell"><PlatformNav/>
   <main className="platform-container unified-agent">
-   <div className="unified-topline"><span><ShieldCheck size={16}/> ALINHA · AGENTE DE CARREIRA</span>
-    <span><LockKeyhole size={14}/> Modo assistido · sem envio automático</span></div>
    <div className="unified-heading">
     <div><h1>O que vamos fazer pela sua carreira?</h1>
-     <p>Descreva seu objetivo. O Alinha busca vagas, confere o que consta no seu perfil e prepara uma prévia para você revisar, tudo aqui.</p></div>
-    <Link href="/conexoes">Gerenciar IA <ArrowUpRight size={15}/></Link>
+     <p>Conte o que você procura. O Alinha cuida da busca e organiza o que precisa da sua revisão.</p></div>
    </div>
 
    <section className="unified-primary" aria-label="Sua jornada">
@@ -295,13 +285,13 @@ export default function CareerAgent(){
     {profileError&&<p role="alert" className="unified-error">{profileError}</p>}
     {notice&&<p role="status" className="unified-notice">{notice}</p>}
     <form onSubmit={e=>void search(e)} className="unified-intent-form">
-     <label htmlFor="career-intent">Seu objetivo</label>
+     <label htmlFor="career-intent">O que você procura?</label>
      <textarea id="career-intent" rows={3} maxLength={400} value={intentText}
       onChange={e=>{intentEdited.current=true;planAbort.current?.abort();aiRunId.current="";setAiRemaining(2);setPlanning(false);setProposal(null);setConfirmedRole("");setPlanError("");setIntentText(e.target.value);}} disabled={status==="searching"}
       placeholder="Ex.: Encontre vagas de Engenheiro de IA remoto no Brasil, com salário a partir de R$ 8.000…"/>
-     <div className="unified-understanding">
-      <strong>Entendi o seguinte:</strong>
-      <div className="unified-chips">
+     <details className="unified-understanding">
+      <summary>Revisar filtros identificados <ChevronDown size={14}/></summary>
+      <div className="unified-understanding-body"><div className="unified-chips">
        <span>Cargo: {activeRole||"precisa informar"}</span>
        {parsed.workMode&&<span>{parsed.workMode==="remote"?"Remoto":parsed.workMode==="hybrid"?"Híbrido":"Presencial"}</span>}
        {parsed.city&&<span>Cidade: {parsed.city}</span>}
@@ -313,11 +303,11 @@ export default function CareerAgent(){
        <summary><CircleAlert size={15}/> {uncertainties.length} condição(ões) que precisam de confirmação <ChevronDown size={14}/></summary>
        <ul>{uncertainties.map(text=><li key={text}>{text}</li>)}</ul>
       </details>}
-     </div>
+      </div>
+     </details>
      <details className="unified-ai-assist" aria-label="Interpretação opcional de IA">
-      <summary>{confirmedRole?"IA ajudou a identificar: "+confirmedRole:"Interpretar objetivo com sua IA (opcional)"}</summary>
-      <div><p>Até duas tentativas por jornada, com limite registrado localmente (não é limite financeiro global).
-        Só o objetivo digitado vai ao modelo; nunca seu currículo. As ações seguem sob seu controle.</p>
+      <summary>{confirmedRole?"Cargo sugerido: "+confirmedRole:"Precisa de ajuda para definir o cargo? Use sua IA"}</summary>
+      <div><p>A IA pode sugerir um cargo para sua busca. Você decide se aceita. Seu currículo não é enviado nesta etapa.</p>
        <p role="status">Interpretações restantes nesta jornada: {aiRemaining}/2</p></div>
       {plannerProviders.length>0&&<div className="unified-ai-controls">
        <select aria-label="IA para interpretar objetivo" value={plannerProvider}
@@ -352,7 +342,7 @@ export default function CareerAgent(){
      </details>
      <label className="unified-consent"><input type="checkbox" checked={authorized}
       disabled={status==="searching"} onChange={e=>setAuthorized(e.target.checked)}/>
-      <span>Autorizo consultar as fontes públicas de vagas habilitadas. Apenas o cargo e o filtro de modalidade são enviados à busca; meu currículo não é transmitido às fontes.</span>
+      <span>Autorizo a consulta de vagas públicas. Meu currículo não será enviado às fontes.</span>
      </label>
      <div className="unified-submit-row"><button type="submit" className="unified-cta"
       disabled={!authorized||!profile||activeRole.length<2||status==="searching"||importing}>
@@ -363,18 +353,9 @@ export default function CareerAgent(){
     </form>
    </section>
 
-   <section className="unified-progress" aria-label="Progresso do agente">
-    <div className="unified-section-head"><h2>Progresso</h2>
-     <span role="status" aria-live="polite">{status==="searching"?"Consultando fontes…":
-      status==="review"?results?.jobs.length?"Oportunidades disponíveis para revisão":"Busca concluída, sem vagas encontradas":
-      status==="failed"?"Consulta interrompida por erro":
-      status==="cancelled"?"Busca cancelada":
-      selected?"Vaga salva para retomar · nenhuma busca refeita":"Aguardando seu pedido"}</span></div>
-    <ol>{steps.map((step,index)=>{const done=index===0?Boolean(profile):index===1?Boolean(runPlanRole):
-     index===2?Boolean(results):index===3?Boolean(results&&runIntent):Boolean(prepared.length||reviewing&&chosen);
-     return <li key={step.label} className={done?"done":""}>
-     <span>{done?<Check size={13}/>:index+1}</span><div><strong>{step.label}</strong><small>{step.detail}</small></div></li>;})}</ol>
-   </section>
+   {status==="searching"&&<p className="unified-working" role="status" aria-live="polite">
+    <span className="unified-working-dot" aria-hidden="true"/>Buscando vagas e comparando requisitos com seu currículo…
+   </p>}
    {(status==="failed"||status==="cancelled")&&<p role="alert" className="unified-error">
     {status==="failed"?error:"A busca foi cancelada. Nenhuma candidatura foi enviada; você pode começar outra quando quiser."}</p>}
    {results&&runIntent&&runRequestedDrafts&&<section className="unified-batch" aria-label="Candidaturas preparadas">
@@ -395,10 +376,15 @@ export default function CareerAgent(){
     <p className="unified-limitation">Prévia não significa candidatura enviada. Respostas desconhecidas dependem de você.</p>
    </section>}
    {results&&runIntent&&<section className="unified-results" id="career-results">
-    <div className="unified-section-head"><div><h2>Oportunidades encontradas</h2>
-     <p>{results.jobs.length} vagas · {results.source_name}. A ordem considera sinais literais e incertezas; não é pontuação ATS.</p></div></div>
+    {runRequestedDrafts&&prepared.length>0&&<button type="button" className="unified-more-jobs"
+     aria-expanded={showAllResults} onClick={()=>setShowAllResults(v=>!v)}>
+     {showAllResults?"Ocultar lista completa":`Ver as ${ranked.length} vagas encontradas`}
+     <ChevronDown size={16}/></button>}
+    {(!runRequestedDrafts||prepared.length===0||showAllResults)&&<>
+     <div className="unified-section-head"><div><h2>Oportunidades encontradas</h2>
+      <p>{results.jobs.length} vagas · {results.source_name}. Os requisitos precisam ser confirmados no anúncio.</p></div></div>
     {ranked.length===0&&<p>Nenhuma vaga encontrada. Revise o objetivo ou tente outra busca.</p>}
-    <div className="unified-list">{ranked.map(item=>{
+    <div className="unified-list">{ranked.slice(0,showAllJobs?undefined:5).map(item=>{
      const job=item.job.opportunity;
      return <article key={job.source+":"+job.external_id} className={"unified-result "+(item.status==="excluded"?"muted":"")}>
       <div className="unified-result-head"><div><small>{job.company} · {job.source}</small>
@@ -418,6 +404,10 @@ export default function CareerAgent(){
       </div>
      </article>;
     })}</div>
+    {ranked.length>5&&<button type="button" className="unified-more-jobs" onClick={()=>setShowAllJobs(v=>!v)}>
+     {showAllJobs?"Mostrar menos":`Mostrar mais ${ranked.length-5} vagas`} <ChevronDown size={16}/>
+    </button>}
+    </>}
     {results.limitations.length>0&&<p className="unified-limitation">{results.limitations.join(" ")}</p>}
    </section>}
 
@@ -454,8 +444,5 @@ export default function CareerAgent(){
     </details>
    </section>}
    {error&&status!=="failed"&&<p className="unified-error" role="alert">{error}</p>}
-   <footer className="unified-footer"><ShieldCheck size={16}/>
-    <span>Você decide cada etapa. Nenhuma ação de candidatura externa está habilitada.</span>
-    <Link href="/vagas">Busca manual</Link><Link href="/studio">Editar currículo</Link></footer>
   </main></div>;
 }

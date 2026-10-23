@@ -2,6 +2,12 @@
 
 > **Fonte principal de contexto do projeto, atualizada em 23/10/2026.** Leia este arquivo, [AGENTS.md](../AGENTS.md), o código real na branch escolhida e os documentos vinculados **antes** de decidir a próxima tarefa. O estado do GitHub pode mudar; confirme branches, CI e PRs ao começar. Este texto não prova que funcionalidades planejadas já funcionem.
 
+## Nova etapa do backend: busca de vagas com execução durável (23/10/2026)
+
+**Depois da PR #55**, o servidor já possui um controle transacional de jornadas com eventos persistentes, idempotência, cancelamento e lease por ferramenta. O próximo incremento conecta **somente a etapa `job.search`** aos conectores públicos já configurados na Community: `POST /api/v1/agent/runs/{run_id}/execute-search` e leitura durável em `GET /api/v1/agent/runs/{run_id}/jobs`. A API valida autorização já registrada, limita as vagas, grava os anúncios públicos com proveniência no mesmo commit do evento de conclusão e impede resultados tardios após cancelamento. **Nenhum envio externo** e nenhuma credencial/CV são gravados no registro da jornada.
+
+**Ainda em aberto na issue #48:** conectar `job.assess` a um perfil local revisado, depois `application.preview`, medição real de tokens/custos e recuperação revisável. **Não conectar ao frontend** antes de concluir o fluxo real de backend; a tela /agente continua sendo a demonstração anterior. Consulte [backend das jornadas](agent-durable-runtime.md). As seções históricas abaixo podem se referir ao estado anterior à #55.
+
 ## Integrado na `main` — IA opt-in e plano revisável (23/10/2026)
 
 **As PRs [#50](https://github.com/mxthsu/alinha/pull/50) e [#51](https://github.com/mxthsu/alinha/pull/51) foram incorporadas à `main` por squash**, respectivamente nos commits `b133b15` e `549a63e`. A PR #51 foi rebased sobre a `main` para não duplicar código; CI Web e Python aprovada após rebase.

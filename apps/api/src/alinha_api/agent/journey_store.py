@@ -1,7 +1,7 @@
 """Crash-aware SQLite run ledger for the actual Community agent, not the fake demo.
 
-The UI cannot mark tools complete. Tool dispatch must use begin_step/finish_step,
-which are trusted backend-only methods. No CVs, provider keys or vacancy text here.
+The UI cannot mark tools complete. Tool dispatch uses backend-only leases.
+Job-search results are public third-party listing data, never CVs or credentials.
 """
 
 from __future__ import annotations
@@ -19,11 +19,13 @@ from uuid import UUID, uuid4
 
 from pydantic import UUID4, BaseModel, ConfigDict, Field, field_validator
 
+from alinha_api.agent.discovery import JobSearchResult
 from alinha_api.services.community_storage import user_paths
 
 RunState = Literal["ready", "running", "needs_review", "completed", "failed", "cancelled"]
 Tool = Literal["job.search", "job.assess", "application.preview"]
 MAX_AGE_SECONDS = 14 * 86400
+MAX_RESULT_BYTES = 350_000
 
 
 class JourneyConflict(Exception):
@@ -116,6 +118,13 @@ class JourneyStore:
                     PRIMARY KEY (run_id, sequence)
                 )
             """)
+            connection.execute("""
+                CREATE TABLE IF NOT EXISTS agent_journey_search_results (
+                    run_id TEXT PRIMARY KEY, payload TEXT NOT NULL,
+                    stored_at INTEGER NOT NULL,
+                    FOREIGN KEY(run_id) REFERENCES agent_journeys(run_id)
+                )
+            """)
             yield connection
             connection.execute("COMMIT")
         except (sqlite3.Error, OSError) as exc:
@@ -186,6 +195,12 @@ class JourneyStore:
                 return self._snapshot(conn, old)
             # Only expired terminal runs are pruned. Never erase active work automatically.
             cutoff = int(time.time()) - MAX_AGE_SECONDS
+            conn.execute(
+                "DELETE FROM agent_journey_search_results WHERE run_id IN "
+                "(SELECT run_id FROM agent_journeys WHERE created_at < ? "
+                "AND status IN ('completed','cancelled','failed'))",
+                (cutoff,),
+            )
             conn.execute(
                 "DELETE FROM agent_journey_events WHERE run_id IN "
                 "(SELECT run_id FROM agent_journeys WHERE created_at < ? "
@@ -307,6 +322,79 @@ class JourneyStore:
                 lease.tool,
                 "completed",
                 "Etapa concluída pelo executor autorizado; nenhum envio externo.",
+            )
+            return self._snapshot(conn, self._row(conn, lease.run_id))
+
+    @staticmethod
+    def _require_active_lease(row: sqlite3.Row, lease: StepLease) -> None:
+        plan = json.loads(row["plan"])
+        if (
+            row["status"] != "running"
+            or row["active_token"] != str(lease.token)
+            or row["next_step"] != lease.index
+            or lease.index >= len(plan)
+            or plan[lease.index] != lease.tool
+        ):
+            raise JourneyConflict("Ação cancelada, repetida ou obsoleta.")
+
+    def finish_search(self, lease: StepLease, result: JobSearchResult) -> JourneySnapshot:
+        """Persist allowlisted search output and completion in one SQLite transaction."""
+        if lease.index != 0 or lease.tool != "job.search":
+            raise JourneyConflict("Somente o executor de busca pode gravar vagas.")
+        result = JobSearchResult.model_validate(result)
+        if len(result.jobs) > lease.max_jobs:
+            raise JourneyConflict("Resultados excederam o limite autorizado.")
+        payload = result.model_dump_json()
+        if len(payload.encode("utf-8")) > MAX_RESULT_BYTES:
+            raise JourneyConflict("Resultados excederam o tamanho permitido.")
+        with self._db() as conn:
+            row = self._row(conn, lease.run_id)
+            self._require_active_lease(row, lease)
+            conn.execute(
+                "INSERT INTO agent_journey_search_results(run_id,payload,stored_at) VALUES (?,?,?)",
+                (str(lease.run_id), payload, int(time.time())),
+            )
+            conn.execute(
+                "UPDATE agent_journeys SET status='ready',next_step=1,active_token=NULL,"
+                "step_started_at=NULL,result_count=? WHERE run_id=?",
+                (len(result.jobs), str(lease.run_id)),
+            )
+            self._event(
+                conn,
+                str(lease.run_id),
+                "job.search",
+                "completed",
+                "Consulta concluída; resultados de fontes públicas disponíveis para revisão.",
+            )
+            return self._snapshot(conn, self._row(conn, lease.run_id))
+
+    def get_search_result(self, run_id: UUID) -> JobSearchResult:
+        with self._db() as conn:
+            row = self._row(conn, run_id)
+            stored = conn.execute(
+                "SELECT payload FROM agent_journey_search_results WHERE run_id=?",
+                (str(run_id),),
+            ).fetchone()
+            if stored is None or row["result_count"] is None:
+                raise JourneyConflict("Resultados ainda não disponíveis.")
+            return JobSearchResult.model_validate_json(stored["payload"])
+
+    def fail_step(self, lease: StepLease) -> JourneySnapshot:
+        """Record fixed, non-sensitive failure text; never store connector exceptions."""
+        with self._db() as conn:
+            row = self._row(conn, lease.run_id)
+            self._require_active_lease(row, lease)
+            conn.execute(
+                "UPDATE agent_journeys SET status='failed',active_token=NULL,"
+                "step_started_at=NULL WHERE run_id=?",
+                (str(lease.run_id),),
+            )
+            self._event(
+                conn,
+                str(lease.run_id),
+                lease.tool,
+                "failed",
+                "Não foi possível executar esta etapa. Nenhuma candidatura foi enviada.",
             )
             return self._snapshot(conn, self._row(conn, lease.run_id))
 

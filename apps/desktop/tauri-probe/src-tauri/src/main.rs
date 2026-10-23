@@ -2,7 +2,7 @@
 
 use std::{path::PathBuf, sync::Mutex};
 use alinha_desktop_host_core::{
-  ApiResponse, Backend, Preferences, ResumeInfo, inspect_chosen_resume, load_preferences, save_preferences,
+  ApiClient, ApiResponse, Backend, Preferences, ResumeInfo, inspect_chosen_resume, load_preferences, save_preferences,
 };
 use serde::Serialize;
 use tauri::{Manager, State};
@@ -10,6 +10,7 @@ use tauri_plugin_dialog::DialogExt;
 
 struct DesktopState {
   backend: Mutex<Option<Backend>>,
+  api_client: Option<ApiClient>,
   startup_error: Option<String>,
   data_dir: PathBuf,
 }
@@ -36,16 +37,19 @@ fn desktop_status(state: State<'_, DesktopState>) -> DesktopStatus {
 /// Only allowlisted API methods/paths can reach Python. The session secret never
 /// crosses IPC and is not readable from JavaScript.
 #[tauri::command]
-fn api_request(
- state: State<'_,DesktopState>,
+async fn api_request(
+ app: tauri::AppHandle,
  method: String,
  path: String,
  content_type: String,
  body_base64: String,
 )->Result<ApiResponse,String> {
- let guard=state.backend.lock().map_err(|_|"Estado Desktop indisponível")?;
- let backend=guard.as_ref().ok_or("API Python não iniciada")?;
- backend.request(&method,&path,&content_type,&body_base64)
+ // Avoid synchronous HTTP or a long-held process lock on the WebView/main thread.
+ let client=app.state::<DesktopState>().api_client.clone()
+   .ok_or("API Python não iniciada")?;
+ tauri::async_runtime::spawn_blocking(move || {
+   client.request(&method,&path,&content_type,&body_base64)
+ }).await.map_err(|_|"Falha no transporte local".to_string())?
 }
 #[tauri::command]
 fn get_desktop_preferences(state: State<'_,DesktopState>)->Result<Preferences,String> {
@@ -84,7 +88,8 @@ fn main() {
       }
       None=>(None,Some("Python não configurado neste protótipo".into())),
     };
-    app.manage(DesktopState{backend:Mutex::new(backend),startup_error,data_dir});
+    let api_client=backend.as_ref().map(Backend::api_client);
+    app.manage(DesktopState{backend:Mutex::new(backend),api_client,startup_error,data_dir});
     Ok(())
   })
   .invoke_handler(tauri::generate_handler![

@@ -41,10 +41,10 @@ fluxos fictícios. Não fazer merge independente da base sem rebase/revisão.
   A exportação estática e testes de interface passaram, mas **não afirmar a
   jornada Desktop completa** sem smoke real na janela com Python supervisionado.
   OAuth ChatGPT no navegador externo/callback permanece fora desta prova.
-- Compilação Tauri no Windows exige Visual Studio C++ Build Tools/MSVC + Windows
-  SDK e WebView2. O PC atual tem Rust portátil para testes de núcleo, mas não
-  tinha linker/SDK MSVC no momento desta prova. **Não tratar fonte Tauri criada
-  como app compilado** sem build real.
+- **A CI Windows/MSVC compilou o executável com sucesso.** A compilação no PC
+  conectado ainda não foi realizada porque não tinha Build Tools/SDK completos.
+  A CI publica um artefato efêmero para testes manuais, **não um instalador**.
+  Falta confirmar a janela e o fluxo completo na máquina do usuário.
 - Não foram testados instalador, atualização, macOS/Linux, assinatura, proteção
   transacional do estado completo do agente ou recuperação da API após crash.
   Estado dos checkpoints do agente pertence ao Python; Rust só cuida de ciclo
@@ -62,6 +62,21 @@ cd apps/desktop/tauri-probe
 cd src-tauri
 cargo build
 ```
+
+Para testar uma build da CI com a janela nativa (sem tocar nos dados da Community):
+
+```powershell
+# Primeiro baixe a build Windows temporária nas Actions da PR, ou via gh:
+gh run download <ID_DA_EXECUCAO> -R mxthsu/alinha -n alinha-tauri-windows-smoke -D .\\smoke-bin
+.\scripts\smoke-window.ps1 -ExecutablePath .\smoke-bin\alinha-tauri-probe.exe -PythonPath ..\..\api\.venv\Scripts\python.exe -BrowserJourney
+```
+
+O script isola APPDATA/LOCALAPPDATA por processo; verifica a janela, usa
+CDP **apenas na execução de teste com porta aleatória em loopback** para navegar
+até `/agente`, testa a ponte Rust autenticada, bloqueio de envio externo e importa
+um **currículo totalmente fictício** na WebView2. Fecha o aplicativo ao concluir.
+Não testa ainda a busca completa/IA ao vivo, assinatura, atualização ou
+instalação limpa. Não utilizar currículos ou credenciais reais.
 
 Para provar Python em loopback com token, crie a venv em `apps/api`,
 instale o pacote (`python -m pip install -e .`) e configure

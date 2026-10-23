@@ -9,7 +9,9 @@ fn authenticated_python_server_is_started_probed_and_stopped() {
     };
     let mut backend = Backend::launch(Path::new(&path)).expect("Python readiness & token");
     assert!(backend.healthy(), "Authenticated health is required");
-    let reply = backend.request("GET", "/api/v1/providers/status", "", "")
+    // Requests operate on a cloned client without holding the process lock.
+    let client = backend.api_client();
+    let reply = client.request("GET", "/api/v1/providers/status", "", "")
         .expect("Only the Rust process attaches the token");
     assert_eq!(reply.status, 200, "Native bridge can read a safe Python route");
 

@@ -1,6 +1,6 @@
 //! Trusted Desktop primitives, independent of Tauri and React.
 pub mod api_bridge;
-pub use api_bridge::ApiResponse;
+pub use api_bridge::{ApiClient, ApiResponse};
 use serde::{Deserialize, Serialize};
 use std::{
  fs::{self,File}, io::{BufRead,BufReader,Read,Write}, net::{SocketAddr,TcpStream},
@@ -124,6 +124,10 @@ impl Backend {
  pub fn healthy(&mut self)->bool{
   if self.child.try_wait().ok().flatten().is_some(){return false}
   checked_health(self.port,&self.secret).is_ok()
+ }
+ pub fn api_client(&self)->ApiClient {ApiClient{port:self.port,secret:self.secret.clone()}}
+ pub fn request(&self,method:&str,path:&str,content_type:&str,body_base64:&str)->Result<ApiResponse,String>{
+  self.api_client().request(method,path,content_type,body_base64)
  }
  pub fn stop(&mut self){let _=self.child.kill();let _=self.child.wait();}
 }

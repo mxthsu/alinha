@@ -26,13 +26,13 @@
 | React/TypeScript suíte e lint | **64/64 testes** e ESLint aprovado |
 | Rust host-core testado com toolchain Windows gnullvm portátil | **3/3 unitários** |
 | Rust inicia Python `desktop_entry`, aguarda readiness, autentica `/health`, encerra o processo filho | **1/1 integração real** |
-| Binário Windows Tauri compilado / janela aberta | **Binário gerado na CI Windows/MSVC**; janela em execução e smoke integrados ainda não validados |
+| Binário Windows Tauri compilado / janela aberta | **Aprovado**: CI Windows/MSVC compilou e artefato foi aberto no Windows conectado; teste de acessibilidade da janela |
 | Instalador Windows assinado | **Não implementado** |
-| UI React conectada à API por IPC autenticado | **Código implementado**, com testes JS/fallback; comportamento na WebView real ainda não homologado |
+| UI React conectada à API por IPC autenticado | **Validado no Windows conectado**: WebView2 `/agente` → bridge Rust → API Python; importação de TXT fictício e bloqueio `application.submit`. Não testado fluxo completo de vagas/IA |
 
 **Importante:** os testes do Rust rodam via toolchain isolada `stable-x86_64-pc-windows-gnullvm` + `rust-lld`; isto não substitui os pré-requisitos oficiais MSVC/WebView2 para compilar o aplicativo Tauri Windows. Consulte a [documentação oficial de pré-requisitos](https://v2.tauri.app/start/prerequisites/).
 
-A prova Go/Wails da PR #47 chegou a abrir uma janela nativa e medir memória do processo principal; esta POC Rust ainda não alcançou esse mesmo marco. **Não declarar Tauri superior.** Compare em igualdade depois de uma build real com a mesma Web e Python.
+A prova Go/Wails da PR #47 chegou a abrir uma janela nativa e medir memória do processo principal; esta POC Rust compilou com sucesso em CI/MSVC, mas ainda não validou janela/UX real nem desempenho comparável. **Não declarar Tauri superior.** Compare em igualdade depois de uma build real com a mesma Web e Python.
 
 ## Fronteiras de segurança
 

@@ -59,7 +59,11 @@ pub fn allowed_route(method: &str, path: &str) -> bool {
     )
 }
 
-impl Backend {
+/// Immutable authenticated client. Can be cloned outside the process-lifecycle lock.
+#[derive(Clone)]
+pub struct ApiClient { pub(crate) port: u16, pub(crate) secret: String }
+
+impl ApiClient {
     /// The WebView never receives port, token, arbitrary file paths, or raw headers.
     pub fn request(&self, method: &str, path: &str, content_type: &str, body_base64: &str)
         -> Result<ApiResponse, String> {

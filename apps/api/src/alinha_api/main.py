@@ -16,6 +16,14 @@ from alinha_api.agent.gupy import search_gupy
 from alinha_api.agent.lever import search_lever
 from alinha_api.agent.models import CandidateCriteria
 from alinha_api.agent.multisource import search_multi_source
+from alinha_api.agent.runtime import (
+    AdvanceRun,
+    AgentCoordinator,
+    ConfirmReview,
+    RunSnapshot,
+    RunViolation,
+    StartRun,
+)
 from alinha_api.resume_schema import (
     ResumeProfile,
     ResumeReviewRequest,
@@ -110,6 +118,64 @@ def _community_api_only(request: Request, *, mutation: bool = False) -> None:
         raise HTTPException(status_code=403, detail="Origem não autorizada.")
     if request.headers.get("sec-fetch-site") == "cross-site":
         raise HTTPException(status_code=403, detail="Acesso não autorizado.")
+
+
+# Ephemeral demo only: isolated synthetic data and no submission connector.
+demo_coordinator = AgentCoordinator()
+
+
+@app.post("/api/v1/agent/demo/runs", response_model=RunSnapshot)
+def start_demo_run(request: Request, response: Response, body: StartRun) -> RunSnapshot:
+    _community_api_only(request, mutation=True)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return demo_coordinator.start(body)
+    except RunViolation as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/api/v1/agent/demo/runs/{run_id}", response_model=RunSnapshot)
+def get_demo_run(request: Request, response: Response, run_id: str) -> RunSnapshot:
+    _community_api_only(request)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return demo_coordinator.get(run_id)
+    except RunViolation as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/v1/agent/demo/runs/{run_id}/advance", response_model=RunSnapshot)
+def advance_demo_run(
+    request: Request, response: Response, run_id: str, body: AdvanceRun,
+) -> RunSnapshot:
+    _community_api_only(request, mutation=True)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return demo_coordinator.advance(run_id, body.expected_step)
+    except RunViolation as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@app.post("/api/v1/agent/demo/runs/{run_id}/cancel", response_model=RunSnapshot)
+def cancel_demo_run(request: Request, response: Response, run_id: str) -> RunSnapshot:
+    _community_api_only(request, mutation=True)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return demo_coordinator.cancel(run_id)
+    except RunViolation as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@app.post("/api/v1/agent/demo/runs/{run_id}/review", response_model=RunSnapshot)
+def review_demo_run(
+    request: Request, response: Response, run_id: str, body: ConfirmReview,
+) -> RunSnapshot:
+    _community_api_only(request, mutation=True)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return demo_coordinator.confirm_review(run_id, body)
+    except RunViolation as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @app.get("/api/v1/community/settings", response_model=CommunitySettings)

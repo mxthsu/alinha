@@ -2,6 +2,29 @@
 
 > **Fonte principal de contexto do projeto, atualizada em 22/10/2026.** Leia este arquivo, [AGENTS.md](../AGENTS.md), o código real na branch escolhida e os documentos vinculados **antes** de decidir a próxima tarefa. O estado do GitHub pode mudar; confirme branches, CI e PRs ao começar. Este texto não prova que funcionalidades planejadas já funcionem.
 
+## Estado mais recente para continuar — integração real em PR (22/10/2026)
+
+**Verifique a PR nova feat/integrated-career-agent antes de retomar.** Esta seção descreve trabalho proposto, **ainda não mergeado à main**. A visão abaixo permanece válida; a seção histórica "Próxima entrega de maior valor" reflete a etapa anterior à integração. Não fazer merge automático.
+
+- **Base:** PR #45 (feat/agent-unified-journey-44) + unidades compatíveis da PR #41 (feat/continuous-career-journey). PR #42 segue experimental, **não utilizada**.
+- **Rota principal /agente:** integra perfil da fonte local existente (importação PDF/DOCX/TXT e SQLite/legado), objetivo livre interpretado por regras determinísticas, confirmação para busca, conectores autorizados via API existente (source=all), classificação por evidências e ressalvas verificáveis, prévia editável para uma vaga, sem envio, e preparação avançada integrada na mesma tela. Links de origem e descrições completas são preservados no handoff seguro.
+- **Retomada da #41:** career-handoff.ts persiste somente a vaga selecionada e a descrição revisada no localStorage, com leitura de seleção legada no sessionStorage; após reabrir, é necessário escolher explicitamente **Retomar**. Busca e respostas de IA **não são repetidas implicitamente**. Perfil continua em sua persistência original; dados desconhecidos exigem revisão.
+- **Provedores de IA:** o componente existente PreparationJourney (preparação avançada expansível) usa ConnectedProviderPicker e adaptadores da API já implementados e dispara análise **somente após clique explícito**. Gemini, OpenAI API, Claude/Anthropic, Ollama e opções ChatGPT existentes dependem das conexões realmente disponíveis. Sem IA, busca, avaliação literal e prévia continuam possíveis.
+- **PR #45:** conserva contratos, política e API sintética para testes, mas a interface duplicada de demonstração e seu transporte foram **retirados** da experiência principal. Não adicionar outro fluxo separado. Para execução real há um único ponto de entrada /agente.
+- **Limites honestos:** busca tem cobertura parcial e pode falhar; não houve envio de candidatura, automação com credenciais, bypass de CAPTCHA/MFA, e a prévia não garante compatibilidade ATS. O teste visual no Chrome usa fontes interceptadas e dados fictícios, não prova disponibilidade de emprego real. Recuperação de resultados de busca após reinício não é persistida; somente seleção de vaga e descrição são recuperadas.
+- **Validação:** executar testes Python da API, testes Node da Web, Ruff, ESLint e build. Smoke Chrome reproduzível: iniciar API e Next localmente com APPDATA/LOCALAPPDATA isolados, depois executar npm run test:browser dentro de apps/web (Chrome instalado; vagas interceptadas sinteticamente). Ver [jornada integrada](integrated-agent-journey.md). Não usar dados pessoais no smoke, screenshot ou commit.
+- **Destino após aprovação:** usar **PR integrada como substituta** de #41 e #45; depois que a integração estiver mergeada, fechar as duas PRs como substituídas para evitar merge duplicado. **Não** fazer merge de #41/#45 separadamente antes da integração. #42 pode permanecer como referência experimental.
+
+### Incremento seguinte — geração de múltiplas prévias, sem novas permissões externas
+
+Na branch feat/integrated-career-agent, quando o pedido inclui preparar candidaturas, a jornada agora monta **até três rascunhos locais automaticamente** a partir das vagas com URL segura, sem novas chamadas ao modelo. Duplicatas são removidas, resultados explicitamente fora dos filtros são descartados e cada prévia mostra fatos comprovados e pendências para revisão. A pessoa escolhe qual rascunho abrir/editar. Não envia nem tenta enviar candidaturas. O mecanismo não persiste uma fila de execução após reinício: a retomada segura da PR #41 continua guardando somente a vaga escolhida e sua descrição, não afirma execução anterior de fontes remotas.
+
+O parser também aceita expressões como "quero trabalhar como...", reconhece preferência inequívoca por CLT ou PJ, sinaliza combinações ambíguas e não trata salário anual como piso mensal. Uma busca tem limite local de 30 segundos; timeout vira falha explícita, não sucesso. Testes sintéticos em apps/web/tests/agent-queue.test.mjs e smoke real de navegador usam API local isolada e vagas interceptadas. A contagem de testes Web aumentou para 64 no desenvolvimento local; confirme no commit/CI mais recente, pois este documento não substitui evidência do GitHub.
+
+### Próxima evolução após a integração
+
+Melhorar cobertura de fontes autorizadas, interpretação sem heurísticas frágeis e preparação avançada com usuários; validar provedor real apenas com chave de teste expressamente fornecida e limites. Não recomeçar pesquisa de stack. Rust/Go/TS/Python seguem opções, não requisitos. Community primeiro, Desktop e Cloud depois.
+
 ## Produto definido
 
 O **Alinha** é um **agente de carreira**, não uma coleção de abas com IA. A pessoa deve conseguir delegar um objetivo em linguagem natural (“Encontre vagas de Python remotas, compare com meu perfil e prepare candidaturas”), acompanhar uma **única jornada visível** e intervir somente quando necessário. Importar currículo deve preencher um perfil editável; a busca prioriza oportunidades no Brasil; preparação de currículo e verificação ATS devem ser integradas; recomendações não podem inventar dados.

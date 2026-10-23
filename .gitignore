@@ -26,3 +26,8 @@ user_data/
 # Community private data (never track per-user databases or settings)
 community.sqlite3*
 config.jsonc
+
+# Isolated synthetic browser smoke and test-generated data
+.browser-smoke/
+.browser-smoke-data/
+.pytest-integrated/

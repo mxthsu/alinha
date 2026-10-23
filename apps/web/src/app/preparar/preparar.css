@@ -97,3 +97,37 @@
 .journey-approved-existing small{font-size:11px;color:#77937c}
 .journey-approved-existing button{background:#295d3a;color:white;border:0}
 @media(max-width:620px){.tailored-evidence{grid-template-columns:1fr}.tailored-actions button{width:100%}.journey-approved-existing button{width:100%}}
+.journey-embedded .journey-main{padding:0;max-width:none}
+.journey-embedded-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px;padding:24px;border-radius:18px;background:linear-gradient(120deg,#173f2b,#2f6844);color:#fff}
+.journey-embedded-heading span{font-size:10px;font-weight:800;letter-spacing:.12em;color:#bde4c3}
+.journey-embedded-heading h2{margin:8px 0 6px;font-size:clamp(25px,3vw,36px);letter-spacing:-.04em}
+.journey-embedded-heading p{margin:0;color:#d4e7d8;font-size:12px;line-height:1.6}
+.journey-embedded-heading button{flex:0 0 auto;border:1px solid #bad7bf;background:#f4faef;color:#24583a;border-radius:9px;min-height:42px;padding:10px 14px;font-size:11px;font-weight:800}
+@media(max-width:650px){.journey-embedded-heading{align-items:flex-start;flex-direction:column}.journey-embedded-heading button{width:100%}}
+
+/* Inside /agente, share the already-imported profile instead of nesting a second wizard. */
+.journey-embedded .journey-main{display:grid;gap:14px}
+.journey-embedded .journey-embedded-heading{margin:0;background:#f0f7ed;border:1px solid #d6e7d0;color:#28583c;padding:17px 19px;border-radius:13px}
+.journey-embedded .journey-embedded-heading span{color:#52845b}
+.journey-embedded .journey-embedded-heading h2{font-size:clamp(19px,2vw,24px);margin:4px 0 5px}
+.journey-embedded .journey-embedded-heading p{color:#62816b}
+.journey-embedded .journey-embedded-heading button{background:white;color:#28583c;border-color:#c6dec5}
+.journey-embedded-ats{border:1px solid #d6e7d0;border-radius:12px;padding:17px 19px;background:#fff}
+.journey-embedded-ats-row{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.journey-embedded-ats-row strong{display:flex;align-items:center;gap:8px;color:#28583c;font-size:13px}
+.journey-embedded-ats-row p{font-size:12px;line-height:1.65;color:#718976;margin:6px 0 0}
+.journey-embedded-ats-row>a{display:inline-flex;align-items:center;gap:6px;color:#39764a;font-size:12px;font-weight:750;white-space:nowrap}
+.journey-embedded-findings{margin-top:13px;border-top:1px solid #e0ebdc;padding-top:12px;color:#6b795f;font-size:12px;line-height:1.6}
+.journey-embedded-findings summary{cursor:pointer;font-weight:750}
+.journey-embedded-findings ul{margin:7px 0 0;padding-left:18px}
+.journey-embedded-retry{margin-top:13px}
+.journey-embedded-retry button{display:inline-flex;align-items:center;gap:8px;background:#28583c;color:white;border:0;border-radius:9px;padding:11px 14px;font-size:12px;font-weight:750}
+.journey-embedded-retry button:disabled{opacity:.6}
+.journey-embedded .journey-job{margin:0}
+.journey-embedded .journey-card-header h2{font-size:clamp(19px,2.1vw,25px)}
+@media(max-width:650px){
+ .journey-embedded .journey-embedded-heading{gap:12px;padding:16px}
+ .journey-embedded .journey-embedded-heading button{width:auto}
+ .journey-embedded-ats-row{align-items:flex-start;flex-direction:column}
+ .journey-embedded-ats{padding:15px}
+}

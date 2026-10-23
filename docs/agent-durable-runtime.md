@@ -14,7 +14,7 @@ O backend possui tabelas SQLite para jornadas reais, separadas do histórico do 
 - `POST /api/v1/agent/runs/{run_id}/cancel`: cancela inclusive uma etapa ativa; a eventual resposta tardia da ferramenta não pode concluir a etapa.
 - `begin_step`/`finish_step`: chamadas **internas somente**, com lease UUID, ordem, transações SQLite e validação de limite. Não existem endpoints para um navegador declarar uma ferramenta concluída.
 - `interrupt_stale`: marca operações antigas como interrompidas e pendentes de revisão **sem reproduzir automaticamente** execução potencialmente ambígua. Leituras do status classificam operações com mais de 180 segundos como interrompidas. O endpoint `POST /api/v1/agent/runs/{run_id}/retry` permite **revisar explicitamente** o evento interrompido e autorizar uma nova tentativa, mas não executa ferramentas. Consulte [recuperação supervisionada](agent-supervised-recovery.md).
-- `POST /api/v1/agent/runs/{run_id}/execute-search`: despacha exatamente uma vez a ferramenta `job.search`, com fontes configuradas em Meu Alinha, `source=all`, `remote_only=true` e `page=1`. Não aceita URLs, nomes de ferramentas ou resultados fornecidos pelo navegador. Havendo cancelamento simultâneo, a busca pode terminar na fonte externa, mas o retorno tardio é descartado.
+- `POST /api/v1/agent/runs/{run_id}/execute-search`: despacha exatamente uma vez a ferramenta `job.search`, com fontes configuradas em Meu Alinha, `source=all` e `page=1`; modalidade e demais filtros seguem os critérios confirmados, mantendo remoto como default legado. Não aceita URLs, nomes de ferramentas ou resultados fornecidos pelo navegador. Havendo cancelamento simultâneo, a busca pode terminar na fonte externa, mas o retorno tardio é descartado.
 - `GET /api/v1/agent/runs/{run_id}/jobs`: lê resultados persistidos sem refazer chamadas; mantém identificação da fonte e ressalvas. Limita a 15 vagas, com até 350 kB de JSON público, em transação única com o registro de conclusão.
 - `POST /api/v1/agent/runs/{run_id}/execute-assess` compara apenas as competências declaradas na versão local de currículo autorizada (`profile_revision`). `GET /api/v1/agent/runs/{run_id}/assessment` recupera a comparação persistida, com rótulo de revisão. Não aceita currículo ou resultado enviados pelo navegador.
 - `POST /api/v1/agent/runs/{run_id}/execute-preview` gera no máximo três rascunhos locais com competências explicitamente declaradas e presentes nos anúncios. O Core recalcula e valida os textos antes do commit, rejeitando qualquer afirmação adicionada fora das regras. `GET /api/v1/agent/runs/{run_id}/previews` recupera os textos persistidos sem executar tarefas adicionais. Apenas jornadas com `prepare_preview=true` podem solicitar essa etapa.
@@ -22,7 +22,7 @@ O backend possui tabelas SQLite para jornadas reais, separadas do histórico do 
 
 ## Segurança e limites
 
-A API requer modo Community, loopback, `Origin` permitido para mutações e bloqueio para requisições cross-site. Nenhuma operação de envio de candidatura faz parte do plano. **Criar a jornada não aciona pesquisa nem IA.** A busca real começa apenas com `execute` (plano único) ou `execute-search` (ferramenta isolada); os filtros para cidade/salário ainda não integram este executor, que atualmente consulta só o conjunto habilitado de fontes e busca anúncios remotos.
+A API requer modo Community, loopback, `Origin` permitido para mutações e bloqueio para requisições cross-site. Nenhuma operação de envio de candidatura faz parte do plano. **Criar a jornada não aciona pesquisa nem IA.** A busca real começa apenas com `execute` (plano único) ou `execute-search` (ferramenta isolada); os critérios confirmados de cidade, modalidade, vínculo e salário são persistidos e aplicados aos fatos publicados pelas fontes, conforme o [contrato de filtros](agent-search-filters.md).
 
 ```json
 {
@@ -36,7 +36,7 @@ A API requer modo Community, loopback, `Origin` permitido para mutações e bloq
 }
 ```
 
-**Ainda faltam:** medição real de tokens/custos da interpretação por cada provedor, homologação de BYOK real, avaliação semântica opcional e verificável, filtros completos, revisão de ações, retomada revisável de **operações interrompidas dentro de uma etapa**, homologação com ao menos um provedor real e contabilidade real de tokens/custos dos provedores. O executor de um comando já retoma passos **concluídos** mas nunca reexecuta uma operação ambígua. A etapa atual usa somente **coincidência literal** entre termos de competências declaradas e texto do anúncio; não atribui nota ATS nem comprova requisitos da vaga. A documentação e os testes com fontes fictícias **não equivalem a homologação de todas as fontes externas reais**. Só depois ligar a interface `/agente`.
+**Ainda faltam:** integração à experiência de chat, homologação de BYOK real, precificação financeira versionada e avaliação de qualidade/cobertura. Tokens reportados e recuperação supervisionada já têm implementação — ver [consumo](agent-token-accounting.md) e [revisão de interrupções](agent-supervised-recovery.md). Coincidência literal não comprova requisitos nem atribui nota ATS; testes fictícios não homologam todas as fontes externas. Seguir o [roadmap vigente](roadmap.md), usando o executor existente.
 
 ## Testes
 

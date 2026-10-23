@@ -1,47 +1,52 @@
 # Alinha — visão do agente de carreira
 
-> **Visão em 22/10/2026.** Consulte [guia para retomar em outro chat](CONTINUAR-ALINHA.md) para detalhes de implementação e [roadmap](roadmap.md) para prioridades. O produto não está em produção, não oferece candidaturas externas automáticas nem dispõe de Cloud/instalador Desktop público.
+> **Direção aprovada em 23/10/2026.** Este documento define o produto desejado; não comprova que os recursos estejam implementados. Estado do código e próxima entrega: [ponto de retomada](CONTINUAR-ALINHA.md). Comportamento da interface e critérios de aceite: [experiência conversacional](agent-experience.md).
 
-## O produto
+## Propósito e público
 
-O **Alinha é o agente**, não o modelo conectado e não uma coleção de ferramentas soltas. A pessoa delega uma intenção em linguagem natural: encontrar vagas alinhadas ao seu currículo, preparar documentos e acompanhar oportunidades. O agente planeja, consulta fontes autorizadas, executa etapas determinísticas, interpreta ambiguidades com IA selecionada e pede revisão ou autorização quando necessário.
+Facilitar a criação do currículo, a descoberta de vagas, a preparação, a candidatura e o acompanhamento em um só lugar, com o mínimo de esforço operacional para a pessoa.
 
-A interface principal se concentra **em uma única jornada** com status e interrupções claras, sem mostrar a automação de navegador. Ferramentas manuais continuam acessíveis como opções secundárias. A primeira experiência deve funcionar com perfil/currículo fictício e um provedor IA simulado, para tornar os testes independentes de pagamentos e contas.
+O Alinha atende **pessoas de qualquer profissão**, escolaridade ou nível de experiência, inclusive primeiro emprego, retorno ao mercado e transição de carreira. Brasil e pt-BR são o ponto de partida; o projeto mantém preparação para futura localização en-US. Não restringir o produto a tecnologia nem presumir formação superior, competências técnicas, vínculo CLT ou trabalho remoto.
 
-## Três linhas de distribuição
+O processo é compartilhado; os critérios variam conforme a pessoa e a oportunidade: cargo, localização, modalidade, vínculo, remuneração, jornada, formação, habilitações e outras exigências. Cobertura de fontes é uma limitação a medir e comunicar, não prova de inexistência de vagas para uma profissão.
 
-- **Alinha Community — Open Source:** desenvolvedores, colaboradores e self-hosting, código auditável, configuração avançada, IA própria/local.
-- **Alinha Desktop:** aplicativo instalável para usuários comuns, com mesma jornada agêntica e conexão simplificada de IA; ainda não lançado.
-- **Alinha Cloud:** versão online gerenciada com execução remota e isolamento; ainda não lançada e com cobrança **a definir**.
+## Experiência central
 
-São **formas de usar o mesmo agente**, não três produtos desconectados. Desktop poderá ser open source. A licença do repositório atual é MIT. Não atrelar Community à contratação da Cloud.
+**Uma tela principal de chat conduz a jornada.** A pessoa pode escrever o que deseja ou escolher sugestões de próximos passos e respostas. O Alinha ajuda a formular o objetivo, faz perguntas curtas e aproveita informações já confirmadas.
 
-## Jornada
+Cards de vagas, upload, escolhas rápidas, pequenos formulários, prévias e painéis de edição aparecem conforme a necessidade. Revisar um currículo pode abrir um painel ou modal e depois retornar à conversa com o contexto preservado. A pessoa não precisa conhecer comandos, escrever prompts elaborados ou coordenar ferramentas separadas.
 
-1. **Conectar IA (quando necessário)** — escolha de provedor/modelo; funcionamento determinístico possível sem IA.
-2. **Importar CV → construir perfil** — extração com evidências, preenchimento direto de campos, correção humana, armazenamento local quando apropriado.
-3. **Entender objetivo** — cargos, Brasil/remoto/híbrido/presencial, cidade, regime, pretensão e outros critérios explícitos; pedir esclarecimento só quando indispensável.
-4. **Buscar e comparar vagas** — várias fontes legítimas; deduplicação e descrição real, sem inventar requisitos ou nota ATS.
-5. **Preparar candidatura** — adaptar currículo sem inventar fatos; checagem ATS integrada, respostas e anexos com revisão humana.
-6. **Executar apenas o permitido** — futuramente, envio a plataformas autorizadas, com confirmação; questões desconhecidas, MFA/CAPTCHA e outros riscos interrompem execução.
-7. **Acompanhar** — mostrar somente fatos realmente confirmados pela pessoa ou plataformas.
+O chat deve levar a resultados concretos: currículo revisável, oportunidades explicadas, materiais preparados e situação das candidaturas. Histórico de mensagens, por si só, não substitui acesso fácil a esses resultados.
 
-A IA não substitui regras de segurança, filtros determinísticos, nem verificação factual. Nem toda ação precisa de uma chamada ao modelo; manter custo e latência sob controle.
+## Capacidades do mesmo agente
 
-## Internacionalização e público
+- **Criar ou importar currículo:** conversar sobre a trajetória de quem começa do zero, extrair arquivos existentes, sugerir redação baseada nas respostas e permitir correção antes de incorporar fatos.
+- **Entender o objetivo:** descobrir preferências aos poucos, esclarecer ambiguidades relevantes e permitir mudar de direção.
+- **Encontrar e avaliar vagas:** consultar fontes permitidas, mostrar proveniência, motivos de relevância, impedimentos e informações desconhecidas, sem inventar nota ATS ou elegibilidade.
+- **Preparar materiais:** organizar versões por vaga, respostas e anexos; mostrar alterações para revisão e integrar a verificação de leitura do documento ao momento adequado.
+- **Candidatar-se dentro da autorização:** objetivo futuro com conectores permitidos, limites e confirmação externa. Pedir intervenção em perguntas desconhecidas, autenticação, MFA/CAPTCHA ou outros impedimentos. Não prometer operação universal.
+- **Acompanhar:** recuperar o trabalho e mostrar fatos confirmados pela pessoa ou pela plataforma, com distinção entre rascunho, pendência e envio confirmado.
 
-Começar no Brasil, pt-BR para usuário e documentação, nomes de código em inglês, com preparação futura para en-US. Valores em BRL quando aplicável, contratos CLT/PJ/estágio/trainee e opções remoto/híbrido/presencial. Evitar slogan, banner promocional e elementos que poluam a experiência principal.
+A sequência se adapta ao objetivo: importar currículo, conectar IA ou buscar vagas não são etapas obrigatórias de toda conversa. As ações disponíveis dependem da implementação e da autorização vigente.
 
-## Métricas que importam
+## Princípios de experiência e confiança
 
-Sucesso da jornada com dados fictícios; precisão de campos do currículo e respostas; cobertura e fidelidade das vagas; taxa de interrupções/revisões; ausência de envios não autorizados; p50/p95 de latência; chamadas de IA e custo por tarefa; memória e dificuldade de instalação Desktop. Não confundir rapidez de um CLI de navegador em um formulário sintético com qualidade global do Alinha.
+- Uma ação principal por momento; explicação curta, texto livre e opção de corrigir ou voltar.
+- Sugestões contextuais, poucas e relevantes; nenhuma informação pessoal é assumida porque uma opção foi exibida.
+- Revisão de fatos e mudanças; nunca inventar experiência, competência, salário, habilitação ou disponibilidade.
+- Progresso compreensível, cancelamento e retomada; respostas tardias não sobrescrevem decisões mais recentes.
+- Conexão com IA nas configurações ou quando necessária; explicar envio de dados e custo no momento pertinente.
+- IA interpreta linguagem e ambiguidades; código controla fatos verificáveis, estado, ferramentas, orçamento e permissões.
+- Dados de vagas e documentos são conteúdo não confiável. Propostas de IA e respostas sugeridas não autorizam ferramentas.
 
-## Próximo marco
+## Distribuições e decisões abertas
 
-Entregar uma fatia vertical funcional em `/agente` — perfil fictício, objetivo, plano, busca de teste, avaliação de evidências e prévia de candidatura, sem envio real. Usar [contrato do agente](agent-runtime-contract.md), testes e ferramentas atuais onde adequado; **não escolher stack final por hábito ou por novidade**.
+Community Open Source (desenvolvedores e auto-hospedagem), Desktop (aplicativo instalável) e Cloud (serviço futuro) compartilham o mesmo agente. Essa distinção descreve instalação e operação, não a profissão atendida. Desktop pode ser open source; a licença MIT do Community é preservada, sem dependência obrigatória da Cloud.
 
-## Segurança
+Nenhuma reescrita geral, nova stack, preço ou modelo definitivo de cobrança está aprovado. Priorizar a experiência compartilhada e validar instalação/distribuição quando necessário. Ver [modelo do produto](product-model.md) e [avaliação arquitetural](architecture-evaluation.md).
 
-Respeitar regras das plataformas e LGPD; sem CAPTCHA bypass, sem credenciais de terceiros em repositórios, sem currículos reais em CI e sem anunciar candidatura enviada sem confirmação. A pessoa precisa controlar consentimento, pausa e revisão; páginas e vagas são dados não confiáveis.
+## Como avaliar o progresso
 
-Arquitetura: [implementation snapshot](architecture.md) · [avaliação neutra](architecture-evaluation.md) · [limites open source](open-core-boundaries.md).
+Medir conclusão da jornada, tempo até o primeiro resultado útil, esforço de configuração, correções de dados, relevância das vagas, dúvidas/abandonos, recuperação após interrupção e ações sem consentimento. Qualidade semântica deve ter avaliação própria; citações válidas não bastam. Tokens, custo e latência são limites operacionais, sem substituir utilidade.
+
+Usar perfis sintéticos de áreas variadas nos testes. Avaliar usabilidade com pessoas de diferentes profissões e familiaridade digital, mediante participação consentida; não incorporar seus currículos a fixtures, logs ou commits. Não alegar cobertura universal com base em exemplos de uma única área.

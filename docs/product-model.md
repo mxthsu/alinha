@@ -1,6 +1,6 @@
 # Modelo de produto — Alinha Community, Desktop e Cloud
 
-> **Direção de produto em 22/10/2026, não anúncio de versões lançadas.** Para retomar o desenvolvimento em outro chat, começar em [CONTINUAR-ALINHA.md](CONTINUAR-ALINHA.md). A forma de monetização Cloud, a stack final e o instalador Desktop **não estão decididos nem prontos**.
+> **Direção de produto em 23/10/2026, não anúncio de versões lançadas.** Para retomar o desenvolvimento em outro chat, começar em [CONTINUAR-ALINHA.md](CONTINUAR-ALINHA.md). A forma de monetização Cloud, a stack final e o instalador Desktop **não estão decididos nem prontos**.
 
 ## Um produto, três distribuições
 
@@ -14,9 +14,13 @@
 
 ## Experiência central
 
-O Alinha é um **agente de carreira**. A pessoa informa um objetivo em linguagem natural e vê numa única interface o plano, a busca de vagas, as evidências de adequação, a preparação de candidatura e os itens pendentes de revisão. Ações previsíveis usam código; IA é usada seletivamente para intenção, linguagem e ambiguidades. Navegador automatizado pode executar oculto, mas autenticação/MFA/CAPTCHA e requisitos de autorização podem exigir intervenção, sem prometer operação universal.
+O Alinha atende pessoas de qualquer profissão e nível de experiência. Community, Desktop e Cloud descrevem formas de distribuição; não restringem o público profissional. A [visão do produto](career-product-vision.md) rege propósito e capacidades.
 
-A importação de currículo preenche um perfil editável (sem inventar fatos), a busca prioriza vagas no Brasil e a verificação ATS é integrada à preparação. Não mostrar processos de browser ou múltiplas telas apenas para justificar arquitetura interna.
+**Uma tela de chat conduz currículo, vagas e candidaturas.** A pessoa escreve livremente ou escolhe sugestões contextuais de próximos passos e respostas. Cards, upload, formulários curtos, prévias e painéis de edição aparecem somente quando úteis. A conversa mantém o contexto, enquanto os resultados permanecem acessíveis sem procurar mensagens antigas.
+
+Quem não tem currículo pode construí-lo por perguntas sobre sua trajetória, com redação revisável e sem invenção de fatos. Quem já tem importa uma vez. Conexão de IA, diagnóstico ATS e ferramentas manuais aparecem no momento pertinente, sem exigir navegação entre áreas para concluir a jornada. Ver [experiência conversacional e critérios de aceite](agent-experience.md).
+
+Ações previsíveis usam código; IA ajuda com linguagem e ambiguidades. Sugestões não comprovam informações pessoais nem autorizam execução. Autenticação, MFA/CAPTCHA e informações desconhecidas podem exigir intervenção. O chat completo e o envio externo ainda não estão implementados.
 
 ## Inteligência conectável, não “IA própria”
 
@@ -46,9 +50,11 @@ A página [cloud-business-model.md](cloud-business-model.md) contém um **estudo
 
 ## Ordem de execução atual
 
-1. Fazer a jornada principal `/agente` funcionar com dados fictícios e ferramentas controladas — ver [roadmap](roadmap.md).
-2. Validar um provedor BYOK real em teste voluntário, desempenho e limites sem custos inesperados.
-3. Provar distribuição Community Open Source reproduzível e Desktop instalável com suporte real em plataformas-alvo.
-4. Projetar Cloud e modelo financeiro somente com medidas e garantias de isolamento.
+1. Conectar a experiência de chat ao executor persistente, com sugestões e componentes contextuais — [marco 1](roadmap.md#marco-1--primeira-jornada-no-chat).
+2. Conduzir a criação de currículo por conversa, incluindo quem começa do zero, com revisão e exportação.
+3. Validar qualidade, cobertura e usabilidade com perfis variados e homologação BYOK autorizada; medir esforço, custo e latência.
+4. Evoluir distribuição Desktop e candidatura externa por entregas delimitadas; projetar Cloud e negócio com demanda, custos e isolamento comprovados.
+
+Os marcos são incrementais; a ordem detalhada e o estado vigente estão no [roadmap](roadmap.md) e no [ponto de retomada](CONTINUAR-ALINHA.md).
 
 Não tratar planos ou promessas comerciais como funcionalidades implementadas.

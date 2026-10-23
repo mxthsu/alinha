@@ -4,6 +4,8 @@
 
 **Sua experiência, novas oportunidades.**
 
+A direção do Alinha é um **chat simples para pessoas de qualquer profissão**, que ajuda a montar currículo, encontrar vagas e candidatar-se em um só lugar. O agente sugere próximos passos e respostas editáveis e apresenta cards, formulários e prévias conforme a necessidade. **Essa experiência conversacional completa ainda será implementada**; consulte a [visão](docs/career-product-vision.md), os [critérios de experiência](docs/agent-experience.md) e o [roteiro vigente](docs/roadmap.md).
+
 O Alinha está evoluindo para um **agente de carreira**: da criação do currículo à descoberta de vagas, preparação de candidaturas e acompanhamento. A versão atual já oferece Studio, legibilidade ATS e comparação de evidências com vagas; **envio automático de candidaturas ainda não está disponível**.
 
 [![CI](https://github.com/mxthsu/alinha/actions/workflows/ci.yml/badge.svg)](https://github.com/mxthsu/alinha/actions/workflows/ci.yml)
@@ -41,20 +43,11 @@ originais. O Studio, o agente e o Kanban passam a utilizar o SQLite após essa m
 
 ## Meu agente: do currículo à oportunidade
 
-A rota **Meu agente** (`/agente`) inicia uma jornada conectada: permite enviar ou recuperar o currículo diretamente
-do Studio no navegador, sugere cargos citados no perfil, apresenta termos
-comprovados e **solicita autorização antes de pesquisar vagas**.
-Os resultados são organizados por indícios literais no anúncio e podem ser
-salvos ou enviados à área de preparação, mantendo o contexto da vaga.
+A rota `/agente` oferece a jornada atual de importação/reutilização de currículo, objetivo, busca autorizada e prévias revisáveis. A interpretação de objetivo por IA é opcional; busca e sinais literais também funcionam sem inferência. Nenhuma candidatura é enviada.
 
-Nesta primeira etapa, o planejador é **determinístico**, sem inferência de IA:
-não analisa descrições completas, não garante compatibilidade e não envia
-candidaturas. O próximo passo é acrescentar ferramentas e execução
-supervisionada com modelos de IA intercambiáveis. A inspiração funcional é
-a jornada do LoopCV com um modelo de tarefas e permissões semelhante ao
-OpenCode, **sem copiar códigos ou interfaces de terceiros**.
+O backend já possui executor persistente, filtros verificados e recuperação supervisionada. A interface ainda usa parte do fluxo anterior e **não é o chat completo planejado**. A próxima entrega conecta essa execução à experiência conversacional, com sugestões contextuais, cards e retomada. Quem começa sem currículo terá condução por conversa em um incremento próprio; o Studio manual continua disponível hoje.
 
-Leia a [arquitetura e os limites desta experiência](docs/agent-experience.md).
+Leia a [experiência desejada](docs/agent-experience.md) e o [estado verificável](docs/CONTINUAR-ALINHA.md).
 
 ## Por que o Alinha?
 
@@ -82,9 +75,7 @@ O **Alinha Desktop ainda não tem instalador público** e o **Alinha Cloud ainda
 O quadro **Acompanhar candidaturas** (/candidaturas) permite salvar vagas da pesquisa
 ou adicionar manualmente links de plataformas de emprego. Cada etapa é declarada
 pelo usuário: o Alinha **não confirma candidaturas, entrevistas ou propostas** e
-**não acessa automaticamente as páginas adicionadas**. As informações ficam somente
-no navegador, sem conta, com exportação/importação JSON validada. Não inclui
-currículos nem dados de candidatos no armazenamento do quadro.
+**não acessa automaticamente as páginas adicionadas**. As informações ficam localmente, no navegador legado ou no SQLite conforme a migração, sem conta e com exportação/importação JSON validada. O armazenamento do quadro não inclui currículos.
 
 Veja [como o acompanhamento funciona](docs/opportunity-tracking.md). As vagas salvas também podem abrir diretamente a preparação da candidatura, mantendo título, empresa e link da oportunidade.
 
@@ -94,7 +85,7 @@ A área **Encontrar vagas** (/vagas) consulta fontes públicas selecionáveis (c
 
 ## Crie seu currículo no Studio
 
-O [Currículo Studio](apps/web/src/app/studio) (rota `/studio`) permite preencher seções estruturadas, escolher dois modelos, acompanhar uma prévia em tempo real e exportar DOCX. As sugestões de melhoria são oferecidas em Preparar candidatura, após a comparação com os requisitos de uma vaga informada. O currículo é salvo automaticamente neste navegador e reutilizado em Preparar candidatura, sem conta ou persistência remota. JSON é apenas um backup opcional; você pode apagar o rascunho local. Consulte a [documentação do Studio](docs/studio.md).
+O [Currículo Studio](apps/web/src/app/studio) (rota `/studio`) permite preencher seções estruturadas, escolher dois modelos, acompanhar uma prévia em tempo real e exportar DOCX. As sugestões de melhoria são oferecidas em Preparar candidatura, após a comparação com os requisitos de uma vaga informada. O perfil do currículo é salvo automaticamente neste dispositivo, no SQLite em instalações novas ou migradas, ou no navegador legado antes da migração. Ele é reutilizado em Preparar candidatura, sem conta ou persistência remota. JSON é apenas um backup opcional; você pode apagar o rascunho local. Consulte a [documentação do Studio](docs/studio.md).
 
 ## Prepare sua candidatura
 
@@ -172,7 +163,9 @@ Queremos manter o núcleo útil sem assinatura obrigatória. A modalidade hosped
 
 ## Privacidade e limites
 
-Na versão inicial, os documentos são processados em memória e **não são salvos pelo Alinha**. Se você habilitar uma análise com provedor externo, o conteúdo será enviado para processamento por esse serviço conforme as condições do próprio provedor. **Não utilize currículos de terceiros sem autorização**.
+Os arquivos originais enviados para extração são processados em memória. **O perfil estruturado, as versões aprovadas e as oportunidades podem ser salvos localmente**, no SQLite ou no armazenamento legado do navegador, conforme o fluxo e a migração. As jornadas persistentes também guardam resultados, termos comparados e rascunhos locais; não duplicam o currículo inteiro nem guardam chaves de IA. Consulte [migração e recuperação](docs/community-data-migration.md) e [dados das jornadas](docs/agent-durable-runtime.md) antes de exportar, restaurar ou excluir dados.
+
+Se você habilitar uma análise com provedor externo, o conteúdo necessário à operação será enviado para processamento por esse serviço conforme suas condições. **Não utilize currículos de terceiros sem autorização**. A direção conversacional não altera automaticamente esses fluxos nem cria retenção de conversas.
 
 A extração ainda não suporta OCR de PDFs digitalizados. O resultado não substitui julgamento humano. Confira [segurança](SECURITY.md), [arquitetura](docs/architecture.md) e [roteiro técnico](docs/roadmap.md).
 

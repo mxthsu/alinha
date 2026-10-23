@@ -1,152 +1,66 @@
-# Alinha — ponto de retomada para outro chat
+# Alinha — ponto de retomada
 
-> **Fonte principal de contexto do projeto, atualizada em 23/10/2026.** Leia este arquivo, [AGENTS.md](../AGENTS.md), o código real na branch escolhida e os documentos vinculados **antes** de decidir a próxima tarefa. O estado do GitHub pode mudar; confirme branches, CI e PRs ao começar. Este texto não prova que funcionalidades planejadas já funcionem.
+> **Atualizado em 23/10/2026.** Direção aprovada pelo responsável do projeto nesta data. O estado abaixo foi conferido na `main` em `5d8f7cb` (PR #63); reconferir GitHub, branch e alterações locais antes de continuar. Esta atualização modifica documentação, não entrega a nova interface.
 
-## Recuperação com aprovação humana após crash (23/10/2026)
+## Leia nesta ordem
 
-**PRs #61 e #62 integradas:** filtros por modalidade/cidade/vínculo/salário e auditoria local dos tokens reportados pelo provedor, com custo financeiro ainda desconhecido.
+1. [AGENTS.md](../AGENTS.md): regras do projeto.
+2. [Visão do produto](career-product-vision.md): propósito, público e capacidades.
+3. [Experiência conversacional](agent-experience.md): interação e critérios de aceite.
+4. [Roadmap vigente](roadmap.md): sequência das entregas.
+5. Contratos técnicos do componente que será alterado e código/testes reais.
 
-**Nova implementação:** `GET /api/v1/agent/runs/{run_id}` identifica etapas há mais de 180s em estado `running` e preserva o run como `needs_review` sem executar nada. `POST /api/v1/agent/runs/{run_id}/retry` requer aprovação explícita ligada ao exato evento interrompido, com limite de duas novas autorizações por jornada; autorizar não executa ferramentas. [Contrato de recuperação](agent-supervised-recovery.md).
+A visão rege direção de produto; a experiência rege comportamento desejado; o roadmap rege prioridade. Código e testes comprovam implementação. Regras de segurança e contratos vigentes continuam valendo. Notas históricas não substituem esses documentos.
 
-**Pendente:** testes de BYOK reais (dependem de autorização e credencial conectada), precificação financeira versionada, mais cobertura/qualidade de fontes BR e integração da jornada final com a interface Community/desktop. Nenhuma alteração na UI atual.
+## Direção vigente
 
-## Auditoria de tokens reportados pelos provedores (23/10/2026)
+O Alinha facilita **montar currículo, encontrar vagas e candidatar-se em um só lugar** para pessoas de qualquer profissão e nível de experiência. O foco é facilidade de uso.
 
-**PR #61 integrada:** filtros reais de modalidade, cidade, vínculo e salário em todas as jornadas backend, com dados não comprovados excluídos quando exigidos.
+**Uma tela de chat conduz a jornada**, sugere próximos passos e respostas editáveis, aceita texto livre e apresenta cards, escolhas, upload, pequenos formulários, prévias e painéis somente quando necessários. A pessoa pode mudar de direção; o agente reutiliza contexto confirmado. Resultados ficam acessíveis sem exigir leitura de todo o histórico.
 
-**Nesta branch:** a interpretação opt-in de IA captura tokens efetivamente informados pelas respostas Gemini, OpenAI, Claude e Ollama, com contadores isolados por chamada e persistência SQLite dos eventos. A consulta de histórico é `GET /api/v1/agent/intent/usage/{run_id}`. Não armazenar prompts nem respostas do modelo. Valores ausentes são desconhecidos, **não zero**; `cost_usd` é nulo pois não há tabela de preços versionada, e não deve ser apresentado como custo gratuito. [Contrato de consumo](agent-token-accounting.md).
+Currículo, busca, preparação e acompanhamento são capacidades do mesmo agente. Ferramentas manuais permanecem acessos auxiliares durante a transição. ATS é uma checagem integrada à preparação; IA é conectável e aparece como configuração quando necessária. Não limitar competências ou exemplos a tecnologia.
 
-**Ainda faltam:** teste BYOK real apenas com autorização do usuário, orçamento financeiro com preço versionado, retomada supervisionada de uma etapa interrompida e integração posterior ao frontend/desktop. A UI existente permanece intacta.
+Community Open Source, Desktop e Cloud são distribuições do mesmo agente, não segmentos profissionais nem três produtos independentes. Não há stack definitiva, reescrita aprovada, instalador ou Cloud público. Não reabrir pesquisa abstrata de linguagens sem bloqueio concreto.
 
-## Backend com filtros reais na busca (23/10/2026)
+## Estado implementado conferido
 
-**PRs #55 a #60 integradas na main:** jornadas persistentes, confirmação de sugestão por IA, busca real, comparação literal de vagas com currículo local versionado, rascunhos revisáveis e comando único.
-
-**Nesta branch:** cada jornada carrega `CandidateCriteria` revisado pelo usuário. O Core filtra modalidade, cidade, vínculo e salário anunciado com dados efetivamente declarados pela fonte; critérios não conhecidos não são presumidos. A busca seleciona até 15 vagas **depois** de aplicar filtros, preservando proveniência e impedindo mudanças dos critérios após confirmação. O legado remoto permanece como default. [Contrato dos filtros](agent-search-filters.md).
-
-**Pendente:** contabilização real de tokens/custos de provedores, teste BYOK autorizado, revisão de execuções interrompidas, ampliação de cobertura/vagas sem dados estruturados e integração à UI. Não alterar o frontend antes de concluir o backend.
-
-## Nova etapa: proposta de IA vinculada à execução (23/10/2026)
-
-Depois das PRs #55 a #59, o backend consegue buscar, comparar e preparar rascunhos com um comando e checkpoints SQLite. Nesta branch, a interpretação opcional por IA grava somente o cargo proposto, com validade de uma hora. Um segundo endpoint exige que o usuário confirme esse mesmo cargo, a versão do CV e a autorização de busca antes de criar a jornada. Nenhuma ação é iniciada na interpretação ou na confirmação.
-
-Veja [Ponte entre IA e agente](ai-proposal-to-runtime.md). A UI ainda não utiliza esta nova ligação. Continuam pendentes filtros completos, medição de tokens/custos, testes de provedor real e retomada supervisionada de operações interrompidas.
-
-## Backend: três ferramentas + comando único (23/10/2026)
-
-**PRs #55, #56, #57 e #58 integradas à main:** jornadas SQLite duráveis e ferramentas `job.search → job.assess → application.preview` operantes sob chamadas autorizadas. A busca usa conectores públicos habilitados, até 15 anúncios com proveniência; avaliação consulta a versão pinada de currículo do registro Community e calcula apenas sinais literais; preview prepara até três textos locais revisáveis, sem contato pessoal ou experiências inventadas. **Nenhuma candidatura é enviada.**
-
-**Nova implementação desta branch:** `POST /api/v1/agent/runs/{run_id}/execute` executa em um único comando os passos do plano permitidos pelo Core, com checkpoint transacional entre cada ferramenta e possibilidade de continuar apenas passos ainda não iniciados após reinício. A API recusa currículo ausente/inválido, revisão alterada e planos corrompidos *antes de consumir quota dos conectores*. Nunca reexecuta automaticamente uma etapa ambígua `running`. A UI `/agente` permanece intacta.
-
-**Próximo trabalho na issue #48:** fechar filtros e interpretação de intenção (IA opt-in com limites reais), retomar com revisão humana operações interrompidas, medir custos/tokens e homologar ao menos um provedor BYOK real. Só depois ligar a interface simplificada ao coordenador e avançar Desktop. Consulte [contrato das jornadas](agent-durable-runtime.md). As seções históricas abaixo tratam de etapas anteriores.
-
-## Integrado na `main` — IA opt-in e plano revisável (23/10/2026)
-
-**As PRs [#50](https://github.com/mxthsu/alinha/pull/50) e [#51](https://github.com/mxthsu/alinha/pull/51) foram incorporadas à `main` por squash**, respectivamente nos commits `b133b15` e `549a63e`. A PR #51 foi rebased sobre a `main` para não duplicar código; CI Web e Python aprovada após rebase.
-
-- O `/agente` pode usar Gemini, OpenAI API, Claude API ou Ollama previamente conectados para interpretar **somente o objetivo digitado**. O modelo propõe um cargo que requer confirmação; a consulta de vagas exige outra autorização explícita. Currículos não são enviados ao modelo por essa rota.
-- O código apresenta um **plano tipado para revisão**, com `job.search → job.assess → application.preview` (prévia opcional). O modelo **não executa** essas ferramentas nem concede permissões.
-- O orçamento SQLite reserva de forma atômica **duas tentativas de IA por UUID da jornada** e recusa repetições; **não é um limite global de tokens ou gastos**. Falha ou timeout pode consumir a reserva.
-- Após o rebase, foram aprovados **230 testes da API + Ruff** e **67 testes da Web + ESLint + Next build**, além da CI. A prova com dados fictícios não significa que todos os provedores BYOK reais foram homologados.
-
-**Issue [#48](https://github.com/mxthsu/alinha/issues/48) ainda aberta:** faltam executor de ferramentas com eventos duráveis, retomada/cancelamento mais abrangentes, aferição de tokens/custos reais e teste autorizado de ao menos um provedor. Sem submissão externa de candidatura. Evitar declarar autonomia completa.
-
-**Desktop separado:** PRs [#47](https://github.com/mxthsu/alinha/pull/47) (Wails/Go) e [#52](https://github.com/mxthsu/alinha/pull/52) (Tauri/Rust) continuam provas **não mergeadas**. A #52 já compilou o executável Windows na CI e o teste local real abriu a WebView2, autenticou Python e importou CV TXT fictício. **Ainda não é um instalador nem a distribuição Desktop concluída.** A arquitetura Rust para shell/estado do aplicativo e Python para lógica de CV/IA é uma direção em avaliação, não migração obrigatória da Community.
-
-## Estado atual — agente integrado na `main` (22/10/2026)
-
-**Implementação publicada:** a [PR #46](https://github.com/mxthsu/alinha/pull/46) foi incorporada por squash no commit `f023afc5` após revisão independente no Chrome e CI aprovada. As PRs #41 e #45 foram **encerradas como substituídas, sem merge independente**. A issue #44 continua disponível como histórico dos critérios de primeira jornada; a próxima tarefa ativa é a [issue #48](https://github.com/mxthsu/alinha/issues/48).
-
-- **Rota principal `/agente`:** usa o currículo existente (importação PDF/DOCX/TXT, Studio, SQLite/legado), recebe pedido natural em pt-BR, exige autorização para consulta a vagas, chama os conectores autorizados já existentes (`source=all`) e mostra evidências, ressalvas e oportunidades.
-- **Rascunhos:** até **três prévias locais** para vagas compatíveis com link HTTPS seguro, sem invenção de competências, sem IA obrigatória e sem envio externo. O usuário escolhe e revisa individualmente. Informações ausentes e filtros não comprovados são sinalizados.
-- **Preparação avançada integrada:** no mesmo `/agente`, uma seção opcional oferece leitura ATS resumida, seleção de provedor de IA e análise da vaga; não repete upload, outro wizard ou conclusão de percurso. A rota independente `/preparar` preserva o fluxo completo.
-- **Retomada:** a vaga selecionada e a descrição revisada podem ser recuperadas no mesmo dispositivo, com retomada explícita e rascunho gerado a partir das evidências. **Histórico da busca, fila completa e execução de IA não são recuperados automaticamente** após reinício.
-- **IA atual:** a integração existente permite análises opcionais mediante ação específica e conexão do usuário. **O modelo já propõe um cargo e o código exibe ferramentas tipadas para revisão via PRs #50/#51.** Ainda não há executor durável de ferramentas nem agente plenamente autônomo.
-- **Validação:** no PC de desenvolvimento, 216 testes API + Ruff, 64 testes web + ESLint + Next build, Chrome com API local e CV/vagas fictícios, sem overflow mobile, sem envios. [CI do commit anterior ao merge](https://github.com/mxthsu/alinha/actions/runs/39889814580) foi aprovada. Smoke browser com fonte de vagas interceptada; **não** homologou fontes externas reais nem provedor BYOK com credencial real.
-- **Arquitetura:** código integrado continua Next.js/TypeScript + FastAPI/Python e SQLite. **Não houve escolha definitiva de stack.** Rust, Go e TypeScript permanecem alternativas fundamentadas por casos reais, não metas de migração. [PR #42](https://github.com/mxthsu/alinha/pull/42) é benchmark isolado.
-- **Desktop:** [PR #47](https://github.com/mxthsu/alinha/pull/47) permanece **rascunho experimental** empilhado sobre a branch anterior à PR #46. A prova Wails/Go não inclui aplicativo com API distribuível e comunicação plenamente segura; Tauri/Rust foi compilado e abriu em Windows com API autenticada e CV fictício, mas permanece POC sem instalador ou comparação equivalente. **Não fazer merge nem mudar a prioridade para Desktop enquanto a Community ainda precisa do agente conectado à IA.**
-- **Cloud:** futura; nenhum SaaS/comercialização lançada.
-
-### Próximo trabalho prioritário — issue #48
-
-**Continuar além das PRs #50/#51:** executar a sequência tipada com eventos duráveis, retomada/cancelamento e verificação independente por allowlist, sem transformar a UI num segundo wizard. A IA já interpreta o objetivo e propõe cargo; falta o executor coordenado e medição de tokens/custos reais. O código determinístico continua cuidando de busca, filtros, deduplicação, evidências e execução. Nenhuma submissão de candidatura externa na próxima entrega.
-
-**Evite criar outra demonstração paralela**, inventar dados reais ou reescrever o núcleo por preferência. Trabalhe numa nova PR pequena da `main`, preserve alterações não commitadas no checkout `feat/job-full-descriptions` e teste no navegador com dados fictícios. Leia a [issue #48](https://github.com/mxthsu/alinha/issues/48) como checklist.
-
-### Como continuar em outro chat
-
-> No GitHub `mxthsu/alinha`, leia `AGENTS.md`, `docs/CONTINUAR-ALINHA.md` e `docs/agent-runtime-contract.md`. A **PR #46 já foi mergeada**; #41/#45 foram encerradas. Siga a **issue #48**: conecte a IA selecionada à jornada principal existente em `/agente`, com propostas de ferramentas verificadas, limites, cancelamento e fallback determinístico. Não recomece pesquisa de stack, não abandone os componentes atuais e **não** priorize a PR #47 de Desktop. Preserve checkouts locais modificados. Entregue implementação e testes por PR, sem envio externo de candidaturas.
-
-## Produto definido
-
-O **Alinha** é um **agente de carreira**, não uma coleção de abas com IA. A pessoa deve conseguir delegar um objetivo em linguagem natural (“Encontre vagas de Python remotas, compare com meu perfil e prepare candidaturas”), acompanhar uma **única jornada visível** e intervir somente quando necessário. Importar currículo deve preencher um perfil editável; a busca prioriza oportunidades no Brasil; preparação de currículo e verificação ATS devem ser integradas; recomendações não podem inventar dados.
-
-**Três formas de uso da mesma plataforma:**
-
-| Nome público | Quem usa | Distribuição desejada | IA |
-|---|---|---|---|
-| **Alinha Community — Open Source** | Desenvolvedores, contribuidores e pessoas que hospedam por conta própria | Código no GitHub; setup reproduzível e opção self-hosted/CLI, conforme necessidade | BYOK e/ou modelo local; sem conta Alinha obrigatória |
-| **Alinha Desktop** | Usuário final | Aplicativo instalável, janela própria, Windows/macOS/Linux quando validado | Conectar IA de modo simplificado, credenciais protegidas localmente |
-| **Alinha Cloud** | Usuário que prefere serviço online | Site e processamento remoto, sem instalação | IA/infraestrutura gerenciada com controle de consumo; BYOK opcional a avaliar |
-
-O Desktop **pode ser open source**; “Community” nomeia a distribuição voltada a desenvolvedores, não uma proibição de compartilhar o código Desktop. Cloud é um **produto futuro**, não hospedagem disponível hoje. Monetização (créditos, consumo, planos) **não foi fechada**; não presumir cobrança exclusivamente por mensalidade. Código público atual sob MIT; revisar implicações de licenças de qualquer dependência.
-
-### Princípios estáveis
-- **A experiência é agêntica; a execução é principalmente determinística.** IA interpreta intenção, ambiguidade e textos não estruturados; código executa ações previsíveis e controla estado, custos, erros e permissões.
-- **IA intercambiável** por contrato único: Gemini/OpenAI/Claude/Ollama e outros compatíveis quando suportados; Community/Desktop com chaves próprias ou modelos locais; Cloud pode oferecer inferência gerenciada. Modelo não escolhe política de segurança.
-- **Interface principal em uma tela**, com progresso, cancelamento, tarefas e revisão. Áreas manuais podem continuar, mas secundárias. Não mostrar o navegador headless preenchendo sites.
-- **Privacidade e segurança:** dados pessoais mínimos, proveniência e veracidade, sem segredos em commits/logs. Não enviar candidaturas reais sem permissão específica, validação de respostas e confirmação externa. CAPTCHA, MFA, termos de plataformas e limitação de acesso exigem interrupção/handoff, nunca bypass.
-- **Brasil primeiro**, texto/documentação em pt-BR e arquitetura preparada para i18n; evitar complexidade, slogans e poluição visual.
-- Um **agente de carreira único com ferramentas**, não criar um enxame de agentes genéricos sem necessidade; framework de agentes opcional.
-
-## Estado verificável do repositório `main` nesta data
-
-**Existe código e um fluxo parcial; o produto não está em produção e não foi homologado pelo usuário de ponta a ponta.** Não confundir testes automatizados com lançamento.
-
-| Área | Evidência de implementação | Limite conhecido |
+| Área | Existe na main de referência | Limite |
 |---|---|---|
-| `apps/web` | Next.js/React: `/agente`, `/studio`, `/preparar`, `/vagas`, `/conexoes`, `/candidaturas` | Não há jornada de candidatura inteiramente agêntica/única validada |
-| `apps/api` | FastAPI/Pydantic: importação estruturada de CV, análise com evidências, diagnóstico ATS, endpoints de buscas | Não há executor de aplicações externas em produção |
-| IA | Adaptadores de provedores em `services/provider.py`, central de conexão, cofre local e workflows existentes | Nem todas as ações do agente usam um contrato universal de ferramentas |
-| Dados | Armazenamento no navegador e migração/SQLite local em evolução | Testar efetivamente migração, recuperação e consistência entre telas |
-| Vagas | Fontes públicas selecionáveis e integração parcial a ATS/boards | Cobertura, descrições completas, limites e autorização variam por fonte |
-| Autorização | Modelos e `agent/policy.py` de planejamento | “Aprovado para despachar” na política **não é envio**; não há envio externo |
+| Interface | `/agente` integra importação, objetivo, busca, prévias e preparação avançada; rotas manuais permanecem | Ainda não é o chat especificado e usa busca/avaliação anteriores, sem consumir toda a jornada persistente |
+| Núcleo | `job.search → job.assess → application.preview`, checkpoints SQLite, execução por comando único e cancelamento | Avaliação por coincidências literais; não comprova adequação semântica |
+| Intenção | IA opt-in propõe cargo, confirmação vinculada ao plano e revisão do currículo | Não equivale a interpretação conversacional geral; sugestões não autorizam execução |
+| Filtros | Cidade, modalidade, vínculo e salário declarado persistidos no backend | Fontes têm cobertura e campos incompletos; informação ausente não pode ser inventada |
+| Recuperação | Interrupção de operação antiga e nova tentativa com autorização vinculada ao evento | Sem repetição automática de operação ambígua |
+| Consumo | Reserva de chamadas e tokens reportados pelos provedores | Sem preço financeiro versionado; custo desconhecido não é zero |
+| Dados | SQLite Community e compatibilidade com registros legados do navegador | Migração parcial; validar concorrência, recuperação e exclusão em cada fluxo |
+| Candidatura | Preparação de rascunhos e acompanhamento manual | Nenhum conector de envio externo disponível |
 
-Ver [arquitetura implementada](architecture.md), [experiência atual do agente](agent-experience.md) e [plano Community](community-release-plan.md). As descrições detalhadas dessas páginas podem refletir etapas anteriores: este arquivo prevalece para **direção de produto**, não para afirmar comportamento do código.
+Referências: [jornadas persistentes](agent-durable-runtime.md), [ponte IA–runtime](ai-proposal-to-runtime.md), [filtros](agent-search-filters.md), [tokens](agent-token-accounting.md), [recuperação](agent-supervised-recovery.md) e [migração](community-data-migration.md).
 
-## Arquitetura: decisão ainda aberta, sem viés por histórico ou novidade
+Na revisão que motivou esta direção, passaram **309 testes API, 67 testes locais web e Ruff**, no snapshot `5d8f7cb`. Não foram executados build, avaliação visual de navegador ou homologação BYOK nessa revisão. Isso não comprova a interface futura nem valida todas as fontes/provedores.
 
-- **Hoje implementado:** Next.js/TypeScript + FastAPI/Python + LangGraph em análises específicas. **Isso é um ponto de partida, não uma escolha irreversível.**
-- **Interessam ao projeto:** Rust (coordenação/desktop/execução), Go (core e serviços), TypeScript (interface/automação) e Python (integrações/IA/extração).
-- **NÃO foi decidido:** reescrever tudo em Rust, Go + Rust, migrar tudo para Python, substituir Next.js por Vite/Svelte, escolher Wails/Tauri/desktop, manter LangGraph para o agente completo.
-- A escolha é por **capacidade, confiabilidade, distribuição, desenvolvimento e custo total**, não por microbenchmark de 100–400 ms nem por familiaridade. O usuário não quer novos ciclos longos de pesquisa abstrata: use experimentos *pontuais* quando houver bloqueio real.
-- Referências de padrão: OpenCode, LoopCV, goose, Browser Use, Skyvern, Stagehand, Jan/AnythingLLM; são inspirações, **não bibliotecas já aprovadas para adoção**. Evitar copiar código/UI sem verificar licença.
+## Próxima entrega
 
-**Experimentos isolados:** [PR #42 — benchmark de motores de navegador](https://github.com/mxthsu/alinha/pull/42) (**rascunho, não mergeada**), com testes sintéticos Ubuntu e Windows. Quatro motores passaram no Ubuntu; em Windows, Go/chromedp, TypeScript/Playwright e Rust/agent-browser completaram 10/10 formulários sintéticos cada; um coordenador Rust in-memory passou 6/6 testes; Go→Rust travou no Windows e **não foi validado**. As medições não são diretamente comparáveis em todos os cenários e **não elegem stack**. Detalhes e código ficam **na PR, não na main**: [relatório Windows](https://github.com/mxthsu/alinha/blob/chore/architecture-benchmark-2026/benchmarks/architecture/results-windows-2026-10-22.md). Não trazer experimentos para produção automaticamente.
+Implementar a primeira fatia de chat em `/agente`, reutilizando componentes e executor existentes: entrada livre ou sugerida → perfil existente/importação → preferências necessárias → autorização → busca persistente → cards → revisão de prévia. Usar fontes sintéticas para o primeiro teste completo. O caminho “Montar meu currículo” deve aceitar quem começa do zero; a condução dessa criação entra na entrega seguinte, explicitamente identificada como pendente até funcionar.
 
-## Situação do computador de desenvolvimento (precisa reconferir)
+Antes de expandir o fluxo, corrigir a proteção de salvamento: o cliente deve conservar a revisão do currículo que carregou e detectar edição em outra aba. A leitura da revisão mais recente imediatamente antes de escrever não protege um conteúdo antigo de sobrescrever outro mais novo.
 
-Em 22/10/2026 foi vista uma cópia local do Alinha na branch `feat/job-full-descriptions` com **muitas alterações não commitadas**, incluindo conectores de vagas e páginas web. Outra cópia `alinha-community-finish` também existe. **Essas alterações NÃO foram publicadas automaticamente no GitHub**. Antes de sincronizar qualquer checkout: `git status`, `git branch -vv`, `git diff --stat`, conferir remotes; nunca `reset --hard`, `clean -fd`, merge ou force-push nessas pastas sem revisar. Para trabalho novo, use branch/worktree/clone separado. O computador pode estar offline em outro chat.
+O primeiro incremento deve definir o mínimo necessário para representar mensagens, decisões e componentes vinculados à jornada, inclusive persistência, migração e exclusão. Não criar outro executor, copiar o currículo para cada mensagem ou implementar todo o roadmap de uma vez. Ver a sequência e os critérios no [roadmap](roadmap.md).
 
-## Próxima entrega de maior valor: um agente demonstrável, não nova reescrita
+Provedor real, custos e cobertura devem ser homologados em trabalho delimitado antes de declarar a integração pronta para uso. Essa validação não impede construir e testar a interface com fakes. Envio real continua fora das próximas entregas; permanece uma capacidade futura do produto.
 
-Fazer uma **fatia vertical integrada** e acessível em `/agente`: perfil de CV **fictício** → objetivo em linguagem natural → plano explicável → busca por fonte de teste ou autorizada → sinais e requisitos comprovados → prévia de candidatura a revisar na mesma tela. Usar fake provider para comportamento reprodutível; testar ao menos um adaptador real **somente** com chave de teste voluntária e limites. Nada de submissão real nesta fatia.
+## Ao continuar o desenvolvimento
 
-**Critérios de aceite obrigatórios:**
-1. Uma solicitação explícita inicia uma jornada clara e permite cancelar; mensagens e estados em pt-BR.
-2. A IA pode propor ações por esquema tipado, mas o executor valida ferramentas, argumentos, escopo, orçamento, origem e permissões; não obedece instruções embutidas em anúncios.
-3. O currículo não é alterado silenciosamente; dados desconhecidos e perguntas sensíveis vão para revisão; nenhuma experiência é inventada.
-4. Uma vaga falsa, perfil fictício e respostas simuladas permitem demonstrar ponta a ponta sem APIs pagas ou plataformas externas.
-5. A UI não anuncia “enviado” se só gerou prévia; o estado é explícito (“rascunho”, “revisão necessária”, “não enviado”).
-6. Testes de sucesso/falha/cancelamento/consentimento/limites, além de `uv run pytest -q`, `npm run test:local`, lint e build quando disponíveis.
-7. Nenhum rework massivo de framework antes de haver gargalo concreto. Ajustes visuais subordinados ao objetivo de facilitar a delegação.
+- Conferir `git status`, branch, remotes, base e contratos; preservar alterações locais. Não fazer merge automático, force-push ou limpeza destrutiva.
+- Executar uma entrega pequena, com testes e critérios pertinentes da experiência conversacional. Não tratar checklist/documentação como recurso entregue.
+- Usar perfis inteiramente fictícios de áreas variadas; nunca gravar currículos reais em testes, logs, capturas ou commits.
+- Plano e sugestões de IA são dados; permissões, limites, conclusão e estado ficam no núcleo. Mudança de UI não afrouxa autorização nem consentimento para processamento externo.
+- Verificar docs de privacidade e persistência ao alterar o fluxo de dados. Não introduzir retenção de conversa sem contrato mínimo.
 
-Ver [contrato proposto](agent-runtime-contract.md) e [roadmap](roadmap.md). Implementar por PRs pequenos, com evidência de execução.
+## Pedido para um novo chat
 
-## Como começar um novo chat, sem depender deste histórico
+> Continue o Alinha lendo `AGENTS.md`, `docs/CONTINUAR-ALINHA.md`, `docs/career-product-vision.md`, `docs/agent-experience.md` e `docs/roadmap.md`. O produto atende qualquer profissão: chat simples, sugestões contextuais editáveis e componentes no momento necessário para currículo, vagas e candidaturas. Inspecione a main e preserve alterações locais. Implemente somente o próximo incremento do roadmap, reutilizando o executor persistente e as permissões determinísticas; use fakes e dados sintéticos de áreas variadas. Entregue testes e PR sem merge automático. Não recomece pesquisa de stack nem implemente envio externo nesta fase.
 
-Copie e envie o seguinte pedido (e dê acesso ao GitHub/PC, se aplicável):
+## Histórico e arquitetura
 
-> Continue o projeto open source **mxthsu/alinha**. Leia primeiro `AGENTS.md`, `docs/CONTINUAR-ALINHA.md` e `docs/agent-runtime-contract.md`, depois inspecione a `main`, as PRs abertas e o código. A visão é um agente de carreira único, com **Community Open Source (dev), Desktop (aplicativo) e Cloud (online)**. IA conectável/BYOK; experiência em uma tela; execução determinística com IA seletiva; segurança e autorização obrigatórias. **Não presuma stack definitiva**: Rust/Go/Python/TypeScript seguem em avaliação, mas não pare para recomeçar pesquisa. Preserve mudanças locais não commitadas. Construa a próxima fatia vertical do `/agente` com fake provider, ferramentas autorizadas e prévia de candidatura **sem envio externo**, rode testes e abra PR. Relate o que foi implementado e o que segue pendente. Não confunda protótipos da PR #42 com código da `main`.
-
-**Lembrete operacional:** GitHub `main` é fonte de código publicado; PRs são hipóteses e trabalho não integrado; documentação contém intenções. Confirme resultados em CI e no produto rodando antes de declarar qualquer recurso pronto.
+As [notas anteriores](history/development-notes-before-conversational-direction.md) foram preservadas integralmente como histórico e podem conter pendências já resolvidas ou prioridades superadas. Protótipos de stack/Desktop são experimentos, não decisões de migração. Consulte [avaliação arquitetural](architecture-evaluation.md) e confira a situação das PRs se for trabalhar nessa área.

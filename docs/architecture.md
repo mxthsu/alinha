@@ -1,10 +1,10 @@
 # Arquitetura implementada (referência do código atual)
 
-> **Atenção (22/10/2026):** este texto documenta majoritariamente a stack **atual**, não a arquitetura definitivamente escolhida para o agente. O produto terá Community Open Source (dev), Desktop (app) e Cloud (serviço futuro). O novo núcleo e o executor serão escolhidos por necessidade concreta; não pressupor reescrita em Rust/Go/Python/TypeScript. Leia [guia para novo chat](CONTINUAR-ALINHA.md), [decisão aberta](architecture-evaluation.md) e [contrato neutro](agent-runtime-contract.md).
+> **Atenção (22/10/2026):** este texto documenta majoritariamente a stack **atual**, não a arquitetura definitivamente escolhida para o agente. O produto terá Community Open Source (dev), Desktop (app) e Cloud (serviço futuro). O núcleo persistente já existe; novas mudanças serão consideradas por necessidade concreta; não pressupor reescrita em Rust/Go/Python/TypeScript. Leia [guia para novo chat](CONTINUAR-ALINHA.md), [decisão aberta](architecture-evaluation.md) e [contrato neutro](agent-runtime-contract.md).
 
 ## Objetivo
 
-Fornecer uma análise de correspondência entre currículo e vaga **fundamentada em evidências literais**, com uma experiência acessível em português e base de código convencional em inglês.
+Apoiar o agente de carreira descrito na [visão](career-product-vision.md), com [experiência principal em chat](agent-experience.md). Esta página descreve sobretudo o pipeline de análise; o [executor persistente](agent-durable-runtime.md) documenta a coordenação já implementada. A interface conversacional completa ainda é uma entrega futura.
 
 > **Evolução do produto:** a arquitetura desta página documenta o núcleo de análise já funcional. O novo domínio independente de candidaturas está em [contratos do agente](agent-application-contract.md) e [fronteira Community/Pro](open-core-boundaries.md). A política em código ainda não executa ações externas.
 
@@ -41,14 +41,14 @@ A descrição da vaga e o currículo são **dados não confiáveis**, nunca inst
 - Provedores são selecionados por solicitação, sem compartilhar credenciais ou alterar o fluxo de verificação.
 - Modelos ChatGPT são consultados na conta autenticada, com tokens mantidos apenas no backend local.
 - Modelos Gemini/Ollama são configurados localmente por variável de ambiente; as chamadas devem poder ser substituídas por fakes em testes.
-- Não há banco, RAG, embeddings, armazenamento de candidatos ou Langfuse **nesta etapa**. Essas tecnologias serão consideradas quando houver caso de uso e requisitos claros.
+- Existe SQLite local para dados Community e jornadas persistentes, com compatibilidade com armazenamento legado do navegador. Não há necessidade aprovada de RAG, embeddings ou banco vetorial. O chat deverá reutilizar o núcleo e definir o mínimo de persistência/migração/retenção antes de guardar conversas.
 - As respostas não têm uma porcentagem de compatibilidade ou rótulo de aprovação ATS.
 - Máximo de 3 MB por arquivo, 12 páginas PDF, conteúdo DOCX descompactado limitado; não existe OCR.
 - O CORS permite, por padrão, `http://localhost:3000`. Ajuste `FRONTEND_ORIGIN` ao publicar.
 
 ## Segurança e privacidade
 
-O processamento de documentos ocorre em memória, sem gravação local pelo aplicativo. O Gemini recebe o texto da vaga e o texto do currículo; suas regras de retenção e tratamento são externas ao projeto. Evite logs contendo conteúdo de currículos e não habilite rastreamento de prompts com dados pessoais sem consentimento e política de privacidade apropriada.
+A extração dos arquivos originais ocorre em memória. O perfil estruturado, versões e oportunidades podem ser persistidos localmente; jornadas guardam resultados e rascunhos conforme o [contrato de dados](agent-durable-runtime.md). A [migração Community](community-data-migration.md) descreve a convivência com o navegador legado. Na análise com IA externa, o provedor selecionado recebe o texto necessário da vaga e do currículo; suas regras de retenção e tratamento são externas ao projeto. Evite logs contendo conteúdo de currículos e não habilite rastreamento de prompts com dados pessoais sem consentimento e política de privacidade apropriada.
 
 Para exposição pública serão necessárias medidas adicionais: limitação de taxa, proteção contra abuso/custo, política de privacidade, consentimento informado, controles de exclusão/retensão, proteção contra uploads maliciosos e observabilidade sem dados sensíveis.
 

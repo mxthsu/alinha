@@ -43,6 +43,7 @@ const context=await browser.newContext({
 });
 const page=await context.newPage();
 const searchCalls=[];
+const intentCalls=[];
 const outbound=[];
 const browserErrors=[];
 page.on("pageerror",e=>browserErrors.push(e.message));
@@ -50,6 +51,21 @@ page.on("dialog",dialog=>dialog.accept()); // Synthetic isolated profile only.
 page.on("request",request=>{
  if(request.method()==="POST" && /(?:submit|apply|application\/dispatch)/i.test(request.url()))
   outbound.push(request.url());
+});
+await page.route(/\/api\/v1\/providers\/status$/,route=>route.fulfill({
+ status:200,contentType:"application/json",
+ body:JSON.stringify({
+  gemini:{available:true},openai_api:{available:false},
+  anthropic:{available:false},ollama:{available:false},
+  chatgpt:{connected:false},
+ }),
+}));
+await page.route(/\/api\/v1\/agent\/interpret$/,route=>{
+ intentCalls.push(route.request().postDataJSON());
+ return route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
+  tool:"job.search",query:"Engenheiro de IA",reason:"Cargo encontrado no objetivo.",
+  needs_confirmation:true,executed:false,external_submission:false,model_calls:1,
+ })});
 });
 await page.route(/\/api\/v1\/jobs\/search\?/,async route=>{
  searchCalls.push(route.request().url());
@@ -66,6 +82,15 @@ try{
  await page.locator("#career-intent").fill(
   "Encontre vagas de Engenheiro de IA remoto no Brasil, compare com meu currículo e prepare candidaturas"
  );
+ await page.locator(".unified-ai-assist summary").click();
+ await page.getByRole("button",{name:"Sugerir cargo com IA"}).click();
+ await page.getByText("Sugestão para sua revisão: Engenheiro de IA").waitFor();
+ assert.equal(intentCalls.length,1,"Interpretation requires explicit click");
+ assert.deepEqual(Object.keys(intentCalls[0]).sort(),["objective","provider"],
+  "Only the objective may reach the model, never the private resume");
+ assert.equal(searchCalls.length,0,"Model proposal must not start a search");
+ await page.getByRole("button",{name:"Usar cargo sugerido"}).click();
+ await page.getByText("Cargo confirmado por você:").waitFor();
  await page.getByRole("checkbox").check();
  await page.getByRole("button",{name:/Encontrar e comparar vagas/}).click();
  await page.locator("#career-results").getByText("Empresa Horizonte (fictícia)").waitFor({timeout:25000});
@@ -128,7 +153,7 @@ try{
  assert.deepEqual(outbound,[],"Nunca disparar envio de candidatura");
  assert.deepEqual(browserErrors,[],"Sem erros Javascript no navegador");
  console.log(JSON.stringify({
-  result:"ok",searchCalls:searchCalls.length,results:foundCount,
+  result:"ok",intentCalls:intentCalls.length,searchCalls:searchCalls.length,results:foundCount,
   resumed:true,embeddedProvider:true,mobileOverflow:overflow,
   externalSubmissions:outbound.length,screenshots:output,
  },null,2));

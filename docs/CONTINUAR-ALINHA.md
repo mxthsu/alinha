@@ -15,9 +15,24 @@
 - **Validação:** executar testes Python da API, testes Node da Web, Ruff, ESLint e build. Smoke Chrome reproduzível: iniciar API e Next localmente com APPDATA/LOCALAPPDATA isolados, depois executar npm run test:browser dentro de apps/web (Chrome instalado; vagas interceptadas sinteticamente). Ver [jornada integrada](integrated-agent-journey.md). Não usar dados pessoais no smoke, screenshot ou commit.
 - **Destino após aprovação:** usar **PR integrada como substituta** de #41 e #45; depois que a integração estiver mergeada, fechar as duas PRs como substituídas para evitar merge duplicado. **Não** fazer merge de #41/#45 separadamente antes da integração. #42 pode permanecer como referência experimental.
 
+### Desempenho e arquitetura por especialidade — direção atual
+
+O objetivo é um **agente rápido e responsivo**, não maximizar linguagens.
+**Python/FastAPI permanece responsável por IA, currículos, documentos, ATS
+e fontes de vagas**, TypeScript/React pela interface, SQLite pelos dados
+locais. **Rust é candidato prioritário a um núcleo nativo de execução**
+(estado, concorrência, cancelamento, supervisão, limites) se uma medição
+de jornada ponta a ponta demonstrar ganho; Rust/Tauri concorre como shell
+Desktop com Go/Wails. Go **não substitui Python** por padrão. Escolher shell
+e coordenador por critérios separados, sem somar Go+Rust+Python sem necessidade.
+Consultar [plano de desempenho e responsabilidades](architecture-performance-plan.md).
+Nesta branch existe um primeiro entrypoint Python de API Desktop em porta
+efêmera com segredo por sessão; a ponte nativa para WebView e distribuição
+de sidecar **ainda não estão prontas**.
+
 ### Nova frente isolada: prova de arquitetura Desktop (Go/Wails vs Rust/Tauri)
 
-A branch `feat/desktop-architecture-poc` foi criada **a partir da PR #46**, em worktree separada. Veja `docs/desktop-architecture-proof.md`. Next.js exportou a interface como arquivos estáticos; o teste real Chrome com API Python e vagas fictícias passou sem servidor Next. Go/Wails v2 compilou no Windows com Go portátil isolado, abriu janela nativa e passou em testes de rotas estáticas Go. A **API Python ainda não é sidecar empacotado**, não existe instalador de usuário final, nem autenticação da porta local do Desktop. Rust/Tauri ainda deve receber teste equivalente; **a arquitetura não está decidida**. Não publicar como release nem mergear em `main` até resolver essas questões.
+A branch `feat/desktop-architecture-poc` foi criada **a partir da PR #46**, em worktree separada. Veja `docs/desktop-architecture-proof.md`. Next.js exportou a interface como arquivos estáticos; o teste real Chrome com API Python e vagas fictícias passou sem servidor Next. Go/Wails v2 compilou no Windows com Go portátil isolado, abriu janela nativa e passou em testes de rotas estáticas Go. A **API Python ainda não é sidecar empacotado** e não existe instalador de usuário final; foi criada a autenticação experimental da porta efêmera, mas a ponte segura entre WebView e shell nativo ainda não existe. Rust/Tauri ainda deve receber teste equivalente; **a arquitetura não está decidida**. Não publicar como release nem mergear em `main` até resolver essas questões.
 
 ### Incremento seguinte — geração de múltiplas prévias, sem novas permissões externas
 

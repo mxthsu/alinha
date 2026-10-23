@@ -60,6 +60,24 @@ https://v2.tauri.app/develop/sidecar/ .
 Go não é descartado em favor de Rust e **não** precisamos dos dois runtimes
 nativos no produto sem evidência.
 
+## Decisão funcional provisória: Rust para execução apenas se melhorar a jornada
+
+A divisão de responsabilidades e critérios de velocidade estão em
+[architecture-performance-plan.md](architecture-performance-plan.md). **O
+núcleo Python (IA, currículos, documentos e fontes de vagas) não será
+reescrito em Go.** Rust/Tokio é candidato para um coordenador que cuide da
+concorrência, supervisão, cancelamento, estado e desempenho do agente. Go,
+na prova atual, existe somente no shell Wails; isso não o transforma no
+backend de IA. A definição de shell e coordenador são decisões **separadas**.
+
+Foi criado o entrypoint Python `alinha_api.desktop_entry`, independente de
+Tauri/Wails. Ele exige um segredo aleatório de sessão, abre uma porta efêmera
+somente em loopback e anuncia readiness após inicialização. O middleware
+FastAPI aplica o segredo quando presente, sem alterar o Community tradicional.
+Existem testes com TestClient e subprocesso real de dados fictícios. Esse
+ponto é uma infraestrutura de teste, **não** comunicação final com o WebView:
+a ponte do shell que guarda o token fora do JS permanece pendente.
+
 ## Bloqueadores antes de escolher a arquitetura final
 
 1. **Sidecar/privacidade:** FastAPI/Python ainda não é executável distribuível;
@@ -67,9 +85,10 @@ nativos no produto sem evidência.
    limpa ou recuperação após falhas. O shell Go só mostra a interface.
 2. **API local segura:** origem `wails://` ou `http://wails.localhost` não é
    automaticamente uma origem permitida pela API; a origem exata deve ser
-   verificada no WebView real. Porta fixa `8000` não é isolamento nem
-   autenticação. Implementar porta dinâmica, verificação de sessão por ação,
-   origem e host estritos, sem afrouxar a proteção Community.
+   verificada no WebView real. A porta efêmera e o token agora existem no
+   entrypoint Python experimental; ainda falta criar a ponte autenticada
+   entre shell/WebView e API, com origem e host estritos, sem expor segredo
+   ao JavaScript ou afrouxar a proteção Community.
 3. **Rotas estáticas:** Next export usa `/agente.html` e links `/agente`.
    O handler da prova Wails resolve a rota sem iniciar Next; testar todos
    os deep links, arquivos `.txt` do App Router, refresh e navegação após

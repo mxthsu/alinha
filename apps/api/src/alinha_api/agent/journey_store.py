@@ -23,6 +23,7 @@ from alinha_api.agent.assessment import AssessmentReport
 from alinha_api.agent.discovery import JobSearchResult
 from alinha_api.agent.models import CandidateCriteria
 from alinha_api.agent.preview import PreviewBatch, prepare_local_previews
+from alinha_api.agent.token_usage import ReportedTokenUsage
 from alinha_api.services.community_storage import user_paths
 
 RunState = Literal["ready", "running", "needs_review", "completed", "failed", "cancelled"]
@@ -91,6 +92,22 @@ class IntentReceipt(BaseModel):
     needs_confirmation: Literal[True] = True
     executed: Literal[False] = False
     external_submission: Literal[False] = False
+
+
+class AiCallRecord(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    run_id: UUID
+    request_id: UUID
+    provider: Literal["gemini", "openai_api", "anthropic", "ollama"]
+    model: str | None = None
+    status: Literal["completed", "failed"]
+    input_tokens: int | None = Field(default=None, ge=0)
+    output_tokens: int | None = Field(default=None, ge=0)
+    total_tokens: int | None = Field(default=None, ge=0)
+    provider_reported: bool
+    observed_at: int
+    # No configured price table, exchange rate or cost inference.
+    cost_usd: None = None
 
 
 class JourneyEvent(BaseModel):
@@ -199,6 +216,21 @@ class JourneyStore:
                     preview_requested INTEGER NOT NULL,
                     calls_used INTEGER NOT NULL,
                     expires_at INTEGER NOT NULL
+                )
+            """)
+            connection.execute("""
+                CREATE TABLE IF NOT EXISTS agent_intent_token_usage (
+                    run_id TEXT NOT NULL,
+                    request_id TEXT NOT NULL,
+                    provider TEXT NOT NULL,
+                    model TEXT,
+                    status TEXT NOT NULL,
+                    input_tokens INTEGER,
+                    output_tokens INTEGER,
+                    total_tokens INTEGER,
+                    provider_reported INTEGER NOT NULL,
+                    observed_at INTEGER NOT NULL,
+                    PRIMARY KEY (run_id, request_id)
                 )
             """)
             yield connection
@@ -337,6 +369,78 @@ class JourneyStore:
             if row is None or row["expires_at"] < int(time.time()):
                 raise JourneyNotFound("Proposta expirada ou não encontrada.")
             return self._receipt(row)
+
+    def record_model_usage(
+        self,
+        *,
+        run_id: UUID,
+        request_id: UUID,
+        provider: str,
+        status: str,
+        usage: ReportedTokenUsage | None,
+    ) -> AiCallRecord:
+        """Audit a reserved model attempt; never pretend missing usage is zero."""
+        record = AiCallRecord(
+            run_id=run_id,
+            request_id=request_id,
+            provider=provider,
+            status=status,
+            model=usage.model if usage is not None else None,
+            input_tokens=usage.input_tokens if usage is not None else None,
+            output_tokens=usage.output_tokens if usage is not None else None,
+            total_tokens=usage.total_tokens if usage is not None else None,
+            provider_reported=usage.reported if usage is not None else False,
+            observed_at=int(time.time()),
+        )
+        with self._db() as conn:
+            reservation = conn.execute(
+                "SELECT 1 FROM agent_intent_call_ledger WHERE run_id=? AND request_id=?",
+                (str(run_id), str(request_id)),
+            ).fetchone()
+            if reservation is None:
+                raise JourneyConflict("Registro de uso sem reserva de chamada.")
+            existing = conn.execute(
+                "SELECT 1 FROM agent_intent_token_usage WHERE run_id=? AND request_id=?",
+                (str(run_id), str(request_id)),
+            ).fetchone()
+            if existing is not None:
+                raise JourneyConflict("Tentativa de IA já auditada.")
+            conn.execute(
+                """
+                INSERT INTO agent_intent_token_usage
+                (run_id,request_id,provider,model,status,
+                 input_tokens,output_tokens,total_tokens,provider_reported,observed_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?)
+            """,
+                (
+                    str(run_id),
+                    str(request_id),
+                    record.provider,
+                    record.model,
+                    record.status,
+                    record.input_tokens,
+                    record.output_tokens,
+                    record.total_tokens,
+                    int(record.provider_reported),
+                    record.observed_at,
+                ),
+            )
+        return record
+
+    def list_model_usage(self, run_id: UUID) -> list[AiCallRecord]:
+        """Return only token counts and metadata, not raw input, output, or keys."""
+        with self._db() as conn:
+            found = conn.execute(
+                """
+                SELECT * FROM agent_intent_token_usage WHERE run_id=?
+                ORDER BY observed_at, rowid
+            """,
+                (str(run_id),),
+            ).fetchall()
+            return [
+                AiCallRecord(**{**dict(row), "provider_reported": bool(row["provider_reported"])})
+                for row in found
+            ]
 
     def confirm_intent(self, body: ConfirmIntentJourney) -> JourneySnapshot:
         """Atomic confirmation: model proposals cannot become search authorization."""

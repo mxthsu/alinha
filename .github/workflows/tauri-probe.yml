@@ -55,3 +55,10 @@ jobs:
           if (-not (Test-Path $exe)) { throw "Missing compiled Windows executable: $exe" }
           Get-Item $exe | Select-Object Name, Length
 
+      - name: Upload Windows executable for interactive Desktop smoke test
+        uses: actions/upload-artifact@v4
+        with:
+          name: alinha-tauri-windows-smoke
+          path: apps/desktop/tauri-probe/src-tauri/target/debug/alinha-tauri-probe.exe
+          if-no-files-found: error
+          retention-days: 3

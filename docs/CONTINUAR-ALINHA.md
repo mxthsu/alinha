@@ -1,5 +1,7 @@
 # Alinha — ponto de retomada para outro chat
 
+> **Prova Desktop Rust/Tauri (23/10/2026):** a branch experimental `spike/tauri-rust-python-desktop` foi criada sobre `feat/desktop-architecture-poc` (PR #47). Reutiliza Next estático e a API Python atual; o host Rust passou em testes de arquivos, preferências e autenticação real de um processo Python em loopback. **Ainda não há shell Tauri compilado, ponte completa WebView → API nem instalador.** Ver [relatório técnico](desktop-tauri-rust-proof.md). Esta POC não substitui nem conclui as PRs de IA #50/#51, e não implica escolha definitiva de framework.
+
 > **Fonte principal de contexto do projeto, atualizada em 22/10/2026.** Leia este arquivo, [AGENTS.md](../AGENTS.md), o código real na branch escolhida e os documentos vinculados **antes** de decidir a próxima tarefa. O estado do GitHub pode mudar; confirme branches, CI e PRs ao começar. Este texto não prova que funcionalidades planejadas já funcionem.
 
 ## Estado mais recente para continuar — integração real em PR (22/10/2026)

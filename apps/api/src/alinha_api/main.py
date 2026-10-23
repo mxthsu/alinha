@@ -38,6 +38,7 @@ from alinha_api.agent.journey_store import (
 from alinha_api.agent.lever import search_lever
 from alinha_api.agent.models import CandidateCriteria
 from alinha_api.agent.multisource import search_multi_source
+from alinha_api.agent.real_search import SearchToolUnavailable, execute_authorized_search
 from alinha_api.agent.runtime import (
     AdvanceRun,
     AgentCoordinator,
@@ -214,6 +215,41 @@ def cancel_agent_run(request: Request, response: Response, run_id: UUID) -> Jour
         return journey_store.cancel(run_id)
     except JourneyNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except JourneyStorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.post("/api/v1/agent/runs/{run_id}/execute-search", response_model=JourneySnapshot)
+def execute_agent_search(request: Request, response: Response, run_id: UUID) -> JourneySnapshot:
+    """Run the allowed real job.search step, once, using existing configured connectors."""
+    _community_api_only(request, mutation=True)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return execute_authorized_search(
+            journey_store, run_id,
+            lambda query: discover_jobs(request, q=query, page=1, remote_only=True, source="all"),
+        )
+    except JourneyNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except JourneyConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except JourneyStorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except SearchToolUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.get("/api/v1/agent/runs/{run_id}/jobs", response_model=JobSearchResult)
+def get_agent_search_result(request: Request, response: Response, run_id: UUID) -> JobSearchResult:
+    """Read a previously stored public listing snapshot; never rerun a connector."""
+    _community_api_only(request)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return journey_store.get_search_result(run_id)
+    except JourneyNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except JourneyConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except JourneyStorageUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 

@@ -37,6 +37,7 @@ from alinha_api.agent.journey_store import (
     JourneySnapshot,
     JourneyStorageUnavailable,
     JourneyStore,
+    RetryInterruptedJourney,
     StartJourney,
 )
 from alinha_api.agent.lever import search_lever
@@ -295,6 +296,9 @@ def get_agent_run(request: Request, response: Response, run_id: UUID) -> Journey
     _community_api_only(request)
     response.headers["Cache-Control"] = "no-store"
     try:
+        # A process crash may leave a lease marked running. Only *old* claims
+        # move to human review; never redispatch tools during this read.
+        journey_store.interrupt_stale(min_age_seconds=180)
         return journey_store.get(run_id)
     except JourneyNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -310,6 +314,25 @@ def cancel_agent_run(request: Request, response: Response, run_id: UUID) -> Jour
         return journey_store.cancel(run_id)
     except JourneyNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except JourneyStorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.post("/api/v1/agent/runs/{run_id}/retry", response_model=JourneySnapshot)
+def authorize_agent_retry(
+    request: Request, response: Response, run_id: UUID,
+    body: RetryInterruptedJourney,
+) -> JourneySnapshot:
+    """Review one interrupted step; no tool call occurs on this endpoint."""
+    _community_api_only(request, mutation=True)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        journey_store.interrupt_stale(min_age_seconds=180)
+        return journey_store.authorize_retry(run_id, body)
+    except JourneyNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except JourneyConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except JourneyStorageUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 

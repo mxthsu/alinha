@@ -2,6 +2,14 @@
 
 > **Fonte principal de contexto do projeto, atualizada em 23/10/2026.** Leia este arquivo, [AGENTS.md](../AGENTS.md), o código real na branch escolhida e os documentos vinculados **antes** de decidir a próxima tarefa. O estado do GitHub pode mudar; confirme branches, CI e PRs ao começar. Este texto não prova que funcionalidades planejadas já funcionem.
 
+## Recuperação com aprovação humana após crash (23/10/2026)
+
+**PRs #61 e #62 integradas:** filtros por modalidade/cidade/vínculo/salário e auditoria local dos tokens reportados pelo provedor, com custo financeiro ainda desconhecido.
+
+**Nova implementação:** `GET /api/v1/agent/runs/{run_id}` identifica etapas há mais de 180s em estado `running` e preserva o run como `needs_review` sem executar nada. `POST /api/v1/agent/runs/{run_id}/retry` requer aprovação explícita ligada ao exato evento interrompido, com limite de duas novas autorizações por jornada; autorizar não executa ferramentas. [Contrato de recuperação](agent-supervised-recovery.md).
+
+**Pendente:** testes de BYOK reais (dependem de autorização e credencial conectada), precificação financeira versionada, mais cobertura/qualidade de fontes BR e integração da jornada final com a interface Community/desktop. Nenhuma alteração na UI atual.
+
 ## Auditoria de tokens reportados pelos provedores (23/10/2026)
 
 **PR #61 integrada:** filtros reais de modalidade, cidade, vínculo e salário em todas as jornadas backend, com dados não comprovados excluídos quando exigidos.

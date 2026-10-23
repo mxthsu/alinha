@@ -37,7 +37,21 @@ jobs:
         env:
           ALINHA_DESKTOP_EXPORT: '1'
         run: npm run build
-      - name: Validate isolated Rust host logic
-        run: cargo test --manifest-path apps/desktop/tauri-probe/host-core/Cargo.toml
-      - name: Compile Tauri Rust shell with Windows prerequisites
-        run: cargo check --manifest-path apps/desktop/tauri-probe/src-tauri/Cargo.toml
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated Python API for authenticated loopback test
+        run: |
+          python -m pip install -e ./apps/api
+          $python = python -c "import sys; print(sys.executable)"
+          "ALINHA_TEST_PYTHON=$python" >> $env:GITHUB_ENV
+      - name: Test Rust host including live Python startup, authentication and shutdown
+        run: cargo test --manifest-path apps/desktop/tauri-probe/host-core/Cargo.toml -- --nocapture
+      - name: Build Tauri Windows executable (development proof only)
+        run: cargo build --manifest-path apps/desktop/tauri-probe/src-tauri/Cargo.toml
+      - name: Verify Tauri Windows binary exists
+        run: |
+          $exe = "apps/desktop/tauri-probe/src-tauri/target/debug/alinha-tauri-probe.exe"
+          if (-not (Test-Path $exe)) { throw "Missing compiled Windows executable: $exe" }
+          Get-Item $exe | Select-Object Name, Length
+

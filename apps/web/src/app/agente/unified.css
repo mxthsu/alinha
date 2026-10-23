@@ -115,3 +115,6 @@
 
 .unified-ai-assist summary{cursor:pointer;color:#355e42;font-size:13px;font-weight:760;list-style-position:inside}
 .unified-ai-assist[open] summary{margin-bottom:8px}
+
+.unified-ai-step-list{margin:11px 0;padding:10px 14px 10px 31px;border:1px solid #e0e9db;border-radius:8px;background:#f9fcf8;display:grid;gap:7px;color:#375f45;font-size:12px}
+.unified-ai-step-list li small{display:block;margin-top:2px;font-size:11px;color:#748875}

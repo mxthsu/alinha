@@ -5,11 +5,12 @@ import json
 import os
 import re
 from typing import Literal, Protocol
+from uuid import UUID
 
 import httpx
 from google import genai
 from google.genai import errors, types
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import UUID4, BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from alinha_api.services.api_key_store import api_key as saved_api_key
 from alinha_api.services.deployment import local_ollama_allowed
@@ -55,8 +56,11 @@ class IntentSuggestion(BaseModel):
 
 class IntentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    run_id: UUID4
+    request_id: UUID4
     objective: str = Field(min_length=5, max_length=400)
     provider: Literal["gemini", "openai_api", "anthropic", "ollama"]
+    preview_requested: bool = False
 
 
 class IntentToolProposal(BaseModel):
@@ -68,6 +72,46 @@ class IntentToolProposal(BaseModel):
     executed: Literal[False] = False
     external_submission: Literal[False] = False
     model_calls: Literal[1] = 1
+
+
+class PlannedToolStep(BaseModel):
+    """Review-only tool roadmap; it does not dispatch any tool."""
+    model_config = ConfigDict(extra="forbid")
+    tool: Literal["job.search", "job.assess", "application.preview"]
+    state: Literal["proposed"] = "proposed"
+    requires_confirmation: bool
+    external_submission: Literal[False] = False
+
+
+class ReviewedIntentPlan(IntentToolProposal):
+    """The model proposes only a role; the code fixes the allowed step sequence."""
+    run_id: UUID
+    calls_used: int = Field(ge=1, le=2)
+    calls_remaining: int = Field(ge=0, le=1)
+    steps: list[PlannedToolStep] = Field(min_length=2, max_length=3)
+
+
+def build_reviewed_plan(
+    suggestion: IntentToolProposal,
+    *,
+    run_id: UUID,
+    calls_used: int,
+    calls_remaining: int,
+    preview_requested: bool,
+) -> ReviewedIntentPlan:
+    steps = [
+        PlannedToolStep(tool="job.search", requires_confirmation=True),
+        PlannedToolStep(tool="job.assess", requires_confirmation=False),
+    ]
+    if preview_requested:
+        steps.append(PlannedToolStep(tool="application.preview", requires_confirmation=True))
+    return ReviewedIntentPlan.model_validate({
+        **suggestion.model_dump(),
+        "run_id": run_id,
+        "calls_used": calls_used,
+        "calls_remaining": calls_remaining,
+        "steps": [step.model_dump() for step in steps],
+    })
 
 
 class IntentModel(Protocol):

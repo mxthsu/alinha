@@ -10,13 +10,20 @@ from pydantic import BaseModel, Field, ValidationError
 from pypdf.errors import PdfReadError
 
 from alinha_api.agent.ats_boards import search_ats_board
+from alinha_api.agent.call_budget import (
+    CallBudgetExhausted,
+    CallBudgetUnavailable,
+    DuplicateIntentRequest,
+    reserve_call,
+)
 from alinha_api.agent.discovery import JobSearchResult, JobSearchUnavailable, search_jobs
 from alinha_api.agent.github_jobs import search_github_jobs
 from alinha_api.agent.gupy import search_gupy
 from alinha_api.agent.intent_model import (
     MODELS,
     IntentRequest,
-    IntentToolProposal,
+    ReviewedIntentPlan,
+    build_reviewed_plan,
     validated_proposal,
 )
 from alinha_api.agent.lever import search_lever
@@ -126,8 +133,8 @@ def _community_api_only(request: Request, *, mutation: bool = False) -> None:
         raise HTTPException(status_code=403, detail="Acesso não autorizado.")
 
 
-@app.post("/api/v1/agent/interpret", response_model=IntentToolProposal)
-def interpret_agent_objective(request: Request, response: Response, body: IntentRequest) -> IntentToolProposal:
+@app.post("/api/v1/agent/interpret", response_model=ReviewedIntentPlan)
+def interpret_agent_objective(request: Request, response: Response, body: IntentRequest) -> ReviewedIntentPlan:
     """One explicit BYOK/local model request, for a review-only job.search proposal.
 
     Never accepts a resume, job description, credentials or an executable tool instruction.
@@ -135,8 +142,27 @@ def interpret_agent_objective(request: Request, response: Response, body: Intent
     """
     _community_api_only(request, mutation=True)
     response.headers["Cache-Control"] = "no-store"
+    # Reserve atomically before inference, so concurrent requests cannot overspend.
+    # The ledger stores only opaque UUIDs, never objective, CV or provider credentials.
     try:
-        return validated_proposal(MODELS[body.provider](), body.objective)
+        reservation = reserve_call(body.run_id, body.request_id)
+    except DuplicateIntentRequest as exc:
+        raise HTTPException(status_code=409, detail="Esta solicitação de IA já foi processada.") from exc
+    except CallBudgetExhausted as exc:
+        raise HTTPException(
+            status_code=429, detail="Limite de duas chamadas de IA atingido nesta jornada."
+        ) from exc
+    except CallBudgetUnavailable as exc:
+        raise HTTPException(status_code=503, detail="Limite de IA indisponível. Nenhuma chamada feita.") from exc
+    try:
+        suggestion = validated_proposal(MODELS[body.provider](), body.objective)
+        return build_reviewed_plan(
+            suggestion,
+            run_id=body.run_id,
+            calls_used=reservation.calls_used,
+            calls_remaining=reservation.calls_remaining,
+            preview_requested=body.preview_requested,
+        )
     except ProviderError as exc:
         # Provider adapters report only static, non-sensitive messages.
         raise HTTPException(status_code=422, detail=str(exc)) from exc

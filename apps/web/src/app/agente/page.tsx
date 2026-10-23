@@ -31,6 +31,11 @@ const DEFAULT_INTENT="Encontre vagas de Engenharia de IA remotas no Brasil, comp
 type RemoteResult={jobs:AgentJob[];source_name:string;limitations:string[]};
 type RunStatus="idle"|"searching"|"review"|"cancelled"|"failed";
 type PlannerProvider="gemini"|"openai_api"|"anthropic"|"ollama";
+const TOOL_LABELS:Record<"job.search"|"job.assess"|"application.preview",string>={
+ "job.search":"Consultar vagas autorizadas",
+ "job.assess":"Comparar requisitos com o currículo",
+ "application.preview":"Preparar prévia para revisão",
+};
 const PLANNER_NAMES:Record<PlannerProvider,string>={
  gemini:"Gemini",openai_api:"OpenAI API",anthropic:"Claude API",ollama:"Ollama local",
 };
@@ -58,6 +63,8 @@ export default function CareerAgent(){
  const [proposal,setProposal]=useState<IntentToolProposal|null>(null);
  const [confirmedRole,setConfirmedRole]=useState("");
  const planAbort=useRef<AbortController|null>(null);
+ const aiRunId=useRef("");
+ const [aiRemaining,setAiRemaining]=useState(2);
  const [authorized,setAuthorized]=useState(false);
  const [status,setStatus]=useState<RunStatus>("idle");
  const [error,setError]=useState("");
@@ -157,17 +164,33 @@ export default function CareerAgent(){
   planAbort.current=controller;
   setPlanning(true);setProposal(null);setPlanError("");setConfirmedRole("");
   try{
-   // Opt-in: send only this written objective, never a résumé or saved secrets.
+   // A journey UUID tracks a local, durable quota. The model receives only the objective.
+   const runId=aiRunId.current||(aiRunId.current=crypto.randomUUID());
+   const previewRequested=wantsApplicationDrafts(intentText);
    const response=await fetch(API+"/api/v1/agent/interpret",{
     method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({objective:intentText,provider:plannerProvider}),
+    body:JSON.stringify({
+     run_id:runId,request_id:crypto.randomUUID(),
+     objective:intentText,provider:plannerProvider,
+     preview_requested:previewRequested,
+    }),
     cache:"no-store",signal:controller.signal,
    });
-   if(!response.ok)throw new Error("Não foi possível interpretar o objetivo com essa IA. A busca manual continua disponível.");
-   const reviewed=reviewIntentTool(await response.json());
-   if(!controller.signal.aborted)setProposal(reviewed);
+   if(!response.ok){
+    if(response.status===429)setAiRemaining(0);
+    else if(response.status===422)setAiRemaining(v=>Math.max(0,v-1));
+    throw new Error("A IA não concluiu a interpretação.");
+   }
+   const reviewed=reviewIntentTool(await response.json(),runId,previewRequested);
+   if(!controller.signal.aborted){
+    setAiRemaining(reviewed.calls_remaining);
+    setProposal(reviewed);
+   }
   }catch{
-   if(!controller.signal.aborted)setPlanError("A IA não concluiu a interpretação. Você ainda pode pesquisar sem IA.");
+   if(!controller.signal.aborted)setPlanError(
+    aiRemaining===0?"Limite de IA desta jornada atingido. A busca sem IA continua disponível.":
+    "A IA não concluiu a interpretação. A tentativa pode ter consumido o limite; busque sem IA ou tente novamente."
+   );
   }finally{
    if(planAbort.current===controller){planAbort.current=null;setPlanning(false);}
   }
@@ -274,7 +297,7 @@ export default function CareerAgent(){
     <form onSubmit={e=>void search(e)} className="unified-intent-form">
      <label htmlFor="career-intent">Seu objetivo</label>
      <textarea id="career-intent" rows={3} maxLength={400} value={intentText}
-      onChange={e=>{intentEdited.current=true;planAbort.current?.abort();setPlanning(false);setProposal(null);setConfirmedRole("");setPlanError("");setIntentText(e.target.value);}} disabled={status==="searching"}
+      onChange={e=>{intentEdited.current=true;planAbort.current?.abort();aiRunId.current="";setAiRemaining(2);setPlanning(false);setProposal(null);setConfirmedRole("");setPlanError("");setIntentText(e.target.value);}} disabled={status==="searching"}
       placeholder="Ex.: Encontre vagas de Engenheiro de IA remoto no Brasil, com salário a partir de R$ 8.000…"/>
      <div className="unified-understanding">
       <strong>Entendi o seguinte:</strong>
@@ -293,15 +316,16 @@ export default function CareerAgent(){
      </div>
      <details className="unified-ai-assist" aria-label="Interpretação opcional de IA">
       <summary>{confirmedRole?"IA ajudou a identificar: "+confirmedRole:"Interpretar objetivo com sua IA (opcional)"}</summary>
-      <div><p>Uma chamada pode gerar custo no seu provedor. Só o objetivo escrito será enviado: nunca seu currículo.
-        A IA apenas sugere um cargo; você autoriza separadamente qualquer consulta.</p></div>
+      <div><p>Até duas tentativas por jornada, com limite registrado localmente (não é limite financeiro global).
+        Só o objetivo digitado vai ao modelo; nunca seu currículo. As ações seguem sob seu controle.</p>
+       <p role="status">Interpretações restantes nesta jornada: {aiRemaining}/2</p></div>
       {plannerProviders.length>0&&<div className="unified-ai-controls">
        <select aria-label="IA para interpretar objetivo" value={plannerProvider}
         disabled={planning||status==="searching"}
         onChange={e=>{planAbort.current?.abort();setPlannerProvider(e.target.value as PlannerProvider);setProposal(null);setConfirmedRole("");}}>
         {plannerProviders.map(name=><option key={name} value={name}>{PLANNER_NAMES[name]}</option>)}
        </select>
-       <button type="button" disabled={planning||status==="searching"||intentText.trim().length<5}
+       <button type="button" disabled={planning||status==="searching"||intentText.trim().length<5||aiRemaining===0}
         onClick={()=>void askModelToInterpret()}>
         {planning?"Interpretando…":"Sugerir cargo com IA"}
        </button>
@@ -312,6 +336,12 @@ export default function CareerAgent(){
       {proposal&&<div className="unified-ai-suggestion" role="status">
        <strong>Sugestão para sua revisão: {proposal.query}</strong>
        <p>{proposal.reason}</p>
+       <ol className="unified-ai-step-list" aria-label="Plano proposto, ainda não executado">
+        {proposal.steps.map(step=><li key={step.tool}>
+         {TOOL_LABELS[step.tool]} <small>{step.requires_confirmation?"Requer sua confirmação":"Somente análise local"}</small>
+        </li>)}
+       </ol>
+       <p>Etapas apenas planejadas. Nenhuma foi executada pela IA.</p>
        <div><button type="button" onClick={()=>{setConfirmedRole(proposal.query);setProposal(null);}}>
         Usar cargo sugerido</button>
         <button type="button" onClick={()=>setProposal(null)}>Descartar</button></div>

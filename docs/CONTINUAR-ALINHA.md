@@ -1,6 +1,16 @@
 # Alinha — ponto de retomada para outro chat
 
-> **Fonte principal de contexto do projeto, atualizada em 22/10/2026.** Leia este arquivo, [AGENTS.md](../AGENTS.md), o código real na branch escolhida e os documentos vinculados **antes** de decidir a próxima tarefa. O estado do GitHub pode mudar; confirme branches, CI e PRs ao começar. Este texto não prova que funcionalidades planejadas já funcionem.
+> **Fonte principal de contexto do projeto, atualizada em 23/10/2026.** Leia este arquivo, [AGENTS.md](../AGENTS.md), o código real na branch escolhida e os documentos vinculados **antes** de decidir a próxima tarefa. O estado do GitHub pode mudar; confirme branches, CI e PRs ao começar. Este texto não prova que funcionalidades planejadas já funcionem.
+
+## Em revisão — integração de IA (23/10/2026)
+
+**Estas funcionalidades NÃO estão na `main` enquanto as PRs permanecerem abertas:**
+
+- [PR #50](https://github.com/mxthsu/alinha/pull/50), branch `feat/agent-connected-ai-48`: primeiro passo de IA no fluxo real, opt-in; Gemini/OpenAI API/Claude API/Ollama interpretam **somente o objetivo profissional**; a pessoa confirma o cargo sugerido e ainda autoriza a busca separadamente. Nenhuma candidatura externa, sem homologação ao vivo com chaves reais.
+- [PR #51](https://github.com/mxthsu/alinha/pull/51), branch `feat/agent-tool-plan-budget-48`: **empilhada sobre a #50**. Até duas reservas de chamadas de IA por UUID de jornada, com SQLite local/concorrência/idempotência; plano tipado `job.search → job.assess → application.preview` (última opcional) é exibido como **proposto**, nunca executado pelo modelo. Esta é uma quota de chamadas por identificador, **não teto financeiro global**.
+- Ambas passaram localmente: #51 teve **230 testes Python, 67 testes web, lint/build e smoke Chrome com fakes**, zero envio externo. Verificar os resultados mais recentes do GitHub Actions antes do merge.
+- **Ordem de integração:** revisar/mergear #50 primeiro; depois ajustar base da #51 conforme o GitHub exigir, para evitar duplicação de commits. Não fazer merge da PR experimental #47 de Desktop nem mudar de stack por preferência.
+- Próximo requisito técnico real da [issue #48](https://github.com/mxthsu/alinha/issues/48): conectar ferramentas a um coordenador com eventos duráveis, cancelamento e recuperação, além de aferição real de tokens/custos e teste autorizado de pelo menos um provedor. Os planos tipados da #51 ainda dependem de execução **determinística da interface existente**. Não anunciar agente autônomo completo.
 
 ## Estado atual — agente integrado na `main` (22/10/2026)
 

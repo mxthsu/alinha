@@ -2,15 +2,18 @@
 
 > **Fonte principal de contexto do projeto, atualizada em 23/10/2026.** Leia este arquivo, [AGENTS.md](../AGENTS.md), o código real na branch escolhida e os documentos vinculados **antes** de decidir a próxima tarefa. O estado do GitHub pode mudar; confirme branches, CI e PRs ao começar. Este texto não prova que funcionalidades planejadas já funcionem.
 
-## Em revisão — integração de IA (23/10/2026)
+## Integrado na `main` — IA opt-in e plano revisável (23/10/2026)
 
-**Estas funcionalidades NÃO estão na `main` enquanto as PRs permanecerem abertas:**
+**As PRs [#50](https://github.com/mxthsu/alinha/pull/50) e [#51](https://github.com/mxthsu/alinha/pull/51) foram incorporadas à `main` por squash**, respectivamente nos commits `b133b15` e `549a63e`. A PR #51 foi rebased sobre a `main` para não duplicar código; CI Web e Python aprovada após rebase.
 
-- [PR #50](https://github.com/mxthsu/alinha/pull/50), branch `feat/agent-connected-ai-48`: primeiro passo de IA no fluxo real, opt-in; Gemini/OpenAI API/Claude API/Ollama interpretam **somente o objetivo profissional**; a pessoa confirma o cargo sugerido e ainda autoriza a busca separadamente. Nenhuma candidatura externa, sem homologação ao vivo com chaves reais.
-- [PR #51](https://github.com/mxthsu/alinha/pull/51), branch `feat/agent-tool-plan-budget-48`: **empilhada sobre a #50**. Até duas reservas de chamadas de IA por UUID de jornada, com SQLite local/concorrência/idempotência; plano tipado `job.search → job.assess → application.preview` (última opcional) é exibido como **proposto**, nunca executado pelo modelo. Esta é uma quota de chamadas por identificador, **não teto financeiro global**.
-- Ambas passaram localmente: #51 teve **230 testes Python, 67 testes web, lint/build e smoke Chrome com fakes**, zero envio externo. Verificar os resultados mais recentes do GitHub Actions antes do merge.
-- **Ordem de integração:** revisar/mergear #50 primeiro; depois ajustar base da #51 conforme o GitHub exigir, para evitar duplicação de commits. Não fazer merge da PR experimental #47 de Desktop nem mudar de stack por preferência.
-- Próximo requisito técnico real da [issue #48](https://github.com/mxthsu/alinha/issues/48): conectar ferramentas a um coordenador com eventos duráveis, cancelamento e recuperação, além de aferição real de tokens/custos e teste autorizado de pelo menos um provedor. Os planos tipados da #51 ainda dependem de execução **determinística da interface existente**. Não anunciar agente autônomo completo.
+- O `/agente` pode usar Gemini, OpenAI API, Claude API ou Ollama previamente conectados para interpretar **somente o objetivo digitado**. O modelo propõe um cargo que requer confirmação; a consulta de vagas exige outra autorização explícita. Currículos não são enviados ao modelo por essa rota.
+- O código apresenta um **plano tipado para revisão**, com `job.search → job.assess → application.preview` (prévia opcional). O modelo **não executa** essas ferramentas nem concede permissões.
+- O orçamento SQLite reserva de forma atômica **duas tentativas de IA por UUID da jornada** e recusa repetições; **não é um limite global de tokens ou gastos**. Falha ou timeout pode consumir a reserva.
+- Após o rebase, foram aprovados **230 testes da API + Ruff** e **67 testes da Web + ESLint + Next build**, além da CI. A prova com dados fictícios não significa que todos os provedores BYOK reais foram homologados.
+
+**Issue [#48](https://github.com/mxthsu/alinha/issues/48) ainda aberta:** faltam executor de ferramentas com eventos duráveis, retomada/cancelamento mais abrangentes, aferição de tokens/custos reais e teste autorizado de ao menos um provedor. Sem submissão externa de candidatura. Evitar declarar autonomia completa.
+
+**Desktop separado:** PRs [#47](https://github.com/mxthsu/alinha/pull/47) (Wails/Go) e [#52](https://github.com/mxthsu/alinha/pull/52) (Tauri/Rust) continuam provas **não mergeadas**. A #52 já compilou o executável Windows na CI e o teste local real abriu a WebView2, autenticou Python e importou CV TXT fictício. **Ainda não é um instalador nem a distribuição Desktop concluída.** A arquitetura Rust para shell/estado do aplicativo e Python para lógica de CV/IA é uma direção em avaliação, não migração obrigatória da Community.
 
 ## Estado atual — agente integrado na `main` (22/10/2026)
 
@@ -20,15 +23,15 @@
 - **Rascunhos:** até **três prévias locais** para vagas compatíveis com link HTTPS seguro, sem invenção de competências, sem IA obrigatória e sem envio externo. O usuário escolhe e revisa individualmente. Informações ausentes e filtros não comprovados são sinalizados.
 - **Preparação avançada integrada:** no mesmo `/agente`, uma seção opcional oferece leitura ATS resumida, seleção de provedor de IA e análise da vaga; não repete upload, outro wizard ou conclusão de percurso. A rota independente `/preparar` preserva o fluxo completo.
 - **Retomada:** a vaga selecionada e a descrição revisada podem ser recuperadas no mesmo dispositivo, com retomada explícita e rascunho gerado a partir das evidências. **Histórico da busca, fila completa e execução de IA não são recuperados automaticamente** após reinício.
-- **IA atual:** a integração existente permite análises opcionais mediante ação específica e conexão do usuário. **O modelo ainda não participa do planejamento e da execução principal com ferramentas tipadas** — isso está na issue #48; não afirmar que o Alinha é um agente plenamente autônomo.
+- **IA atual:** a integração existente permite análises opcionais mediante ação específica e conexão do usuário. **O modelo já propõe um cargo e o código exibe ferramentas tipadas para revisão via PRs #50/#51.** Ainda não há executor durável de ferramentas nem agente plenamente autônomo.
 - **Validação:** no PC de desenvolvimento, 216 testes API + Ruff, 64 testes web + ESLint + Next build, Chrome com API local e CV/vagas fictícios, sem overflow mobile, sem envios. [CI do commit anterior ao merge](https://github.com/mxthsu/alinha/actions/runs/39889814580) foi aprovada. Smoke browser com fonte de vagas interceptada; **não** homologou fontes externas reais nem provedor BYOK com credencial real.
 - **Arquitetura:** código integrado continua Next.js/TypeScript + FastAPI/Python e SQLite. **Não houve escolha definitiva de stack.** Rust, Go e TypeScript permanecem alternativas fundamentadas por casos reais, não metas de migração. [PR #42](https://github.com/mxthsu/alinha/pull/42) é benchmark isolado.
-- **Desktop:** [PR #47](https://github.com/mxthsu/alinha/pull/47) permanece **rascunho experimental** empilhado sobre a branch anterior à PR #46. A prova Wails/Go não inclui aplicativo com API distribuível e comunicação plenamente segura; Tauri/Rust não foi validado sob cenário equivalente. **Não fazer merge nem mudar a prioridade para Desktop enquanto a Community ainda precisa do agente conectado à IA.**
+- **Desktop:** [PR #47](https://github.com/mxthsu/alinha/pull/47) permanece **rascunho experimental** empilhado sobre a branch anterior à PR #46. A prova Wails/Go não inclui aplicativo com API distribuível e comunicação plenamente segura; Tauri/Rust foi compilado e abriu em Windows com API autenticada e CV fictício, mas permanece POC sem instalador ou comparação equivalente. **Não fazer merge nem mudar a prioridade para Desktop enquanto a Community ainda precisa do agente conectado à IA.**
 - **Cloud:** futura; nenhum SaaS/comercialização lançada.
 
 ### Próximo trabalho prioritário — issue #48
 
-Construir uma ligação controlada entre a IA escolhida e **a jornada real**: `FakeAIProvider` para CI + adaptação real de provedor autorizada quando houver chave de teste; interpretação de intenção e propostas estruturadas, executor de ferramentas por allowlist, orçamento, timeout, cancelamento e eventos exibidos na única tela. O código determinístico continua cuidando de busca, filtros, deduplicação, evidências e execução. Nenhuma submissão de candidatura externa na próxima entrega.
+**Continuar além das PRs #50/#51:** executar a sequência tipada com eventos duráveis, retomada/cancelamento e verificação independente por allowlist, sem transformar a UI num segundo wizard. A IA já interpreta o objetivo e propõe cargo; falta o executor coordenado e medição de tokens/custos reais. O código determinístico continua cuidando de busca, filtros, deduplicação, evidências e execução. Nenhuma submissão de candidatura externa na próxima entrega.
 
 **Evite criar outra demonstração paralela**, inventar dados reais ou reescrever o núcleo por preferência. Trabalhe numa nova PR pequena da `main`, preserve alterações não commitadas no checkout `feat/job-full-descriptions` e teste no navegador com dados fictícios. Leia a [issue #48](https://github.com/mxthsu/alinha/issues/48) como checklist.
 

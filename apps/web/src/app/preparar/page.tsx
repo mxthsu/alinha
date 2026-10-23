@@ -210,10 +210,11 @@ export function PreparationJourney({embedded=false,opportunity,onClose,onClearSe
     {!embedded&&<PlatformNav/>}
     <JourneyContainer className={embedded?"journey-main":"platform-container journey-main"}>
       {embedded&&<div className="journey-embedded-heading">
-        <div><span>CONTINUE SEM SAIR DA JORNADA</span><h2>Prepare esta candidatura.</h2>
-          <p>Verifique, compare e aprove uma versão do currículo para a vaga selecionada.</p></div>
-        {onClose&&<button type="button" onClick={onClose}>Pausar e voltar às oportunidades</button>}
+        <div><span>AJUSTE AVANÇADO · OPCIONAL</span><h2>Verifique os requisitos com sua IA</h2>
+          <p>O currículo já está associado à jornada. Analise a vaga ou aprove uma versão personalizada sem enviar candidatura.</p></div>
+        {onClose&&<button type="button" onClick={onClose}>Fechar análise avançada</button>}
       </div>}
+      {!embedded&&<>
       <div className="platform-kicker"><ShieldCheck size={16}/> UMA JORNADA · DUAS VERIFICAÇÕES</div>
       <h1>Prepare sua candidatura.</h1>
       <p className="platform-lead">Comece verificando se o currículo pode ser lido. Depois, se quiser, compare-o com uma vaga usando a IA escolhida. Sem notas ou promessas de aprovação.</p>
@@ -224,8 +225,27 @@ export function PreparationJourney({embedded=false,opportunity,onClose,onClearSe
         <div className="journey-progress-connector"/>
         <div className="journey-progress-item"><span>03</span><div><strong>Revisar e melhorar</strong><small>Editor e exportação</small></div></div>
       </div>
+      </>}
 
-      <section className="journey-card" id="curriculo">
+      {embedded ? <section className="journey-embedded-ats" aria-label="Currículo e leitura ATS">
+        <div className="journey-embedded-ats-row">
+          <div><strong><FileCheck2 size={17}/> Currículo salvo na jornada</strong>
+            <p>{ats
+              ? "Diagnóstico de leitura concluído: "+ats.readable_characters.toLocaleString("pt-BR")+" caracteres. Nenhuma nota ATS universal é atribuída."
+              : studioMessage||"Carregando currículo local e verificando a leitura ATS…"}</p></div>
+          <Link href="/studio">Revisar perfil <ArrowRight size={15}/></Link>
+        </div>
+        {ats&&ats.findings.length>0&&<details className="journey-embedded-findings">
+          <summary>{ats.findings.length} ponto(s) de atenção na leitura ATS</summary>
+          <ul>{ats.findings.map(item=><li key={item.code}><strong>{item.title}:</strong> {item.action}</li>)}</ul>
+        </details>}
+        {!ats&&hasResume&&<form onSubmit={checkAts} className="journey-embedded-retry">
+          <button type="submit" disabled={Boolean(busy)}>
+            {busy==="ats"?"Verificando leitura…":"Verificar leitura ATS"} <ArrowRight size={15}/>
+          </button>
+        </form>}
+        {error&&<p className="journey-error" role="alert"><AlertCircle size={16}/>{error}</p>}
+      </section> : <section className="journey-card" id="curriculo">
         <div className="journey-card-header"><span>01 · DIAGNÓSTICO DE LEITURA</span><h2>Seu currículo, uma única vez.</h2><p>Envie PDF, DOCX ou TXT, ou cole o texto. A análise ATS ocorre localmente e não consome sua cota de IA.</p></div>
         <div className="journey-columns">
           <form className="journey-form" onSubmit={checkAts}>
@@ -262,7 +282,7 @@ export function PreparationJourney({embedded=false,opportunity,onClose,onClearSe
           </div>
         </div>
         {showEditor&&ats&&<AtsEditor apiUrl={api} sourceText={mode==="text"?resume:null} file={mode==="file"?file:null}/>}
-      </section>
+      </section>}
 
       <section className={"journey-card journey-job"+(!ats?" journey-locked":"")} id="vaga">
         <div className="journey-card-header"><span>02 · CORRESPONDÊNCIA COM A VAGA</span>
@@ -319,11 +339,11 @@ export function PreparationJourney({embedded=false,opportunity,onClose,onClearSe
         </button>
       </div>}
       {versionNotice&&<p role="status" className="journey-shared-notice">{versionNotice}</p>}
-      <section className="journey-finish" id="melhorar"><div><span>03 · PRÓXIMO PASSO</span><h2>Revise, melhore e exporte.</h2>
+      {!embedded&&<section className="journey-finish" id="melhorar"><div><span>03 · PRÓXIMO PASSO</span><h2>Revise, melhore e exporte.</h2>
         <p>O Alinha prepara uma versão específica para cada oportunidade. Aprove ou baixe seu documento aqui; abra o Studio apenas se quiser editar o perfil original.</p></div>
         <Link href="/studio" className="journey-finish-button"><FilePenLine size={17}/> Abrir Studio <ArrowRight size={17}/></Link>
-      </section>
-      <p className="journey-disclaimer"><Info size={17}/> Esta jornada não garante classificação, entrevista ou contratação. As decisões dependem dos critérios de cada empresa.</p>
+      </section>}
+      {!embedded&&<p className="journey-disclaimer"><Info size={17}/> Esta jornada não garante classificação, entrevista ou contratação. As decisões dependem dos critérios de cada empresa.</p>}
     </JourneyContainer>
   </div>;
 }

@@ -253,7 +253,8 @@ export default function CareerAgent(){
      <span role="status" aria-live="polite">{status==="searching"?"Consultando fontes…":
       status==="review"?results?.jobs.length?"Oportunidades disponíveis para revisão":"Busca concluída, sem vagas encontradas":
       status==="failed"?"Consulta interrompida por erro":
-      status==="cancelled"?"Busca cancelada": "Aguardando seu pedido"}</span></div>
+      status==="cancelled"?"Busca cancelada":
+      selected?"Vaga salva para retomar · nenhuma busca refeita":"Aguardando seu pedido"}</span></div>
     <ol>{steps.map((step,index)=>{const done=index===0?Boolean(profile):index===1?Boolean(runPlanRole):
      index===2?Boolean(results):index===3?Boolean(results&&runIntent):Boolean(prepared.length||reviewing&&chosen);
      return <li key={step.label} className={done?"done":""}>

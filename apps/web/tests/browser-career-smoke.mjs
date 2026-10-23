@@ -90,8 +90,19 @@ try{
  await page.getByRole("button",{name:/Retomar nesta tela/}).waitFor({timeout:20000});
  await page.getByRole("button",{name:/Retomar nesta tela/}).click();
  await page.getByText("RASCUNHO · NÃO ENVIADO").waitFor();
+ const resumedDraft=await page.locator("#career-draft").inputValue();
+ assert.match(resumedDraft,/Python|Engenheiro de IA/,
+  "Resuming must restore a safe evidence-based draft instead of an empty editor");
  await page.getByText("Analisar com IA conectada, verificar ATS e adaptar currículo").click();
  await page.getByText("Provedor para esta operação").waitFor({timeout:15000});
+ const embedded=page.locator(".journey-embedded");
+ await embedded.getByText("Currículo salvo na jornada").waitFor({timeout:15000});
+ assert.equal(await embedded.locator('input[type="file"]').count(),0,
+  "Embedded mode must reuse the imported profile, not show a second upload");
+ assert.equal(await embedded.locator(".journey-progress").count(),0,
+  "Embedded mode must not present a second progress wizard");
+ assert.equal(await embedded.locator(".journey-finish").count(),0,
+  "Embedded mode must not present a second final step");
  await page.setViewportSize({width:390,height:844});
  await page.screenshot({path:resolve(output,"mobile.png"),fullPage:true});
  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);

@@ -2,6 +2,14 @@
 
 > **Fonte principal de contexto do projeto, atualizada em 23/10/2026.** Leia este arquivo, [AGENTS.md](../AGENTS.md), o código real na branch escolhida e os documentos vinculados **antes** de decidir a próxima tarefa. O estado do GitHub pode mudar; confirme branches, CI e PRs ao começar. Este texto não prova que funcionalidades planejadas já funcionem.
 
+## Backend com filtros reais na busca (23/10/2026)
+
+**PRs #55 a #60 integradas na main:** jornadas persistentes, confirmação de sugestão por IA, busca real, comparação literal de vagas com currículo local versionado, rascunhos revisáveis e comando único.
+
+**Nesta branch:** cada jornada carrega `CandidateCriteria` revisado pelo usuário. O Core filtra modalidade, cidade, vínculo e salário anunciado com dados efetivamente declarados pela fonte; critérios não conhecidos não são presumidos. A busca seleciona até 15 vagas **depois** de aplicar filtros, preservando proveniência e impedindo mudanças dos critérios após confirmação. O legado remoto permanece como default. [Contrato dos filtros](agent-search-filters.md).
+
+**Pendente:** contabilização real de tokens/custos de provedores, teste BYOK autorizado, revisão de execuções interrompidas, ampliação de cobertura/vagas sem dados estruturados e integração à UI. Não alterar o frontend antes de concluir o backend.
+
 ## Nova etapa: proposta de IA vinculada à execução (23/10/2026)
 
 Depois das PRs #55 a #59, o backend consegue buscar, comparar e preparar rascunhos com um comando e checkpoints SQLite. Nesta branch, a interpretação opcional por IA grava somente o cargo proposto, com validade de uma hora. Um segundo endpoint exige que o usuário confirme esse mesmo cargo, a versão do CV e a autorização de busca antes de criar a jornada. Nenhuma ação é iniciada na interpretação ou na confirmação.

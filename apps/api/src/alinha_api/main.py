@@ -286,7 +286,11 @@ def execute_agent_search(request: Request, response: Response, run_id: UUID) -> 
     try:
         return execute_authorized_search(
             journey_store, run_id,
-            lambda query: discover_jobs(request, q=query, page=1, remote_only=True, source="all"),
+            lambda query: discover_jobs(
+                request, q=query, page=1,
+                remote_only=journey_store.get_search_criteria(run_id).allowed_work_modes == ["remote"],
+                source="all",
+            ),
         )
     except JourneyNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -390,7 +394,9 @@ def execute_agent_journey(request: Request, response: Response, run_id: UUID) ->
         return run_authorized_journey(
             journey_store, run_id,
             search=lambda query: discover_jobs(
-                request, q=query, page=1, remote_only=True, source="all",
+                request, q=query, page=1,
+                remote_only=journey_store.get_search_criteria(run_id).allowed_work_modes == ["remote"],
+                source="all",
             ),
             read_profile=lambda: get_record("resume"),
         )

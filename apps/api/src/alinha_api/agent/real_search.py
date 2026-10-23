@@ -10,6 +10,7 @@ from collections.abc import Callable
 from uuid import UUID
 
 from alinha_api.agent.discovery import JobSearchResult
+from alinha_api.agent.job_filters import filter_public_jobs
 from alinha_api.agent.journey_store import JourneyConflict, JourneySnapshot, JourneyStore
 
 
@@ -27,8 +28,8 @@ def execute_authorized_search(
     # An already-cancelled run fails before reaching any external connector.
     try:
         result = JobSearchResult.model_validate(search(lease.query))
-        # Allowlisted connectors may return up to 40; authorized limit is <=15.
-        trimmed = result.model_copy(update={"jobs": result.jobs[: lease.max_jobs]})
+        # Filter before truncation. Missing verified fields do not pass hard filters.
+        trimmed = filter_public_jobs(result, lease.criteria, lease.max_jobs)
     except Exception as exc:
         # If cancelled concurrently, fail_step refuses the stale lease.
         store.fail_step(lease)

@@ -97,3 +97,21 @@
 @media(max-width:800px){.unified-heading{flex-direction:column;align-items:flex-start}.unified-progress ol{grid-template-columns:repeat(3,minmax(0,1fr))}.unified-profile-line{align-items:flex-start;flex-direction:column}}
 @media(max-width:520px){.unified-agent{padding-block:22px 50px}.unified-primary,.unified-progress,.unified-results,.unified-preview{padding:16px}.unified-heading h1{font-size:31px}.unified-progress ol{grid-template-columns:repeat(2,minmax(0,1fr))}.unified-result-head{flex-wrap:wrap}.unified-profile-actions{width:100%}.unified-cta{width:100%}.unified-resume{flex-direction:column;align-items:flex-start}.unified-resume>div:last-child{width:100%}.unified-resume button{width:100%}}
 @media(prefers-reduced-motion:reduce){.unified-agent *{scroll-behavior:auto!important}}
+
+/* An opt-in model proposal, not a second career wizard or autonomous search. */
+.unified-ai-assist{border:1px solid #d7e7d2;border-radius:12px;padding:15px 17px;margin-top:14px;background:#f7fbf5;color:#355d40}
+.unified-ai-assist>div>strong{font-size:13px}
+.unified-ai-assist p{font-size:11px;line-height:1.65;color:#698372;margin:6px 0 0}
+.unified-ai-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.unified-ai-controls select{max-width:100%;border:1px solid #c8dcc6;border-radius:8px;padding:10px 12px;background:white;color:#2c533a;font-size:12px}
+.unified-ai-controls button,.unified-ai-suggestion button{border:1px solid #c5ddc2;border-radius:8px;padding:10px 13px;background:#285a3d;color:white;font-size:12px;font-weight:750}
+.unified-ai-controls button:disabled{opacity:.55;cursor:not-allowed}
+.unified-ai-suggestion{border:1px solid #cfe5c9;background:white;border-radius:10px;padding:13px;margin-top:12px}
+.unified-ai-suggestion strong{font-size:13px}
+.unified-ai-suggestion div{display:flex;flex-wrap:wrap;gap:9px;margin-top:11px}
+.unified-ai-suggestion button:last-child,.unified-ai-reset{border:1px solid #cedfc9;background:white;color:#356b44;border-radius:7px;font-size:11px;padding:8px 10px;margin-left:6px}
+.unified-ai-assist .unified-ai-error{color:#a53c2c}
+@media(max-width:520px){.unified-ai-controls{align-items:stretch;flex-direction:column}.unified-ai-controls select,.unified-ai-controls button{width:100%}}
+
+.unified-ai-assist summary{cursor:pointer;color:#355e42;font-size:13px;font-weight:760;list-style-position:inside}
+.unified-ai-assist[open] summary{margin-bottom:8px}

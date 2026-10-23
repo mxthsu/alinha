@@ -66,7 +66,7 @@ test("no accidental overwrite or application submission in the integrated page",
  const component=readFileSync(new URL("../src/app/agente/page.tsx",import.meta.url),"utf8");
  assert.ok(component.includes("loadResumeDraft()"));
  assert.ok(component.includes('source:"all"'));
- assert.ok(component.includes('remote_only:String(parsed.remoteOnly)'));
+ assert.ok(component.includes('remote_only:String(activeIntent.remoteOnly)'));
  assert.ok(component.includes("selectOpportunity(next)"));
  assert.ok(component.includes("<PreparationJourney"));
  assert.ok(component.includes("abort.current?.abort()"));

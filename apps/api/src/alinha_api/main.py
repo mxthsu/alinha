@@ -13,6 +13,12 @@ from alinha_api.agent.ats_boards import search_ats_board
 from alinha_api.agent.discovery import JobSearchResult, JobSearchUnavailable, search_jobs
 from alinha_api.agent.github_jobs import search_github_jobs
 from alinha_api.agent.gupy import search_gupy
+from alinha_api.agent.intent_model import (
+    MODELS,
+    IntentRequest,
+    IntentToolProposal,
+    validated_proposal,
+)
 from alinha_api.agent.lever import search_lever
 from alinha_api.agent.models import CandidateCriteria
 from alinha_api.agent.multisource import search_multi_source
@@ -118,6 +124,22 @@ def _community_api_only(request: Request, *, mutation: bool = False) -> None:
         raise HTTPException(status_code=403, detail="Origem não autorizada.")
     if request.headers.get("sec-fetch-site") == "cross-site":
         raise HTTPException(status_code=403, detail="Acesso não autorizado.")
+
+
+@app.post("/api/v1/agent/interpret", response_model=IntentToolProposal)
+def interpret_agent_objective(request: Request, response: Response, body: IntentRequest) -> IntentToolProposal:
+    """One explicit BYOK/local model request, for a review-only job.search proposal.
+
+    Never accepts a resume, job description, credentials or an executable tool instruction.
+    The model cannot trigger a job search or application submission.
+    """
+    _community_api_only(request, mutation=True)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return validated_proposal(MODELS[body.provider](), body.objective)
+    except ProviderError as exc:
+        # Provider adapters report only static, non-sensitive messages.
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 # Ephemeral demo only: isolated synthetic data and no submission connector.

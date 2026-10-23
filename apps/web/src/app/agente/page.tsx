@@ -14,6 +14,7 @@ import {
 } from "@/lib/career-handoff";
 import type {AgentJob} from "@/lib/career-agent";
 import {planCareerSearch} from "@/lib/career-agent";
+import {reviewIntentTool,type IntentToolProposal} from "@/lib/intent-tool-guard";
 import {prepareApplicationQueue,wantsApplicationDrafts} from "@/lib/agent-queue";
 import {
  interpretCareerIntent,rankCareerJobs,judgeCareerJob,prepareCareerPreview,
@@ -29,6 +30,10 @@ const API=resolveApiOrigin();
 const DEFAULT_INTENT="Encontre vagas de Engenharia de IA remotas no Brasil, compare com meu currículo e prepare candidaturas";
 type RemoteResult={jobs:AgentJob[];source_name:string;limitations:string[]};
 type RunStatus="idle"|"searching"|"review"|"cancelled"|"failed";
+type PlannerProvider="gemini"|"openai_api"|"anthropic"|"ollama";
+const PLANNER_NAMES:Record<PlannerProvider,string>={
+ gemini:"Gemini",openai_api:"OpenAI API",anthropic:"Claude API",ollama:"Ollama local",
+};
 
 function buildStoredJob(selected:SelectedOpportunity):AgentJob{
  return {
@@ -46,6 +51,13 @@ export default function CareerAgent(){
  const [profileError,setProfileError]=useState("");
  const [importing,setImporting]=useState(false);
  const [intentText,setIntentText]=useState(DEFAULT_INTENT);
+ const [plannerProviders,setPlannerProviders]=useState<PlannerProvider[]>([]);
+ const [plannerProvider,setPlannerProvider]=useState<PlannerProvider>("gemini");
+ const [planning,setPlanning]=useState(false);
+ const [planError,setPlanError]=useState("");
+ const [proposal,setProposal]=useState<IntentToolProposal|null>(null);
+ const [confirmedRole,setConfirmedRole]=useState("");
+ const planAbort=useRef<AbortController|null>(null);
  const [authorized,setAuthorized]=useState(false);
  const [status,setStatus]=useState<RunStatus>("idle");
  const [error,setError]=useState("");
@@ -65,6 +77,11 @@ export default function CareerAgent(){
  const intentEdited=useRef(false);
  const isMounted=useRef(true);
  const parsed=useMemo(()=>interpretCareerIntent(intentText),[intentText]);
+ const activeRole=confirmedRole||parsed.role;
+ const activeIntent=useMemo(()=>({...parsed,role:activeRole}),[parsed,activeRole]);
+ const uncertainties=useMemo(()=>confirmedRole
+  ?parsed.needsConfirmation.filter(message=>!message.toLowerCase().includes("cargo"))
+  :parsed.needsConfirmation,[parsed,confirmedRole]);
  const ranked=useMemo(()=>profile&&runIntent&&results?
   rankCareerJobs(results.jobs,profile,runIntent):[],[results,profile,runIntent]);
  const prepared=useMemo(()=>profile&&runIntent&&runRequestedDrafts?
@@ -75,6 +92,20 @@ export default function CareerAgent(){
   return item??judgeCareerJob(buildStoredJob(selected),profile,
    runIntent??interpretCareerIntent(selected.title,selected.title));
  },[profile,ranked,runIntent,selected]);
+
+ useEffect(()=>{
+  let live=true;
+  void fetch(API+"/api/v1/providers/status",{cache:"no-store"})
+   .then(r=>{if(!r.ok)throw new Error("Status indisponível");return r.json();})
+   .then((data:Record<string,{available?:boolean}>)=>{
+    if(!live)return;
+    const available=(Object.keys(PLANNER_NAMES) as PlannerProvider[])
+     .filter(key=>data[key]?.available);
+    setPlannerProviders(available);
+    if(available.length)setPlannerProvider(available[0]);
+   }).catch(()=>{/* Deterministic search remains available. */});
+  return ()=>{live=false;};
+ },[]);
 
  useEffect(()=>{
   isMounted.current=true;
@@ -91,7 +122,7 @@ export default function CareerAgent(){
    }).catch(()=>{if(alive)setProfileError("Falha ao ler o currículo local. Verifique a conexão com a API.");})
      .finally(()=>{if(alive)setLoadingProfile(false);});
   });
-  return ()=>{alive=false;isMounted.current=false;cancelAnimationFrame(frame);abort.current?.abort();};
+  return ()=>{alive=false;isMounted.current=false;cancelAnimationFrame(frame);abort.current?.abort();planAbort.current?.abort();};
  },[]);
 
  async function importResume(event:ChangeEvent<HTMLInputElement>){
@@ -118,20 +149,45 @@ export default function CareerAgent(){
   finally{setImporting(false);}
  }
 
+ async function askModelToInterpret(){
+  if(planning||status==="searching"||intentText.trim().length<5||
+     !plannerProviders.includes(plannerProvider))return;
+  planAbort.current?.abort();
+  const controller=new AbortController();
+  planAbort.current=controller;
+  setPlanning(true);setProposal(null);setPlanError("");setConfirmedRole("");
+  try{
+   // Opt-in: send only this written objective, never a résumé or saved secrets.
+   const response=await fetch(API+"/api/v1/agent/interpret",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({objective:intentText,provider:plannerProvider}),
+    cache:"no-store",signal:controller.signal,
+   });
+   if(!response.ok)throw new Error("Não foi possível interpretar o objetivo com essa IA. A busca manual continua disponível.");
+   const reviewed=reviewIntentTool(await response.json());
+   if(!controller.signal.aborted)setProposal(reviewed);
+  }catch{
+   if(!controller.signal.aborted)setPlanError("A IA não concluiu a interpretação. Você ainda pode pesquisar sem IA.");
+  }finally{
+   if(planAbort.current===controller){planAbort.current=null;setPlanning(false);}
+  }
+ }
+
  async function search(event:FormEvent<HTMLFormElement>){
   event.preventDefault();
-  if(!authorized||!profile||loadingProfile||status==="searching"||parsed.role.length<2)return;
+  if(!authorized||!profile||loadingProfile||status==="searching"||activeRole.length<2)return;
+  planAbort.current?.abort();
   const controller=new AbortController();
   abort.current?.abort();abort.current=controller;
   const current=++generation.current;
   setStatus("searching");setResults(null);setRunIntent(null);setError("");setReviewed(false);
-  setRunPlanRole(parsed.role);
+  setRunPlanRole(activeRole);
   setRunRequestedDrafts(wantsApplicationDrafts(intentText));
   let timedOut=false;
   const deadline=window.setTimeout(()=>{timedOut=true;controller.abort();},30000);
   try{
    // Source adapters, settings and rate limits are enforced by the existing local API.
-   const qs=new URLSearchParams({q:parsed.role,source:"all",page:"1",remote_only:String(parsed.remoteOnly)});
+   const qs=new URLSearchParams({q:activeRole,source:"all",page:"1",remote_only:String(activeIntent.remoteOnly)});
    const response=await fetch(API+"/api/v1/jobs/search?"+qs.toString(),{signal:controller.signal,cache:"no-store"});
    if(!response.ok){
     let detail="Não foi possível consultar as fontes públicas autorizadas.";
@@ -142,7 +198,7 @@ export default function CareerAgent(){
    if(!Array.isArray(data.jobs))throw new Error("A fonte não retornou uma lista válida de oportunidades.");
    if(controller.signal.aborted||current!==generation.current)return;
    setResults({...data,jobs:data.jobs.slice(0,30)});
-   setRunIntent(parsed);setStatus("review");
+   setRunIntent(activeIntent);setStatus("review");
   }catch(e){
    if(current===generation.current&&(!controller.signal.aborted||timedOut)){
     setStatus("failed");setError(timedOut?"A consulta excedeu 30 segundos. Nenhum resultado foi confirmado. Tente novamente.":
@@ -218,29 +274,58 @@ export default function CareerAgent(){
     <form onSubmit={e=>void search(e)} className="unified-intent-form">
      <label htmlFor="career-intent">Seu objetivo</label>
      <textarea id="career-intent" rows={3} maxLength={400} value={intentText}
-      onChange={e=>{intentEdited.current=true;setIntentText(e.target.value);}} disabled={status==="searching"}
+      onChange={e=>{intentEdited.current=true;planAbort.current?.abort();setPlanning(false);setProposal(null);setConfirmedRole("");setPlanError("");setIntentText(e.target.value);}} disabled={status==="searching"}
       placeholder="Ex.: Encontre vagas de Engenheiro de IA remoto no Brasil, com salário a partir de R$ 8.000…"/>
      <div className="unified-understanding">
       <strong>Entendi o seguinte:</strong>
       <div className="unified-chips">
-       <span>Cargo: {parsed.role||"precisa informar"}</span>
+       <span>Cargo: {activeRole||"precisa informar"}</span>
        {parsed.workMode&&<span>{parsed.workMode==="remote"?"Remoto":parsed.workMode==="hybrid"?"Híbrido":"Presencial"}</span>}
        {parsed.city&&<span>Cidade: {parsed.city}</span>}
        {parsed.brazilOnly&&<span>Brasil</span>}
        {parsed.minSalaryBrl!==null&&<span>A partir de {parsed.minSalaryBrl.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</span>}
        {parsed.contract&&<span>Contrato {parsed.contract.toUpperCase()}</span>}
       </div>
-      {parsed.needsConfirmation.length>0&&<details className="unified-uncertainties">
-       <summary><CircleAlert size={15}/> {parsed.needsConfirmation.length} condição(ões) que precisam de confirmação <ChevronDown size={14}/></summary>
-       <ul>{parsed.needsConfirmation.map(text=><li key={text}>{text}</li>)}</ul>
+      {uncertainties.length>0&&<details className="unified-uncertainties">
+       <summary><CircleAlert size={15}/> {uncertainties.length} condição(ões) que precisam de confirmação <ChevronDown size={14}/></summary>
+       <ul>{uncertainties.map(text=><li key={text}>{text}</li>)}</ul>
       </details>}
      </div>
+     <details className="unified-ai-assist" aria-label="Interpretação opcional de IA">
+      <summary>{confirmedRole?"IA ajudou a identificar: "+confirmedRole:"Interpretar objetivo com sua IA (opcional)"}</summary>
+      <div><p>Uma chamada pode gerar custo no seu provedor. Só o objetivo escrito será enviado: nunca seu currículo.
+        A IA apenas sugere um cargo; você autoriza separadamente qualquer consulta.</p></div>
+      {plannerProviders.length>0&&<div className="unified-ai-controls">
+       <select aria-label="IA para interpretar objetivo" value={plannerProvider}
+        disabled={planning||status==="searching"}
+        onChange={e=>{planAbort.current?.abort();setPlannerProvider(e.target.value as PlannerProvider);setProposal(null);setConfirmedRole("");}}>
+        {plannerProviders.map(name=><option key={name} value={name}>{PLANNER_NAMES[name]}</option>)}
+       </select>
+       <button type="button" disabled={planning||status==="searching"||intentText.trim().length<5}
+        onClick={()=>void askModelToInterpret()}>
+        {planning?"Interpretando…":"Sugerir cargo com IA"}
+       </button>
+      </div>}
+      {plannerProviders.length===0&&<p>Sem conexão compatível disponível. A busca continua funcionando sem IA.
+       <Link href="/conexoes"> Conectar IA</Link></p>}
+      {planError&&<p className="unified-ai-error" role="alert">{planError}</p>}
+      {proposal&&<div className="unified-ai-suggestion" role="status">
+       <strong>Sugestão para sua revisão: {proposal.query}</strong>
+       <p>{proposal.reason}</p>
+       <div><button type="button" onClick={()=>{setConfirmedRole(proposal.query);setProposal(null);}}>
+        Usar cargo sugerido</button>
+        <button type="button" onClick={()=>setProposal(null)}>Descartar</button></div>
+      </div>}
+      {confirmedRole&&<p role="status">Cargo confirmado por você: <strong>{confirmedRole}</strong>.
+       Os demais critérios do seu pedido continuam em vigor.
+       <button type="button" className="unified-ai-reset" onClick={()=>setConfirmedRole("")}>Retirar sugestão</button></p>}
+     </details>
      <label className="unified-consent"><input type="checkbox" checked={authorized}
       disabled={status==="searching"} onChange={e=>setAuthorized(e.target.checked)}/>
       <span>Autorizo consultar as fontes públicas de vagas habilitadas. Apenas o cargo e o filtro de modalidade são enviados à busca; meu currículo não é transmitido às fontes.</span>
      </label>
      <div className="unified-submit-row"><button type="submit" className="unified-cta"
-      disabled={!authorized||!profile||parsed.role.length<2||status==="searching"||importing}>
+      disabled={!authorized||!profile||activeRole.length<2||status==="searching"||importing}>
       <Search size={17}/>{status==="searching"?"Buscando oportunidades…":"Encontrar e comparar vagas"}
       <ArrowRight size={16}/></button>
       {status==="searching"&&<button type="button" className="unified-cancel" onClick={cancel}><Square size={13}/> Cancelar</button>}

@@ -61,10 +61,19 @@ await page.route(/\/api\/v1\/providers\/status$/,route=>route.fulfill({
  }),
 }));
 await page.route(/\/api\/v1\/agent\/interpret$/,route=>{
- intentCalls.push(route.request().postDataJSON());
+ const request=route.request().postDataJSON();
+ intentCalls.push(request);
  return route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
   tool:"job.search",query:"Engenheiro de IA",reason:"Cargo encontrado no objetivo.",
   needs_confirmation:true,executed:false,external_submission:false,model_calls:1,
+  run_id:request.run_id,calls_used:1,calls_remaining:1,
+  steps:[
+   {tool:"job.search",state:"proposed",requires_confirmation:true,external_submission:false},
+   {tool:"job.assess",state:"proposed",requires_confirmation:false,external_submission:false},
+   ...(request.preview_requested?[{
+    tool:"application.preview",state:"proposed",requires_confirmation:true,external_submission:false,
+   }]:[]),
+  ],
  })});
 });
 await page.route(/\/api\/v1\/jobs\/search\?/,async route=>{
@@ -86,9 +95,15 @@ try{
  await page.getByRole("button",{name:"Sugerir cargo com IA"}).click();
  await page.getByText("Sugestão para sua revisão: Engenheiro de IA").waitFor();
  assert.equal(intentCalls.length,1,"Interpretation requires explicit click");
- assert.deepEqual(Object.keys(intentCalls[0]).sort(),["objective","provider"],
-  "Only the objective may reach the model, never the private resume");
+ assert.deepEqual(Object.keys(intentCalls[0]).sort(),
+  ["objective","preview_requested","provider","request_id","run_id"],
+  "Only an objective, anonymous identifiers and scope may reach the planner API");
+ assert.equal(intentCalls[0].preview_requested,true);
+ assert.equal(typeof intentCalls[0].run_id,"string");
  assert.equal(searchCalls.length,0,"Model proposal must not start a search");
+ assert.equal(await page.locator(".unified-ai-step-list li").count(),3);
+ await page.getByText("Interpretações restantes nesta jornada: 1/2").waitFor();
+ await page.screenshot({path:resolve(output,"ai-proposal.png"),fullPage:false});
  await page.getByRole("button",{name:"Usar cargo sugerido"}).click();
  await page.getByText("Cargo confirmado por você:").waitFor();
  await page.getByRole("checkbox").check();

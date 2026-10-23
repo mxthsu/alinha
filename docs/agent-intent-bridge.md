@@ -40,3 +40,32 @@ Os testes verificam origem local, ausência de currículo no payload, proposta p
 ## Próxima fatia da issue #48
 
 Depois de revisar esse piloto: medir falhas com provedor real autorizado, registrar consumo/limites por jornada, interpretar condições ambíguas em esquema estruturado sem enfraquecer critérios, planejar uma sequência tipada de ferramentas controladas e persistir eventos/cancelamento. Não implementar tudo isso alterando o parser atual às cegas.
+
+
+## Segundo incremento (branch dependente da PR #50): plano tipado e limite por jornada
+
+Este bloco ainda **não está na `main`**, e a PR depende da incorporação/rebase correto da #50.
+
+### Plano revisável, sem poderes concedidos à IA
+
+A API agora retorna uma sequência **fixada pelo código**, derivada do cargo sugerido pela IA:
+1. `job.search` — requer autorização separada do usuário antes da consulta;
+2. `job.assess` — comparação local e determinística com o currículo;
+3. `application.preview` — somente se o objetivo digitado pedir preparação; revisão humana é necessária.
+
+Todas as etapas são marcadas `state=proposed`, `external_submission=false`. O modelo não escolhe ferramentas, ordem ou permissões; ele **continua sugerindo somente o cargo**. O frontend valida a mesma ordem, checa o UUID da jornada e não executa ações automaticamente por receber uma proposta. A busca e a prévia continuam sendo realizadas pelas rotinas existentes da jornada `/agente`, sujeitas aos consentimentos existentes. **Não é ainda um orquestrador com eventos duráveis de execução.**
+
+### Reserva de chamadas de IA
+
+- Cada solicitação de interpretação exige `run_id` e `request_id` UUIDv4. O backend reserva atomicamente **até 2 chamadas por `run_id`** em SQLite local antes de contactar o fornecedor.
+- A reserva é transacional e resistente a solicitações concorrentes, repetição de `request_id` ou reinício da API. O banco armazena só UUIDs e horário, sem prompts, currículos, tokens ou chaves; elimina registros após 14 dias.
+- Falha técnica do banco **impede** a chamada (fail-closed); falha ou timeout do provedor **consome** a reserva para não duplicar uma chamada potencialmente faturada.
+- O frontend exibe o saldo por jornada e permite consultar vagas sem IA ao esgotá-lo.
+- **Limitação deliberada:** é um limite *por UUID de jornada*, não um limite financeiro global ou mensal. Alterar o objetivo/reabrir a página pode criar novo UUID, e não existe autenticação/identidade global. O valor da chamada, tokens reais, cota total do provedor e custos comerciais **não são medidos** neste incremento. Chamar isso de "limite financeiro total" seria incorreto.
+- Controles do provedor sobre output/timeout permanecem; não há reutilização de segredos entre modelos nem login obrigatório para a Community.
+
+### Verificações e limitações
+
+Os testes incluem concorrência de 8 threads reservando no mesmo SQLite (só 2 conseguem), repetição de solicitação (409), terceira chamada (429), persistência do orçamento após reabrir conexões, rejeição de payload adicional e plano malicioso. O Chrome com IA e vagas fictícias verifica que o plano é visível, a busca não acontece antes da confirmação e nenhuma candidatura é enviada.
+
+Ainda faltam integração real de provedores com uma chave de teste autorizada, contador de tokens/custos, eventos duráveis de execução e um coordenador que despache ferramentas por políticas sem depender do estado do React. Não expor isso como produto pronto. Continuar com PRs pequenas.

@@ -2,6 +2,7 @@
 import os
 import sqlite3
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,6 +26,14 @@ from alinha_api.agent.intent_model import (
     ReviewedIntentPlan,
     build_reviewed_plan,
     validated_proposal,
+)
+from alinha_api.agent.journey_store import (
+    JourneyConflict,
+    JourneyNotFound,
+    JourneySnapshot,
+    JourneyStorageUnavailable,
+    JourneyStore,
+    StartJourney,
 )
 from alinha_api.agent.lever import search_lever
 from alinha_api.agent.models import CandidateCriteria
@@ -166,6 +175,47 @@ def interpret_agent_objective(request: Request, response: Response, body: Intent
     except ProviderError as exc:
         # Provider adapters report only static, non-sensitive messages.
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+# Durable execution control plane. UI integrations and tool dispatch come later;
+# never expose begin_step or finish_step to untrusted browser requests.
+journey_store = JourneyStore()
+
+
+@app.post("/api/v1/agent/runs", response_model=JourneySnapshot)
+def create_agent_run(request: Request, response: Response, body: StartJourney) -> JourneySnapshot:
+    _community_api_only(request, mutation=True)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return journey_store.create(body)
+    except JourneyConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except JourneyStorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.get("/api/v1/agent/runs/{run_id}", response_model=JourneySnapshot)
+def get_agent_run(request: Request, response: Response, run_id: UUID) -> JourneySnapshot:
+    _community_api_only(request)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return journey_store.get(run_id)
+    except JourneyNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except JourneyStorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.post("/api/v1/agent/runs/{run_id}/cancel", response_model=JourneySnapshot)
+def cancel_agent_run(request: Request, response: Response, run_id: UUID) -> JourneySnapshot:
+    _community_api_only(request, mutation=True)
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return journey_store.cancel(run_id)
+    except JourneyNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except JourneyStorageUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 # Ephemeral demo only: isolated synthetic data and no submission connector.
